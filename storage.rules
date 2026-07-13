@@ -1,0 +1,16 @@
+rules_version = '2';
+
+// ---------------------------------------------------------------------------
+// PLACEHOLDER — INFRASTRUCTURE PHASE ONLY.
+// Denies all direct client access to Storage. Definitive rules (per-path
+// read/write policy for product images, avatars, proof-of-payment uploads,
+// etc.) are pending Product Owner validation. Until then, uploads go through
+// the Admin SDK in a trusted server context.
+// ---------------------------------------------------------------------------
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
