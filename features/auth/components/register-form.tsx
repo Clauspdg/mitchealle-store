@@ -61,7 +61,11 @@ export function RegisterForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="flex flex-col gap-4"
+      noValidate
+    >
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="displayName">Nom</Label>
         <Input
@@ -71,7 +75,9 @@ export function RegisterForm() {
           {...register("displayName")}
         />
         {errors.displayName ? (
-          <p className="text-destructive text-sm">{errors.displayName.message}</p>
+          <p className="text-destructive text-sm">
+            {errors.displayName.message}
+          </p>
         ) : null}
       </div>
 
@@ -113,23 +119,32 @@ export function RegisterForm() {
           {...register("confirmPassword")}
         />
         {errors.confirmPassword ? (
-          <p className="text-destructive text-sm">{errors.confirmPassword.message}</p>
+          <p className="text-destructive text-sm">
+            {errors.confirmPassword.message}
+          </p>
         ) : null}
       </div>
 
       <div className="flex items-start gap-2">
         <Checkbox
           id="acceptTerms"
-          onCheckedChange={(checked) => setValue("acceptTerms", checked === true, {
-            shouldValidate: true,
-          })}
+          onCheckedChange={(checked) =>
+            setValue("acceptTerms", checked === true, {
+              shouldValidate: true,
+            })
+          }
         />
-        <Label htmlFor="acceptTerms" className="text-muted-foreground font-normal">
+        <Label
+          htmlFor="acceptTerms"
+          className="text-muted-foreground font-normal"
+        >
           J&apos;accepte les conditions d&apos;utilisation.
         </Label>
       </div>
       {errors.acceptTerms ? (
-        <p className="text-destructive -mt-2 text-sm">{errors.acceptTerms.message}</p>
+        <p className="text-destructive -mt-2 text-sm">
+          {errors.acceptTerms.message}
+        </p>
       ) : null}
 
       <Button type="submit" disabled={submitting} className="mt-2">

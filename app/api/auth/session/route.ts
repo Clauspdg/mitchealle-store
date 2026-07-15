@@ -2,7 +2,10 @@ import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 
 import { adminAuth } from "@/firebase/admin"
-import { SESSION_COOKIE_NAME, SESSION_EXPIRES_IN_MS } from "@/lib/session.server"
+import {
+  SESSION_COOKIE_NAME,
+  SESSION_EXPIRES_IN_MS,
+} from "@/lib/session.server"
 
 /**
  * Exchanges a fresh Firebase ID token (short-lived, browser-only) for a

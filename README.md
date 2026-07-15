@@ -61,12 +61,12 @@ npm run build
 
 ## Scripts
 
-| Commande            | Description |
-| --------------------- | ------------- |
-| `npm run dev`          | Serveur de développement (Turbopack) |
-| `npm run build`        | Build de production |
-| `npm run start`        | Démarre le build de production |
-| `npm run lint`         | ESLint |
+| Commande        | Description                          |
+| --------------- | ------------------------------------ |
+| `npm run dev`   | Serveur de développement (Turbopack) |
+| `npm run build` | Build de production                  |
+| `npm run start` | Démarre le build de production       |
+| `npm run lint`  | ESLint                               |
 
 ## Documentation
 

@@ -76,10 +76,7 @@ export function Header() {
           {loading ? (
             <Skeleton className="h-8 w-20 rounded-md" />
           ) : user ? (
-            <Button
-              render={<Link href="/account" />}
-              variant="ghost"
-            >
+            <Button render={<Link href="/account" />} variant="ghost">
               Mon compte
             </Button>
           ) : (

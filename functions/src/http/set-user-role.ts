@@ -15,34 +15,37 @@ const setUserRoleInput = z.object({
  * client-writable Firestore field — this is the single trusted path for
  * role changes (see docs/firestore-architecture.md §5).
  */
-export const setUserRole = onCall({ region: "europe-west1" }, async (request) => {
-  if (!request.auth) {
-    throw new HttpsError("unauthenticated", "Connexion requise.")
+export const setUserRole = onCall(
+  { region: "europe-west1" },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Connexion requise.")
+    }
+
+    const actorRole = isRole(request.auth.token.role)
+      ? request.auth.token.role
+      : "customer"
+
+    const parsed = setUserRoleInput.safeParse(request.data)
+    if (!parsed.success) {
+      throw new HttpsError("invalid-argument", "Paramètres invalides.")
+    }
+
+    const { uid, role: targetRole } = parsed.data
+
+    if (!canAssignRole(actorRole, targetRole)) {
+      throw new HttpsError(
+        "permission-denied",
+        "Vous n'avez pas le droit d'assigner ce rôle."
+      )
+    }
+
+    await adminAuth.setCustomUserClaims(uid, { role: targetRole })
+    await adminDb.collection("users").doc(uid).update({
+      role: targetRole,
+      updatedAt: FieldValue.serverTimestamp(),
+    })
+
+    return { status: "ok" as const }
   }
-
-  const actorRole = isRole(request.auth.token.role)
-    ? request.auth.token.role
-    : "customer"
-
-  const parsed = setUserRoleInput.safeParse(request.data)
-  if (!parsed.success) {
-    throw new HttpsError("invalid-argument", "Paramètres invalides.")
-  }
-
-  const { uid, role: targetRole } = parsed.data
-
-  if (!canAssignRole(actorRole, targetRole)) {
-    throw new HttpsError(
-      "permission-denied",
-      "Vous n'avez pas le droit d'assigner ce rôle."
-    )
-  }
-
-  await adminAuth.setCustomUserClaims(uid, { role: targetRole })
-  await adminDb.collection("users").doc(uid).update({
-    role: targetRole,
-    updatedAt: FieldValue.serverTimestamp(),
-  })
-
-  return { status: "ok" as const }
-})
+)

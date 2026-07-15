@@ -28,12 +28,18 @@ export default function LoginPage() {
       <GoogleSignInButton />
 
       <div className="text-muted-foreground flex flex-col items-center gap-1 text-sm">
-        <Link href="/forgot-password" className="hover:text-foreground underline underline-offset-4">
+        <Link
+          href="/forgot-password"
+          className="hover:text-foreground underline underline-offset-4"
+        >
           Mot de passe oublié ?
         </Link>
         <p>
           Pas encore de compte ?{" "}
-          <Link href="/register" className="text-foreground underline underline-offset-4">
+          <Link
+            href="/register"
+            className="text-foreground underline underline-offset-4"
+          >
             Créer un compte
           </Link>
         </p>

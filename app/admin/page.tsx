@@ -28,7 +28,9 @@ export default async function AdminPage() {
               d&apos;un prochain sprint.
             </p>
             <p className="flex items-center gap-2">
-              <span className="text-muted-foreground">Connecté en tant que : </span>
+              <span className="text-muted-foreground">
+                Connecté en tant que :{" "}
+              </span>
               <Badge variant="secondary">{session.role}</Badge>
             </p>
           </CardContent>

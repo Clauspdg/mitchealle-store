@@ -31,7 +31,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const tokenResult = await nextUser.getIdTokenResult()
-      setRole(isRole(tokenResult.claims.role) ? tokenResult.claims.role : "customer")
+      setRole(
+        isRole(tokenResult.claims.role) ? tokenResult.claims.role : "customer"
+      )
 
       await fetch("/api/auth/session", {
         method: "POST",

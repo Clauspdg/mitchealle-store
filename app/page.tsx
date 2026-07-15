@@ -5,10 +5,10 @@ export default function Home() {
         Mitchaella Store
       </h1>
       <p className="text-muted-foreground max-w-md text-sm">
-        Infrastructure en place. Les fonctionnalités métier seront ajoutées
-        une fois le modèle de données validé (voir{" "}
+        Infrastructure en place. Les fonctionnalités métier seront ajoutées une
+        fois le modèle de données validé (voir{" "}
         <code className="font-mono">docs/</code>).
       </p>
     </div>
-  );
+  )
 }

@@ -20,7 +20,9 @@ export function AdminSidebar() {
     <aside className="bg-sidebar text-sidebar-foreground hidden w-56 shrink-0 border-r md:block">
       <nav className="flex flex-col gap-1 p-3">
         {items.map((item) => {
-          const active = pathname === item.href
+          const active =
+            pathname === item.href ||
+            (item.href !== "/admin" && pathname.startsWith(`${item.href}/`))
           return (
             <Link
               key={item.href}

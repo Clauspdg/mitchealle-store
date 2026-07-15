@@ -26,11 +26,9 @@ export const registerSchema = z
     email,
     password,
     confirmPassword: z.string(),
-    acceptTerms: z
-      .boolean()
-      .refine((value) => value === true, {
-        error: "Vous devez accepter les conditions d'utilisation.",
-      }),
+    acceptTerms: z.boolean().refine((value) => value === true, {
+      error: "Vous devez accepter les conditions d'utilisation.",
+    }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Les mots de passe ne correspondent pas.",

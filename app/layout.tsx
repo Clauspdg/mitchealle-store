@@ -1,21 +1,21 @@
-import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import type { Metadata, Viewport } from "next"
+import { Geist, Geist_Mono } from "next/font/google"
+import "./globals.css"
 
-import { AppProviders } from "@/providers/app-providers";
-import { Header } from "@/components/layout/header";
-import { Footer } from "@/components/layout/footer";
-import { RegisterServiceWorker } from "@/components/shared/register-service-worker";
+import { AppProviders } from "@/providers/app-providers"
+import { Header } from "@/components/layout/header"
+import { Footer } from "@/components/layout/footer"
+import { RegisterServiceWorker } from "@/components/shared/register-service-worker"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
-});
+})
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
-});
+})
 
 export const metadata: Metadata = {
   title: {
@@ -30,7 +30,9 @@ export const metadata: Metadata = {
       { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
       { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
     ],
-    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
   },
   appleWebApp: {
     capable: true,
@@ -40,18 +42,18 @@ export const metadata: Metadata = {
   other: {
     "mobile-web-app-capable": "yes",
   },
-};
+}
 
 export const viewport: Viewport = {
   themeColor: "#171717",
   width: "device-width",
   initialScale: 1,
-};
+}
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
   return (
     <html
@@ -68,5 +70,5 @@ export default function RootLayout({
         <RegisterServiceWorker />
       </body>
     </html>
-  );
+  )
 }

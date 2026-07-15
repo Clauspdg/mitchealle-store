@@ -11,7 +11,9 @@ export default function RegisterPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1 text-center">
-        <h1 className="text-xl font-semibold tracking-tight">Créer un compte</h1>
+        <h1 className="text-xl font-semibold tracking-tight">
+          Créer un compte
+        </h1>
         <p className="text-muted-foreground text-sm">
           Rejoignez Mitchaella Store en quelques secondes.
         </p>
@@ -29,7 +31,10 @@ export default function RegisterPage() {
 
       <p className="text-muted-foreground text-center text-sm">
         Déjà un compte ?{" "}
-        <Link href="/login" className="text-foreground underline underline-offset-4">
+        <Link
+          href="/login"
+          className="text-foreground underline underline-offset-4"
+        >
           Se connecter
         </Link>
       </p>

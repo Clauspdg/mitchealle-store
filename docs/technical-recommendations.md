@@ -36,19 +36,22 @@ Fait, vérifié, fonctionnel :
 ## 2. Recommandations techniques
 
 ### 2.1 Monorepo & partage de code avec `functions/`
+
 `functions/` est un package npm séparé (nécessaire pour un déploiement
 indépendant), ce qui veut dire que les types de `types/` et les schémas Zod
 de l'app Next.js **ne sont pas partagés automatiquement** avec les Cloud
 Functions aujourd'hui. Deux options pour plus tard :
+
 - Dupliquer les types nécessaires dans `functions/src/types.ts` (simple,
   mais duplication à maintenir) ;
 - Passer à un vrai monorepo (npm/pnpm workspaces) avec un package
   `packages/shared` contenant les types et schémas communs.
-Recommandation : rester simple (option 1) tant que peu de types sont
-partagés ; migrer vers un workspace si la duplication devient un problème
-réel.
+  Recommandation : rester simple (option 1) tant que peu de types sont
+  partagés ; migrer vers un workspace si la duplication devient un problème
+  réel.
 
 ### 2.2 PWA
+
 `app/layout.tsx` référence un manifest (`public/manifest.webmanifest`) et
 les métadonnées de base sont en place pour qu'une installation "Ajouter à
 l'écran d'accueil" fonctionne. La mise en cache offline (service worker)
@@ -57,6 +60,7 @@ qu'un défaut d'infrastructure — un mauvais cache offline sur un catalogue
 e-commerce peut afficher des prix/stocks périmés si mal configuré.
 
 ### 2.3 Qualité de code
+
 - TypeScript `strict: true` partout (app + functions).
 - Limites client/serveur imposées au build via `server-only` / `client-only`
   plutôt que par convention orale.
@@ -67,6 +71,7 @@ e-commerce peut afficher des prix/stocks périmés si mal configuré.
   pour uniformiser le formatage avant le premier commit de code métier.
 
 ### 2.4 Observabilité
+
 Non mise en place à ce stade (hors périmètre "infrastructure"). À prévoir
 avant la mise en production : logs structurés Cloud Functions, alerting sur
 échecs de paiement/livraison, et un outil de suivi d'erreurs front (ex.
@@ -76,18 +81,18 @@ Sentry) — dépend du budget/outillage choisi par le Product Owner.
 
 Ces points bloquent ou orientent fortement l'implémentation métier à venir.
 
-| # | Décision | Impact si non tranché |
-| - | --------- | ----------------------- |
-| 1 | **Devise(s)** supportée(s) — HTG, USD, ou les deux avec taux de change ? | Impacte `products.currency`, l'affichage prix, et le calcul des totaux de commande. |
-| 2 | **Pré-commandes** : variante du modèle `orders` (recommandé) ou collection `preorders` séparée ? | Impacte le schéma, les règles de sécurité, et les Cloud Functions de suivi. |
-| 3 | **Fournisseur(s) de paiement** (MonCash, Stripe, virement/dépôt manuel, autre) — un seul ou plusieurs simultanés ? | Impacte `orders/payments`, les webhooks Cloud Functions, et les variables d'environnement à ajouter à `.env.example`. |
-| 4 | **Livraison** : coursier interne, transporteur tiers avec tracking API, retrait en boutique uniquement, ou combinaison ? | Impacte `orders.delivery` et une éventuelle intégration API tierce. |
-| 5 | **Avis produits (reviews)** : fonctionnalité prévue à court terme ? | Impacte l'ajout d'une sous-collection `products/{id}/reviews` et des champs `ratingAverage`/`ratingCount`. |
-| 6 | **Profondeur des catégories** : 2 niveaux suffisent-ils, ou faut-il une hiérarchie arbitraire ? | Impacte `categories.parentId` vs un modèle d'arbre plus général. |
-| 7 | **Hébergement** de l'app Next.js : Vercel, Firebase App Hosting, ou Cloud Run ? | `firebase.json` ne configure pas de section `hosting` pour l'instant — à ajouter selon la cible retenue. |
-| 8 | **Région GCP** des Cloud Functions et de Firestore (actuellement `europe-west1` dans `healthCheck`, à confirmer) | Impacte la latence pour les utilisateurs cibles et les coûts. |
-| 9 | **Notifications** : email, SMS, WhatsApp, push navigateur, ou combinaison ? | Impacte les intégrations tierces à ajouter dans `functions/src/http` et les variables d'environnement associées. |
-| 10 | **Rôles au-delà de `customer`/`staff`/`admin`** : granularité nécessaire (ex. gestion des stocks vs gestion des commandes) ? | Impacte le modèle de permissions dans les règles de sécurité définitives. |
+| #   | Décision                                                                                                                     | Impact si non tranché                                                                                                 |
+| --- | ---------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Devise(s)** supportée(s) — HTG, USD, ou les deux avec taux de change ?                                                     | Impacte `products.currency`, l'affichage prix, et le calcul des totaux de commande.                                   |
+| 2   | **Pré-commandes** : variante du modèle `orders` (recommandé) ou collection `preorders` séparée ?                             | Impacte le schéma, les règles de sécurité, et les Cloud Functions de suivi.                                           |
+| 3   | **Fournisseur(s) de paiement** (MonCash, Stripe, virement/dépôt manuel, autre) — un seul ou plusieurs simultanés ?           | Impacte `orders/payments`, les webhooks Cloud Functions, et les variables d'environnement à ajouter à `.env.example`. |
+| 4   | **Livraison** : coursier interne, transporteur tiers avec tracking API, retrait en boutique uniquement, ou combinaison ?     | Impacte `orders.delivery` et une éventuelle intégration API tierce.                                                   |
+| 5   | **Avis produits (reviews)** : fonctionnalité prévue à court terme ?                                                          | Impacte l'ajout d'une sous-collection `products/{id}/reviews` et des champs `ratingAverage`/`ratingCount`.            |
+| 6   | **Profondeur des catégories** : 2 niveaux suffisent-ils, ou faut-il une hiérarchie arbitraire ?                              | Impacte `categories.parentId` vs un modèle d'arbre plus général.                                                      |
+| 7   | **Hébergement** de l'app Next.js : Vercel, Firebase App Hosting, ou Cloud Run ?                                              | `firebase.json` ne configure pas de section `hosting` pour l'instant — à ajouter selon la cible retenue.              |
+| 8   | **Région GCP** des Cloud Functions et de Firestore (actuellement `europe-west1` dans `healthCheck`, à confirmer)             | Impacte la latence pour les utilisateurs cibles et les coûts.                                                         |
+| 9   | **Notifications** : email, SMS, WhatsApp, push navigateur, ou combinaison ?                                                  | Impacte les intégrations tierces à ajouter dans `functions/src/http` et les variables d'environnement associées.      |
+| 10  | **Rôles au-delà de `customer`/`staff`/`admin`** : granularité nécessaire (ex. gestion des stocks vs gestion des commandes) ? | Impacte le modèle de permissions dans les règles de sécurité définitives.                                             |
 
 Tant que ces points ne sont pas validés, aucune règle de sécurité définitive
 ni logique métier (Cloud Functions de traitement de commande, formulaires de
