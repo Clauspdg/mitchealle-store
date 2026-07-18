@@ -7,6 +7,7 @@ import { toast } from "sonner"
 
 import { auth } from "@/firebase/client"
 import { getAuthErrorMessage } from "@/features/auth/lib/auth-error-messages"
+import { syncSessionCookie } from "@/lib/session-client"
 import { Button } from "@/components/ui/button"
 
 const provider = new GoogleAuthProvider()
@@ -18,10 +19,12 @@ export function GoogleSignInButton() {
   async function handleClick() {
     setSubmitting(true)
     try {
-      await signInWithPopup(auth, provider)
+      const credential = await signInWithPopup(auth, provider)
+      const idToken = await credential.user.getIdToken()
+      await syncSessionCookie(idToken)
+
       toast.success("Connexion réussie.")
       router.push("/account")
-      router.refresh()
     } catch (error) {
       toast.error(getAuthErrorMessage(error))
     } finally {

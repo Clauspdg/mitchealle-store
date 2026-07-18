@@ -1,16 +1,80 @@
 rules_version = '2';
 
 // ---------------------------------------------------------------------------
-// PLACEHOLDER — INFRASTRUCTURE PHASE ONLY.
-// This file intentionally denies all client access. Definitive rules will be
-// written from /docs/firestore-architecture.md once the data model and the
-// per-collection access matrix are validated by the Product Owner.
-// All reads/writes during this phase must go through the Admin SDK
-// (trusted server context: Server Actions, Route Handlers, Cloud Functions),
-// which bypasses these rules entirely.
+// Sprint 3 — flips the storefront-relevant collections from deny-all to the
+// matrix already specified in docs/firestore-architecture.md §5. This is
+// defense-in-depth, not a functional requirement: every read/write in this
+// app already goes through the Admin SDK (Server Components/Actions/Route
+// Handlers), which bypasses these rules entirely. Everything not explicitly
+// listed below (inventory, suppliers, settings, auditLogs, stockMovements,
+// incomingShipments, promotions, coupons, banners, homepage) stays deny-all
+// until its own sprint defines the real access matrix.
 // ---------------------------------------------------------------------------
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isStaffOrAbove() {
+      return isSignedIn() &&
+        request.auth.token.role in ['staff', 'admin', 'superAdmin'];
+    }
+
+    match /products/{productId} {
+      allow read: if resource.data.status == 'published' || isStaffOrAbove();
+      allow write: if false; // Admin SDK / staff only.
+    }
+
+    match /categories/{categoryId} {
+      allow read: if resource.data.isActive == true || isStaffOrAbove();
+      allow write: if false;
+    }
+
+    match /collections/{collectionId} {
+      allow read: if resource.data.status == 'active' || isStaffOrAbove();
+      allow write: if false;
+    }
+
+    match /users/{uid} {
+      // The `role` field is server-only writable (Admin SDK) — never
+      // trust a client-supplied role change, even from the owner.
+      allow read: if isOwner(uid) || isStaffOrAbove();
+      allow write: if isOwner(uid) &&
+        request.resource.data.role == resource.data.role;
+
+      match /addresses/{addressId} {
+        allow read, write: if isOwner(uid);
+      }
+    }
+
+    match /carts/{uid} {
+      allow read, write: if isOwner(uid);
+    }
+
+    match /wishlists/{uid} {
+      match /items/{productId} {
+        allow read, write: if isOwner(uid);
+      }
+    }
+
+    match /orders/{orderId} {
+      allow read: if isSignedIn() &&
+        (resource.data.userId == request.auth.uid || isStaffOrAbove());
+      allow write: if false; // Server Action / Cloud Function only.
+
+      match /payments/{paymentId} {
+        allow read: if isSignedIn() &&
+          (get(/databases/$(database)/documents/orders/$(orderId)).data.userId
+            == request.auth.uid || isStaffOrAbove());
+        allow write: if false; // Payment webhook (Admin SDK) only.
+      }
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

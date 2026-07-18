@@ -13,8 +13,10 @@ export default async function AccountPage() {
   const profile = await getUserProfile(session.uid)
 
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 px-6 py-12">
-      <h1 className="text-xl font-semibold tracking-tight">Mon compte</h1>
+    <div className="flex flex-col gap-6">
+      <h1 className="font-heading text-xl font-semibold tracking-tight">
+        Mon compte
+      </h1>
 
       <Card>
         <CardHeader>

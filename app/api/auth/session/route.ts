@@ -40,7 +40,27 @@ export async function POST(request: Request) {
     })
 
     return NextResponse.json({ status: "ok" })
-  } catch {
+  } catch (error) {
+    // Firebase Admin errors are prefixed by origin: "app/*" means the
+    // server's own service-account credential failed (e.g. revoked key,
+    // clock skew) — never the caller's fault, and very different from
+    // "auth/*", which means the ID token itself was invalid/expired.
+    // Conflating the two into one generic 401 hid real credential failures
+    // behind a message that told users to just log in again.
+    const code =
+      error && typeof error === "object" && "code" in error
+        ? String(error.code)
+        : null
+
+    if (code?.startsWith("app/")) {
+      console.error("[api/auth/session] Admin SDK credential error:", error)
+      return NextResponse.json(
+        { error: "Erreur serveur d'authentification." },
+        { status: 500 }
+      )
+    }
+
+    console.error("[api/auth/session] Invalid ID token:", error)
     return NextResponse.json({ error: "Jeton invalide" }, { status: 401 })
   }
 }

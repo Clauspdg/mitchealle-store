@@ -10,6 +10,7 @@ import { toast } from "sonner"
 import { auth } from "@/firebase/client"
 import { loginSchema, type LoginInput } from "@/schemas/auth.schema"
 import { getAuthErrorMessage } from "@/features/auth/lib/auth-error-messages"
+import { syncSessionCookie } from "@/lib/session-client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -27,10 +28,16 @@ export function LoginForm() {
   async function onSubmit(data: LoginInput) {
     setSubmitting(true)
     try {
-      await signInWithEmailAndPassword(auth, data.email, data.password)
+      const credential = await signInWithEmailAndPassword(
+        auth,
+        data.email,
+        data.password
+      )
+      const idToken = await credential.user.getIdToken()
+      await syncSessionCookie(idToken)
+
       toast.success("Connexion réussie.")
       router.push("/account")
-      router.refresh()
     } catch (error) {
       toast.error(getAuthErrorMessage(error))
     } finally {

@@ -3,6 +3,7 @@ import { FieldValue } from "firebase-admin/firestore"
 
 import { adminDb } from "@/firebase/admin"
 import { generateUniqueSlug } from "@/validators/slug.validator"
+import { isMissingIndexError } from "@/utils/firestore-errors"
 import type { CategoryFormInput } from "@/schemas/category.schema"
 import type { Category, CategoryDocument } from "@/types/category"
 
@@ -39,13 +40,43 @@ export async function listCategories(options?: {
     query = query.where("isActive", "==", true)
   }
 
-  const snapshot = await query.get()
-  return snapshot.docs.map((doc) => toCategory(doc.id, doc.data()))
+  try {
+    const snapshot = await query.get()
+    return snapshot.docs.map((doc) => toCategory(doc.id, doc.data()))
+  } catch (error) {
+    if (isMissingIndexError(error)) {
+      console.error(
+        "[listCategories] Firestore composite index missing — returning an empty list instead of crashing. Deploy indexes: firebase deploy --only firestore:indexes",
+        error
+      )
+      return []
+    }
+    throw error
+  }
 }
 
 export async function getCategory(id: string): Promise<Category | null> {
   const doc = await adminDb.collection(CATEGORIES_COLLECTION).doc(id).get()
   return doc.exists ? toCategory(doc.id, doc.data()!) : null
+}
+
+/**
+ * Storefront-safe lookup by slug — always forces `isActive == true` so a
+ * customer can never load an inactive category by guessing its slug.
+ */
+export async function getCategoryBySlug(
+  slug: string
+): Promise<Category | null> {
+  const snapshot = await adminDb
+    .collection(CATEGORIES_COLLECTION)
+    .where("slug", "==", slug)
+    .where("isActive", "==", true)
+    .limit(1)
+    .get()
+
+  return snapshot.empty
+    ? null
+    : toCategory(snapshot.docs[0].id, snapshot.docs[0].data())
 }
 
 export async function createCategory(

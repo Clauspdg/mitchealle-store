@@ -21,8 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import type { Category } from "@/types/category"
-import type { Product, ProductStatus } from "@/types/product"
+import type { ProductStatus } from "@/types/product"
 
 const COLUMN_DEFS = [
   { key: "image", label: "Photo" },
@@ -52,14 +51,33 @@ const STATUS_VARIANTS: Record<
   archived: "destructive",
 }
 
+// Deliberately NOT the Firestore `Product`/`Category` types — those carry
+// `createdAt`/`updatedAt` as Firestore `Timestamp` class instances, and
+// React rejects passing non-plain objects from a Server Component to a
+// Client Component across the RSC boundary. The Server Component that
+// renders this table converts to this plain shape first.
+export interface ProductTableRow {
+  id: string
+  images: { url: string; alt: string; position: number }[]
+  name: string
+  sku: string
+  basePriceMinor: number
+  salePriceMinor: number | null
+  currency: string
+  categoryId: string
+  status: ProductStatus
+  isPreorderable: boolean
+  createdAtLabel: string
+}
+
 interface ProductsTableProps {
-  products: Product[]
-  categoriesById: Record<string, Category>
+  products: ProductTableRow[]
+  categoryNamesById: Record<string, string>
 }
 
 export function ProductsTable({
   products,
-  categoriesById,
+  categoryNamesById,
 }: ProductsTableProps) {
   const [visibleColumns, setVisibleColumns] = useLocalStorage<ColumnKey[]>(
     "admin.products.columns",
@@ -131,7 +149,7 @@ export function ProductsTable({
           <TableBody>
             {products.map((product) => {
               const thumbnail = product.images[0]?.url
-              const category = categoriesById[product.categoryId]
+              const categoryName = categoryNamesById[product.categoryId]
 
               return (
                 <TableRow key={product.id}>
@@ -190,7 +208,7 @@ export function ProductsTable({
                     </TableCell>
                   )}
                   {isVisible("category") && (
-                    <TableCell>{category?.name ?? "—"}</TableCell>
+                    <TableCell>{categoryName ?? "—"}</TableCell>
                   )}
                   {isVisible("status") && (
                     <TableCell>
@@ -210,11 +228,14 @@ export function ProductsTable({
                   )}
                   {isVisible("createdAt") && (
                     <TableCell className="text-muted-foreground">
-                      {product.createdAt.toDate().toLocaleDateString("fr-FR")}
+                      {product.createdAtLabel}
                     </TableCell>
                   )}
                   <TableCell className="text-right">
-                    <ProductRowActions product={product} />
+                    <ProductRowActions
+                      productId={product.id}
+                      status={product.status}
+                    />
                   </TableCell>
                 </TableRow>
               )

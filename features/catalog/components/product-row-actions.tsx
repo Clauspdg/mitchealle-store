@@ -21,7 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import type { ActionResult } from "@/types/action-result"
-import type { Product } from "@/types/product"
+import type { ProductStatus } from "@/types/product"
 
 async function runAction(
   action: () => Promise<ActionResult>,
@@ -32,7 +32,19 @@ async function runAction(
   else toast.error(result.error)
 }
 
-export function ProductRowActions({ product }: { product: Product }) {
+interface ProductRowActionsProps {
+  productId: string
+  status: ProductStatus
+}
+
+// Only plain-serializable fields are accepted here (never the full
+// `Product`) — `Product.createdAt`/`updatedAt` are Firestore `Timestamp`
+// class instances, and React rejects passing non-plain objects from a
+// Server Component to a Client Component across the RSC boundary.
+export function ProductRowActions({
+  productId,
+  status,
+}: ProductRowActionsProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [archiveOpen, setArchiveOpen] = useState(false)
 
@@ -46,16 +58,16 @@ export function ProductRowActions({ product }: { product: Product }) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem
-            render={<Link href={`/admin/products/${product.id}`} />}
+            render={<Link href={`/admin/products/${productId}`} />}
           >
             Modifier
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          {product.status !== "published" && (
+          {status !== "published" && (
             <DropdownMenuItem
               onClick={() =>
                 runAction(
-                  () => publishProductAction(product.id),
+                  () => publishProductAction(productId),
                   "Produit publié."
                 )
               }
@@ -63,11 +75,11 @@ export function ProductRowActions({ product }: { product: Product }) {
               Publier
             </DropdownMenuItem>
           )}
-          {product.status === "published" && (
+          {status === "published" && (
             <DropdownMenuItem
               onClick={() =>
                 runAction(
-                  () => unpublishProductAction(product.id),
+                  () => unpublishProductAction(productId),
                   "Produit dépublié."
                 )
               }
@@ -75,7 +87,7 @@ export function ProductRowActions({ product }: { product: Product }) {
               Dépublier
             </DropdownMenuItem>
           )}
-          {product.status !== "archived" ? (
+          {status !== "archived" ? (
             <DropdownMenuItem
               closeOnClick={false}
               onClick={() => {
@@ -89,7 +101,7 @@ export function ProductRowActions({ product }: { product: Product }) {
             <DropdownMenuItem
               onClick={() =>
                 runAction(
-                  () => restoreProductAction(product.id),
+                  () => restoreProductAction(productId),
                   "Produit restauré."
                 )
               }
@@ -108,7 +120,7 @@ export function ProductRowActions({ product }: { product: Product }) {
         confirmLabel="Archiver"
         destructive
         onConfirm={() =>
-          runAction(() => archiveProductAction(product.id), "Produit archivé.")
+          runAction(() => archiveProductAction(productId), "Produit archivé.")
         }
       />
     </>

@@ -29,3 +29,8 @@ export interface Address {
   country: string
   isDefault: boolean
 }
+
+/** `Address` plus the Firestore document ID — used everywhere in app code. */
+export interface AddressWithId extends Address {
+  id: string
+}

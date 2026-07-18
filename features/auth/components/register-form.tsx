@@ -14,6 +14,7 @@ import { toast } from "sonner"
 import { auth } from "@/firebase/client"
 import { registerSchema, type RegisterInput } from "@/schemas/auth.schema"
 import { getAuthErrorMessage } from "@/features/auth/lib/auth-error-messages"
+import { syncSessionCookie } from "@/lib/session-client"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
@@ -50,9 +51,11 @@ export function RegisterForm() {
       await updateProfile(credential.user, { displayName: data.displayName })
       await sendEmailVerification(credential.user)
 
+      const idToken = await credential.user.getIdToken()
+      await syncSessionCookie(idToken)
+
       toast.success("Compte créé. Vérifiez votre email pour le confirmer.")
       router.push("/account")
-      router.refresh()
     } catch (error) {
       toast.error(getAuthErrorMessage(error))
     } finally {

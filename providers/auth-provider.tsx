@@ -5,6 +5,7 @@ import { onIdTokenChanged, type User } from "firebase/auth"
 
 import { auth } from "@/firebase/client"
 import { AuthContext, type AuthContextValue } from "@/contexts/auth-context"
+import { clearSessionCookie, syncSessionCookie } from "@/lib/session-client"
 import { isRole, type Role } from "@/types/roles"
 
 /**
@@ -26,7 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!nextUser) {
         setRole(null)
         setLoading(false)
-        await fetch("/api/auth/session", { method: "DELETE" })
+        await clearSessionCookie()
         return
       }
 
@@ -35,11 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isRole(tokenResult.claims.role) ? tokenResult.claims.role : "customer"
       )
 
-      await fetch("/api/auth/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken: tokenResult.token }),
-      })
+      await syncSessionCookie(tokenResult.token)
 
       setLoading(false)
     })

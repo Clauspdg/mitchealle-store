@@ -5,12 +5,11 @@ export interface NavItem {
   href: string
 }
 
-/**
- * Intentionally minimal for Sprint 1 (foundations only) — no links to
- * catalog/checkout pages that don't exist yet. Expand as those features
- * land.
- */
-export const mainNav: NavItem[] = [{ title: "Accueil", href: "/" }]
+export const mainNav: NavItem[] = [
+  { title: "Accueil", href: "/" },
+  { title: "Produits", href: "/products" },
+  { title: "Collections", href: "/collections" },
+]
 
 export const adminNav: Array<NavItem & { minimumRole: Role }> = [
   { title: "Tableau de bord", href: "/admin", minimumRole: "staff" },

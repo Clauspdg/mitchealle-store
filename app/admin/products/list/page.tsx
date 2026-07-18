@@ -41,9 +41,21 @@ export default async function ProductsListPage({
       listCollections(),
     ])
 
-  const categoriesById = Object.fromEntries(
-    categories.map((category) => [category.id, category])
+  const categoryNamesById = Object.fromEntries(
+    categories.map((category) => [category.id, category.name])
   )
+
+  // `Product.createdAt`/`updatedAt` are Firestore `Timestamp` class
+  // instances — React rejects passing non-plain objects from a Server
+  // Component to a Client Component, so this strips them down to a plain,
+  // pre-formatted view-model before handing off to <ProductsTable>.
+  const productRows = products.map(({ createdAt, updatedAt, ...rest }) => {
+    void updatedAt // stripped — only `createdAt` is displayed
+    return {
+      ...rest,
+      createdAtLabel: createdAt.toDate().toLocaleDateString("fr-FR"),
+    }
+  })
 
   return (
     <div className="flex flex-1">
@@ -51,14 +63,20 @@ export default async function ProductsListPage({
       <div className="flex w-full flex-col gap-6 px-6 py-8">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-semibold tracking-tight">Produits</h1>
-          <Button render={<Link href="/admin/products/new" />}>
+          <Button
+            render={<Link href="/admin/products/new" />}
+            nativeButton={false}
+          >
             <PlusIcon />
             Ajouter un produit
           </Button>
         </div>
 
         <ProductsToolbar categories={categories} collections={collections} />
-        <ProductsTable products={products} categoriesById={categoriesById} />
+        <ProductsTable
+          products={productRows}
+          categoryNamesById={categoryNamesById}
+        />
         <CursorPagination nextCursor={nextCursor} hasMore={hasMore} />
       </div>
     </div>

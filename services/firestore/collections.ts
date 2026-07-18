@@ -3,6 +3,7 @@ import { FieldValue, Timestamp } from "firebase-admin/firestore"
 
 import { adminDb } from "@/firebase/admin"
 import { generateUniqueSlug } from "@/validators/slug.validator"
+import { isMissingIndexError } from "@/utils/firestore-errors"
 import type { CollectionFormInput } from "@/schemas/collection.schema"
 import type {
   Collection,
@@ -44,13 +45,43 @@ export async function listCollections(options?: {
     query = query.where("status", "==", "active")
   }
 
-  const snapshot = await query.get()
-  return snapshot.docs.map((doc) => toCollection(doc.id, doc.data()))
+  try {
+    const snapshot = await query.get()
+    return snapshot.docs.map((doc) => toCollection(doc.id, doc.data()))
+  } catch (error) {
+    if (isMissingIndexError(error)) {
+      console.error(
+        "[listCollections] Firestore composite index missing — returning an empty list instead of crashing. Deploy indexes: firebase deploy --only firestore:indexes",
+        error
+      )
+      return []
+    }
+    throw error
+  }
 }
 
 export async function getCollection(id: string): Promise<Collection | null> {
   const doc = await adminDb.collection(COLLECTIONS_COLLECTION).doc(id).get()
   return doc.exists ? toCollection(doc.id, doc.data()!) : null
+}
+
+/**
+ * Storefront-safe lookup by slug — always forces `status == "active"` so a
+ * customer can never load a draft/archived collection by guessing its slug.
+ */
+export async function getCollectionBySlug(
+  slug: string
+): Promise<Collection | null> {
+  const snapshot = await adminDb
+    .collection(COLLECTIONS_COLLECTION)
+    .where("slug", "==", slug)
+    .where("status", "==", "active")
+    .limit(1)
+    .get()
+
+  return snapshot.empty
+    ? null
+    : toCollection(snapshot.docs[0].id, snapshot.docs[0].data())
 }
 
 function toTimestampOrNull(date: Date | null): Timestamp | null {

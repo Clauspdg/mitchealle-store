@@ -4,6 +4,7 @@ import { FieldValue, Timestamp } from "firebase-admin/firestore"
 import { adminDb } from "@/firebase/admin"
 import { generateUniqueSlug } from "@/validators/slug.validator"
 import { encodeCursor, decodeCursor } from "@/utils/pagination"
+import { isMissingIndexError } from "@/utils/firestore-errors"
 import type {
   ProductFormInput,
   ProductSearchParams,
@@ -43,6 +44,24 @@ export async function productSlugExists(
 export async function getProduct(id: string): Promise<Product | null> {
   const doc = await adminDb.collection(PRODUCTS_COLLECTION).doc(id).get()
   return doc.exists ? toProduct(doc.id, doc.data()!) : null
+}
+
+/**
+ * Storefront-safe lookup by slug — unlike `getProduct`, always forces
+ * `status == "published"` so a customer can never load a draft/archived
+ * product by guessing or scraping its slug.
+ */
+export async function getProductBySlug(slug: string): Promise<Product | null> {
+  const snapshot = await adminDb
+    .collection(PRODUCTS_COLLECTION)
+    .where("slug", "==", slug)
+    .where("status", "==", "published")
+    .limit(1)
+    .get()
+
+  return snapshot.empty
+    ? null
+    : toProduct(snapshot.docs[0].id, snapshot.docs[0].data())
 }
 
 /**
@@ -276,7 +295,20 @@ export async function listProducts(
     paged = paged.startAfter(decoded.sortValue, decoded.id)
   }
 
-  const snapshot = await paged.get()
+  let snapshot
+  try {
+    snapshot = await paged.get()
+  } catch (error) {
+    if (isMissingIndexError(error)) {
+      console.error(
+        "[listProducts] Firestore composite index missing — returning an empty page instead of crashing. Deploy indexes: firebase deploy --only firestore:indexes",
+        error
+      )
+      return { items: [], nextCursor: null, hasMore: false }
+    }
+    throw error
+  }
+
   const docs = snapshot.docs.slice(0, PAGE_SIZE)
   const hasMore = snapshot.docs.length > PAGE_SIZE
 

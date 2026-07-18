@@ -11,6 +11,8 @@ const serverEnvSchema = z.object({
   // Stored with literal "\n" sequences in the platform's env UI; normalized below.
   FIREBASE_PRIVATE_KEY: z.string().min(1),
   FIREBASE_STORAGE_BUCKET: z.string().min(1),
+  STRIPE_SECRET_KEY: z.string().min(1),
+  STRIPE_WEBHOOK_SECRET: z.string().min(1),
 })
 
 function loadServerEnv() {
@@ -19,6 +21,8 @@ function loadServerEnv() {
     FIREBASE_CLIENT_EMAIL: process.env.FIREBASE_CLIENT_EMAIL,
     FIREBASE_PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY,
     FIREBASE_STORAGE_BUCKET: process.env.FIREBASE_STORAGE_BUCKET,
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
   })
 
   if (!parsed.success) {

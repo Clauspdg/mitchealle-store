@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ModeToggle } from "@/components/shared/mode-toggle"
+import { CartBadge } from "@/features/cart/components/cart-badge"
 import {
   Sheet,
   SheetContent,
@@ -54,7 +55,10 @@ export function Header() {
           </SheetContent>
         </Sheet>
 
-        <Link href="/" className="font-semibold tracking-tight">
+        <Link
+          href="/"
+          className="font-heading text-lg font-medium tracking-tight"
+        >
           {siteConfig.name}
         </Link>
 
@@ -72,19 +76,30 @@ export function Header() {
 
         <div className="ml-auto flex items-center gap-2">
           <ModeToggle />
+          <CartBadge />
 
           {loading ? (
             <Skeleton className="h-8 w-20 rounded-md" />
           ) : user ? (
-            <Button render={<Link href="/account" />} variant="ghost">
+            <Button
+              render={<Link href="/account" />}
+              variant="ghost"
+              nativeButton={false}
+            >
               Mon compte
             </Button>
           ) : (
             <>
-              <Button render={<Link href="/login" />} variant="ghost">
+              <Button
+                render={<Link href="/login" />}
+                variant="ghost"
+                nativeButton={false}
+              >
                 Connexion
               </Button>
-              <Button render={<Link href="/register" />}>Inscription</Button>
+              <Button render={<Link href="/register" />} nativeButton={false}>
+                Inscription
+              </Button>
             </>
           )}
         </div>

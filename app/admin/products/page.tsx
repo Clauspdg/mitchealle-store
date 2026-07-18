@@ -47,10 +47,14 @@ export default async function ProductsDashboardPage() {
             <Button
               variant="outline"
               render={<Link href="/admin/products/list" />}
+              nativeButton={false}
             >
               Voir la liste
             </Button>
-            <Button render={<Link href="/admin/products/new" />}>
+            <Button
+              render={<Link href="/admin/products/new" />}
+              nativeButton={false}
+            >
               <PlusIcon />
               Ajouter un produit
             </Button>
