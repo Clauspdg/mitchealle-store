@@ -1,18 +1,47 @@
 import Link from "next/link"
 
-import { siteConfig } from "@/config/site"
-import { listProducts } from "@/services/firestore/products"
+import { getSession } from "@/lib/session.server"
+import {
+  countPublishedProductsByCategory,
+  listProducts,
+} from "@/services/firestore/products"
+import { listCategories } from "@/services/firestore/categories"
 import { listCollections } from "@/services/firestore/collections"
+import { listWishlistItems } from "@/services/firestore/wishlists"
+import { listActiveBanners } from "@/services/firestore/banners"
+import { listHomepageSections } from "@/services/firestore/homepage"
+import { heroSlides } from "@/lib/demo-content"
+import type { HeroSlideView } from "@/components/home/hero-section"
+import type { Category } from "@/types/category"
+import type { Collection } from "@/types/collection"
+import type { Product } from "@/types/product"
 
 // Live catalog data (stock, published status) must never be baked into the
 // build output — always render fresh, per request.
 export const dynamic = "force-dynamic"
-import { Button } from "@/components/ui/button"
 import { Reveal } from "@/components/shared/reveal"
+import { ScrollCarousel } from "@/components/shared/scroll-carousel"
+import { ProductCard } from "@/features/catalog/components/storefront/product-card"
 import { ProductGrid } from "@/features/catalog/components/storefront/product-grid"
+import { HeroSection } from "@/components/home/hero-section"
+import { PromoBanner } from "@/components/home/promo-banner"
+import { CollectionsShowcase } from "@/components/home/collections-showcase"
+import { CategoriesIllustrated } from "@/components/home/categories-illustrated"
+import { BrandsStrip } from "@/components/home/brands-strip"
+import { TestimonialsSection } from "@/components/home/testimonials-section"
+import { NewsletterSection } from "@/components/home/newsletter-section"
 
 export default async function Home() {
-  const [{ items: products }, collections] = await Promise.all([
+  const session = await getSession()
+
+  const [
+    { items: products },
+    categories,
+    collections,
+    wishlist,
+    heroBanners,
+    homepageSections,
+  ] = await Promise.all([
     listProducts({
       q: "",
       status: "published",
@@ -21,77 +50,99 @@ export default async function Home() {
       sort: "createdAt_desc",
       cursor: null,
     }),
+    listCategories({ activeOnly: true }),
     listCollections({ activeOnly: true }),
+    session ? listWishlistItems(session.uid) : Promise.resolve([]),
+    listActiveBanners("homepageHero"),
+    listHomepageSections(),
   ])
 
-  const featuredProducts = products.slice(0, 8)
-  const featuredCollections = collections.slice(0, 3)
+  // If no admin-configured hero banner exists yet, fall back to the
+  // static demo slides — zero-configuration, byte-identical to pre-Sprint-10A.
+  const heroSlideViews: HeroSlideView[] =
+    heroBanners.length > 0
+      ? heroBanners.map((banner) => ({
+          id: banner.id,
+          imageUrl: banner.imageUrl,
+          eyebrow: banner.eyebrow ?? "",
+          title: banner.title,
+          subtitle: banner.subtitle ?? "",
+          primaryButtonLabel: banner.primaryButtonLabel ?? "Acheter maintenant",
+          primaryButtonHref: banner.primaryButtonHref ?? "/products",
+          secondaryButtonLabel: banner.secondaryButtonLabel,
+          secondaryButtonHref: banner.secondaryButtonHref,
+        }))
+      : heroSlides.map((slide) => ({
+          id: slide.imageSeed,
+          imageUrl: `https://picsum.photos/seed/${slide.imageSeed}/1920/1200`,
+          eyebrow: slide.eyebrow,
+          title: slide.title,
+          subtitle: slide.subtitle,
+          primaryButtonLabel: "Acheter maintenant",
+          primaryButtonHref: "/products",
+          secondaryButtonLabel: "Découvrir",
+          secondaryButtonHref: "/collections",
+        }))
 
-  return (
-    <div className="flex flex-col">
-      <section className="bg-surface-ink text-surface-ink-foreground relative overflow-hidden">
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-6 py-24 text-center sm:py-32">
-          <Reveal>
-            <p className="text-accent-gold text-xs font-medium tracking-[0.2em] uppercase">
-              Élégance intemporelle
-            </p>
-          </Reveal>
-          <Reveal delay={0.1}>
-            <h1 className="shimmer shimmer-once shimmer-color-accent-gold font-heading max-w-2xl text-4xl leading-tight font-medium sm:text-6xl">
-              {siteConfig.name}
-            </h1>
-          </Reveal>
-          <Reveal delay={0.2}>
-            <p className="max-w-md text-sm text-white/70 sm:text-base">
-              {siteConfig.description}
-            </p>
-          </Reveal>
-          <Reveal delay={0.3}>
-            <Button
-              render={<Link href="/products" />}
-              nativeButton={false}
-              size="lg"
-              className="bg-accent-gold text-accent-gold-foreground hover:bg-accent-gold/90 mt-2"
-            >
-              Découvrir la collection
-            </Button>
-          </Reveal>
-        </div>
-      </section>
+  const wishlistProductIds = new Set(wishlist.map((item) => item.id))
+  const categoryProductCounts = await countPublishedProductsByCategory(
+    categories.map((category) => category.id)
+  )
 
-      {featuredCollections.length > 0 ? (
-        <section className="mx-auto w-full max-w-6xl px-6 py-16">
-          <Reveal>
-            <h2 className="font-heading mb-6 text-2xl font-medium">
-              Nos collections
-            </h2>
-          </Reveal>
-          <div className="grid gap-4 sm:grid-cols-3">
-            {featuredCollections.map((collection, index) => (
-              <Reveal key={collection.id} delay={index * 0.08}>
-                <Link
-                  href={`/collections/${collection.slug}`}
-                  className="group bg-muted relative block aspect-[4/5] overflow-hidden rounded-xl"
-                >
-                  {collection.coverImageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element -- external Storage URL
-                    <img
-                      src={collection.coverImageUrl}
-                      alt={collection.name}
-                      className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                  ) : null}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0" />
-                  <span className="font-heading absolute bottom-4 left-4 text-lg font-medium text-white">
-                    {collection.name}
-                  </span>
-                </Link>
-              </Reveal>
-            ))}
+  // Split the same already-fetched page into two homepage rails — a
+  // re-sorted "Populaires" slice (in-memory only, no new Firestore query)
+  // and the existing createdAt_desc order for "Nouveautés".
+  const popularProducts = [...products]
+    .sort(
+      (a, b) =>
+        b.ratingAverage * b.ratingCount - a.ratingAverage * a.ratingCount
+    )
+    .slice(0, 8)
+  const newArrivals = products.slice(0, 8)
+  const promoProducts = products
+    .filter((product) => product.salePriceMinor !== null)
+    .slice(0, 8)
+
+  const featuredCollections = collections.slice(0, 6)
+
+  function renderCarouselRail(
+    heading: string,
+    rail: Product[],
+    showViewAll: boolean
+  ) {
+    if (rail.length === 0) return null
+    return (
+      <section className="mx-auto w-full max-w-6xl px-6 py-16">
+        <Reveal>
+          <div className="mb-6 flex items-center justify-between">
+            <h2 className="font-heading text-2xl font-medium">{heading}</h2>
+            {showViewAll ? (
+              <Link
+                href="/products"
+                className="text-muted-foreground hover:text-foreground text-sm underline underline-offset-4"
+              >
+                Voir tout
+              </Link>
+            ) : null}
           </div>
-        </section>
-      ) : null}
+        </Reveal>
+        <Reveal delay={0.1}>
+          <ScrollCarousel>
+            {rail.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                isInWishlist={wishlistProductIds.has(product.id)}
+              />
+            ))}
+          </ScrollCarousel>
+        </Reveal>
+      </section>
+    )
+  }
 
+  function renderNewArrivals() {
+    return (
       <section className="mx-auto w-full max-w-6xl px-6 py-16">
         <Reveal>
           <div className="mb-6 flex items-center justify-between">
@@ -105,9 +156,72 @@ export default async function Home() {
           </div>
         </Reveal>
         <Reveal delay={0.1}>
-          <ProductGrid products={featuredProducts} />
+          <ProductGrid
+            products={newArrivals}
+            wishlistProductIds={wishlistProductIds}
+          />
         </Reveal>
       </section>
+    )
+  }
+
+  function renderSection(
+    type: (typeof homepageSections)[number]["type"],
+    categories: Category[],
+    featuredCollections: Collection[]
+  ) {
+    switch (type) {
+      case "heroBanner":
+        // `PromoBanner` (generic marketing banner) isn't a managed section
+        // in this sprint's scope — kept immediately after Hero, matching
+        // its pre-Sprint-10A adjacency.
+        return (
+          <>
+            <HeroSection slides={heroSlideViews} />
+            <PromoBanner />
+          </>
+        )
+      case "featuredCollections":
+        return <CollectionsShowcase collections={featuredCollections} />
+      case "categoriesShowcase":
+        return (
+          <CategoriesIllustrated
+            categories={categories}
+            productCounts={categoryProductCounts}
+          />
+        )
+      case "popularProducts":
+        return renderCarouselRail("Produits populaires", popularProducts, false)
+      case "newArrivals":
+        return newArrivals.length > 0 ? renderNewArrivals() : null
+      case "promotionBanner":
+        return renderCarouselRail("Promotions", promoProducts, true)
+      case "brandsStrip":
+        return <BrandsStrip />
+      case "newsletterSignup":
+        // `TestimonialsSection` isn't a managed section either — kept
+        // immediately before Newsletter, matching its original adjacency
+        // regardless of where Newsletter itself is repositioned.
+        return (
+          <>
+            <TestimonialsSection />
+            <NewsletterSection />
+          </>
+        )
+      default:
+        return null
+    }
+  }
+
+  return (
+    <div className="flex flex-col">
+      {homepageSections
+        .filter((section) => section.isActive)
+        .map((section) => (
+          <div key={section.id}>
+            {renderSection(section.type, categories, featuredCollections)}
+          </div>
+        ))}
     </div>
   )
 }

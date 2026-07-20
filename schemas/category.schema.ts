@@ -11,9 +11,11 @@ export const categoryFormSchema = z.object({
   description: z.string(),
   icon: z.string().nullable(),
   imageUrl: z.string().nullable(),
+  bannerImageUrl: z.string().nullable(),
   parentId: z.string().nullable(),
   position: z.number().int().min(0),
   isActive: z.boolean(),
+  customSlug: z.string().max(120, "120 caractères maximum.").nullable(),
   seo: z.object({
     title: z.string().max(70, "70 caractères maximum."),
     description: z.string().max(160, "160 caractères maximum."),

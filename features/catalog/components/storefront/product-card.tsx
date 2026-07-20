@@ -1,46 +1,130 @@
+import Image from "next/image"
 import Link from "next/link"
 import { StarIcon } from "lucide-react"
 
+import { cn } from "@/lib/utils"
 import type { Product } from "@/types/product"
+import { Badge } from "@/components/ui/badge"
 import { PriceDisplay } from "@/features/catalog/components/storefront/price-display"
 import { PreorderBadge } from "@/features/catalog/components/storefront/preorder-badge"
 import { WishlistButton } from "@/features/wishlist/components/wishlist-button"
+import { QuickViewDialog } from "@/features/catalog/components/storefront/quick-view-dialog"
+import { AddToCartButton } from "@/features/cart/components/add-to-cart-button"
+import { BuyNowButton } from "@/features/cart/components/buy-now-button"
+import { CompareToggleButton } from "@/features/compare/components/compare-toggle-button"
+import { computeProductBadges } from "@/features/catalog/lib/product-badges"
 
 interface ProductCardProps {
   product: Product
   isInWishlist?: boolean
+  /** Set for the first above-the-fold row so its image is an LCP priority
+   * candidate instead of lazy-loaded — see `ProductGrid`. */
+  priority?: boolean
 }
 
 export function ProductCard({
   product,
   isInWishlist = false,
+  priority = false,
 }: ProductCardProps) {
   const image = product.images[0]
+  const hoverImage = product.images[1]
+  const badges = computeProductBadges(product).slice(0, 2)
+  const defaultVariant =
+    product.variants.find((v) => v.isDefault) ?? product.variants[0]
+  const canQuickAdd = product.variants.length <= 1
+  const roundedRating = Math.round(product.ratingAverage)
 
   return (
-    <div className="group relative flex flex-col gap-3">
-      <div className="bg-muted relative aspect-[3/4] overflow-hidden rounded-xl">
+    <div className="group relative flex flex-col gap-3 transition-transform duration-200 hover:-translate-y-1">
+      <div className="bg-muted relative aspect-[3/4] overflow-hidden rounded-2xl shadow-sm transition-shadow duration-300 group-hover:shadow-xl">
         <Link href={`/products/${product.slug}`} className="absolute inset-0">
           {image ? (
-            // eslint-disable-next-line @next/next/no-img-element -- external Storage URL
-            <img
+            <Image
               src={image.url}
               alt={image.alt || product.name}
-              className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+              fill
+              preload={priority}
+              sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+          ) : null}
+          {hoverImage ? (
+            <Image
+              src={hoverImage.url}
+              alt={hoverImage.alt || product.name}
+              fill
+              sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+              className="object-cover opacity-0 transition-opacity duration-300 group-hover:opacity-100"
             />
           ) : null}
         </Link>
+
         <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+          {badges.map((badge) => (
+            <Badge key={badge.key} className={badge.className}>
+              {badge.label}
+            </Badge>
+          ))}
           <PreorderBadge
             isComingSoon={product.isComingSoon}
             isPreorderable={product.isPreorderable}
           />
         </div>
-        <div className="absolute top-3 right-3">
+
+        <div className="absolute top-3 right-3 flex flex-col gap-1.5">
           <WishlistButton
             productId={product.id}
             initialIsInWishlist={isInWishlist}
           />
+          <CompareToggleButton productId={product.id} />
+        </div>
+
+        <div className="absolute right-3 bottom-3 flex flex-col items-end gap-2">
+          <div className="translate-y-2 opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+            <QuickViewDialog
+              product={{
+                id: product.id,
+                slug: product.slug,
+                name: product.name,
+                brand: product.brand,
+                shortDescription: product.shortDescription,
+                images: product.images,
+                basePriceMinor: product.basePriceMinor,
+                salePriceMinor: product.salePriceMinor,
+                currency: product.currency,
+                variants: product.variants,
+                ratingAverage: product.ratingAverage,
+                ratingCount: product.ratingCount,
+                isComingSoon: product.isComingSoon,
+                isPreorderable: product.isPreorderable,
+              }}
+            />
+          </div>
+          {canQuickAdd && defaultVariant ? (
+            <>
+              <div className="translate-y-2 opacity-0 transition-all delay-75 duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+                <AddToCartButton
+                  productId={product.id}
+                  variantId={defaultVariant.id}
+                  quantity={1}
+                  disabled={defaultVariant.stock <= 0}
+                  iconOnly
+                  className="bg-background/80 text-foreground hover:bg-background backdrop-blur"
+                />
+              </div>
+              <div className="translate-y-2 opacity-0 transition-all delay-150 duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+                <BuyNowButton
+                  productId={product.id}
+                  variantId={defaultVariant.id}
+                  quantity={1}
+                  disabled={defaultVariant.stock <= 0}
+                  iconOnly
+                  className="bg-background/80 text-foreground hover:bg-background backdrop-blur"
+                />
+              </div>
+            </>
+          ) : null}
         </div>
       </div>
 
@@ -59,9 +143,21 @@ export function ProductCard({
           currency={product.currency}
         />
         {product.ratingCount > 0 ? (
-          <span className="text-muted-foreground flex items-center gap-1 text-xs">
-            <StarIcon className="size-3 fill-current" />
-            {product.ratingAverage.toFixed(1)} ({product.ratingCount})
+          <span className="flex items-center gap-0.5">
+            {Array.from({ length: 5 }, (_, index) => (
+              <StarIcon
+                key={index}
+                className={cn(
+                  "size-3",
+                  index < roundedRating
+                    ? "fill-accent-gold text-accent-gold"
+                    : "fill-muted text-muted"
+                )}
+              />
+            ))}
+            <span className="text-muted-foreground ml-1 text-xs">
+              ({product.ratingCount})
+            </span>
           </span>
         ) : null}
       </Link>

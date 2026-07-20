@@ -18,9 +18,9 @@ export default function ShopTemplate({
   // to skip the enter animation without changing what gets rendered.
   return (
     <motion.div
-      initial={shouldReduceMotion ? false : { opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.3 }}
+      initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.35 }}
     >
       {children}
     </motion.div>

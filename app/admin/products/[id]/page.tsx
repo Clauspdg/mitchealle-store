@@ -5,6 +5,7 @@ import { requireSession } from "@/lib/session.server"
 import { getProduct } from "@/services/firestore/products"
 import { listCategories } from "@/services/firestore/categories"
 import { listCollections } from "@/services/firestore/collections"
+import { listBrands } from "@/services/firestore/brands"
 import { AdminSidebar } from "@/components/layout/admin-sidebar"
 import { ProductForm } from "@/features/catalog/components/product-form"
 
@@ -20,10 +21,11 @@ export default async function EditProductPage({
   await requireSession("staff")
   const { id } = await params
 
-  const [product, categories, collections] = await Promise.all([
+  const [product, categories, collections, brands] = await Promise.all([
     getProduct(id),
     listCategories(),
     listCollections(),
+    listBrands(),
   ])
 
   if (!product) {
@@ -41,6 +43,7 @@ export default async function EditProductPage({
           product={product}
           categories={categories}
           collections={collections}
+          brands={brands}
         />
       </div>
     </div>

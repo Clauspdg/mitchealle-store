@@ -10,11 +10,23 @@ import {
 import {
   releaseInventory,
   reserveInventory,
+  stockIn,
   stockOut,
 } from "@/services/firestore/inventory"
 import { getNextOrderNumber } from "@/services/firestore/counters"
 import { getShippingFeeMinor } from "@/features/delivery/lib/shipping"
+import { getShippingSettings } from "@/services/firestore/settings"
+import {
+  getCouponByCode,
+  incrementCouponUsage,
+} from "@/services/firestore/coupons"
+import { generateInvoiceForOrder } from "@/services/firestore/invoices"
+import { dispatchNotification } from "@/services/notifications/dispatch"
 import { computeOrderTotals } from "@/validators/order.validator"
+import {
+  validateCoupon,
+  type CouponValidationLine,
+} from "@/validators/coupon.validator"
 import { decodeCursor, encodeCursor } from "@/utils/pagination"
 import { isMissingIndexError } from "@/utils/firestore-errors"
 import type { Address } from "@/types/user"
@@ -25,8 +37,10 @@ import type {
   Order,
   OrderDocument,
   OrderItem,
+  OrderStatus,
   Payment,
   PaymentDocument,
+  ShippingTier,
 } from "@/types/order"
 
 const ORDERS_COLLECTION = "orders"
@@ -114,11 +128,16 @@ export async function listPaymentsForOrder(
 
 export async function createPendingPayment(
   orderId: string,
-  input: { amountMinor: number; currency: string; providerRef: string }
+  input: {
+    amountMinor: number
+    currency: string
+    providerRef: string
+    provider?: string
+  }
 ): Promise<Payment> {
   const ref = await paymentsRef(orderId).add({
     type: "full",
-    provider: "stripe",
+    provider: input.provider ?? "stripe",
     method: "card",
     amountMinor: input.amountMinor,
     currency: input.currency,
@@ -143,9 +162,15 @@ export async function createPendingPayment(
 export async function createOrderFromCart(
   uid: string,
   input: {
+    customerEmail: string
     deliveryMethod: DeliveryMethod
+    shippingTier: ShippingTier | null
     addressSnapshot: Address | null
     notes: string | null
+    /** Re-validated server-side here — never trusts a client-computed
+     * discount amount, only the code itself (see `apply-coupon-action.ts`,
+     * which is a UX preview, not the source of truth). */
+    couponCode?: string | null
   }
 ): Promise<Order> {
   const cart = await getCart(uid)
@@ -155,6 +180,7 @@ export async function createOrderFromCart(
 
   const orderRef = adminDb.collection(ORDERS_COLLECTION).doc()
   const items: OrderItem[] = []
+  const couponLines: CouponValidationLine[] = []
   let currency: string | null = null
   const reserved: Array<{
     productId: string
@@ -211,6 +237,12 @@ export async function createOrderFromCart(
         quantity: cartItem.quantity,
         lineTotalMinor: unitPriceMinor * cartItem.quantity,
       })
+      couponLines.push({
+        productId: cartItem.productId,
+        categoryId: product.categoryId,
+        unitPriceMinor,
+        quantity: cartItem.quantity,
+      })
     }
   } catch (error) {
     for (const line of reserved) {
@@ -224,27 +256,79 @@ export async function createOrderFromCart(
     throw error
   }
 
-  const shippingFeeMinor = getShippingFeeMinor(input.deliveryMethod)
-  const totals = computeOrderTotals(items, shippingFeeMinor)
+  const shippingSettings = await getShippingSettings()
+  const rawSubtotalMinor = items.reduce(
+    (sum, item) => sum + item.lineTotalMinor,
+    0
+  )
+  const shippingFeeMinor = getShippingFeeMinor(
+    input.deliveryMethod,
+    input.shippingTier,
+    rawSubtotalMinor,
+    shippingSettings
+  )
+
+  let discountMinor = 0
+  let appliedCouponCode: string | null = null
+  let appliedCouponId: string | null = null
+  if (input.couponCode) {
+    const coupon = await getCouponByCode(input.couponCode)
+    if (!coupon) {
+      throw new Error("Ce code promo n'existe pas.")
+    }
+    const result = validateCoupon(coupon, { uid, items: couponLines })
+    if (!result.valid) {
+      if (result.code === "expired") {
+        await dispatchNotification({
+          type: "coupon_expired",
+          couponCode: coupon.code,
+          uid,
+          channelsSent: [],
+        })
+      }
+      throw new Error(result.reason)
+    }
+    discountMinor = result.discountMinor
+    appliedCouponCode = coupon.code
+    appliedCouponId = coupon.id
+  }
+
+  // Tax rate is admin-configurable (Sprint 10A, `settings/shipping.taxRatePercent`,
+  // defaults to 0 — byte-identical to pre-Sprint-10A behavior until an admin
+  // sets a rate). Applied to the discounted subtotal, matching typical
+  // receipt math (same convention `computeOrderTotals` already documents).
+  const taxableAmountMinor = Math.max(0, rawSubtotalMinor - discountMinor)
+  const taxMinor = Math.round(
+    (taxableAmountMinor * shippingSettings.taxRatePercent) / 100
+  )
+  const totals = computeOrderTotals(
+    items,
+    shippingFeeMinor,
+    discountMinor,
+    taxMinor
+  )
   const orderNumber = await getNextOrderNumber()
   const now = Timestamp.now()
 
   const doc: OrderDocument = {
     orderNumber,
     userId: uid,
+    customerEmail: input.customerEmail,
     type: "standard",
     status: "pending",
     items,
     subtotalMinor: totals.subtotalMinor,
     shippingFeeMinor: totals.shippingFeeMinor,
     discountMinor: totals.discountMinor,
-    appliedCouponCode: null,
+    taxMinor: totals.taxMinor,
+    appliedCouponCode,
     appliedPromotionIds: [],
     totalMinor: totals.totalMinor,
     currency: currency!,
     statusHistory: [{ status: "pending", at: now, by: uid }],
     delivery: {
       method: input.deliveryMethod,
+      tier: input.deliveryMethod === "delivery" ? input.shippingTier : null,
       addressSnapshot: input.addressSnapshot,
       trackingNumber: null,
       estimatedAt: null,
@@ -258,8 +342,29 @@ export async function createOrderFromCart(
 
   await orderRef.set(doc)
   await clearCart(uid)
+  if (appliedCouponId) {
+    await incrementCouponUsage(appliedCouponId)
+  }
+  const createdOrder: Order = { id: orderRef.id, ...doc }
+  await dispatchNotification({
+    type: "order_created",
+    orderId: orderRef.id,
+    order: createdOrder,
+    uid,
+    channelsSent: [],
+  })
+  // Whether this actually sends anything is resolved inside
+  // `dispatchNotification` itself (settings/notifications.adminAlertEmails,
+  // falling back to `ADMIN_NOTIFICATION_EMAIL` — see Sprint 10A Phase 11).
+  await dispatchNotification({
+    type: "admin_new_order",
+    orderId: orderRef.id,
+    order: createdOrder,
+    uid,
+    channelsSent: [],
+  })
 
-  return { id: orderRef.id, ...doc }
+  return createdOrder
 }
 
 /**
@@ -319,6 +424,26 @@ export async function confirmOrderPayment(
       }),
       updatedAt: FieldValue.serverTimestamp(),
     })
+
+  const confirmedOrder = await getOrder(orderId)
+  if (confirmedOrder) {
+    await generateInvoiceForOrder(confirmedOrder)
+  }
+
+  await dispatchNotification({
+    type: "payment_succeeded",
+    orderId,
+    order: confirmedOrder ?? undefined,
+    uid: order.userId,
+    channelsSent: [],
+  })
+  await dispatchNotification({
+    type: "order_confirmed",
+    orderId,
+    order: confirmedOrder ?? undefined,
+    uid: order.userId,
+    channelsSent: [],
+  })
 }
 
 export async function cancelUnpaidOrder(
@@ -354,4 +479,314 @@ export async function cancelUnpaidOrder(
       }),
       updatedAt: FieldValue.serverTimestamp(),
     })
+
+  await dispatchNotification({
+    type: "payment_failed",
+    orderId,
+    order,
+    uid: order.userId,
+    channelsSent: [],
+  })
+  await dispatchNotification({
+    type: "order_cancelled",
+    orderId,
+    order,
+    uid: order.userId,
+    channelsSent: [],
+  })
+}
+
+/**
+ * Sets `"refund_requested"` without touching stock — an admin (or an
+ * automated policy, later) then approves via `refundOrder`, which is the
+ * only function that actually reverses the stock decrement. Idempotent:
+ * a no-op once the order is already refunded or already has a pending
+ * request.
+ */
+export async function requestRefund(
+  orderId: string,
+  reason: string
+): Promise<void> {
+  const order = await getOrder(orderId)
+  if (
+    !order ||
+    order.status === "refunded" ||
+    order.status === "refund_requested"
+  ) {
+    return
+  }
+
+  const now = Timestamp.now()
+  await adminDb
+    .collection(ORDERS_COLLECTION)
+    .doc(orderId)
+    .update({
+      status: "refund_requested",
+      statusHistory: FieldValue.arrayUnion({
+        status: "refund_requested",
+        at: now,
+        by: "system",
+        note: reason,
+      }),
+      updatedAt: FieldValue.serverTimestamp(),
+    })
+
+  await dispatchNotification({
+    type: "refund_requested",
+    orderId,
+    order,
+    uid: order.userId,
+    channelsSent: [],
+  })
+}
+
+/**
+ * Reverses the `stockOut` that `confirmOrderPayment` already applied
+ * (via `stockIn` — the inventory doc is guaranteed to already exist at this
+ * point, so the `sku` passed to `stockIn` is never actually used for
+ * lazy-creation). Only valid for an order whose stock was actually
+ * decremented — i.e. anything that passed through `confirmOrderPayment` —
+ * guarding out `pending`/`cancelled` (never stocked out) and `refunded`
+ * (already reversed, so calling this twice is a safe no-op rather than a
+ * double stock restoration).
+ */
+export async function refundOrder(
+  orderId: string,
+  reason: string
+): Promise<void> {
+  const order = await getOrder(orderId)
+  if (
+    !order ||
+    order.status === "pending" ||
+    order.status === "cancelled" ||
+    order.status === "refunded"
+  ) {
+    return
+  }
+
+  for (const item of order.items) {
+    await stockIn(
+      {
+        productId: item.productId,
+        variantId: item.variantId,
+        quantity: item.quantity,
+        reason: "Remboursement commande",
+        reference: orderId,
+        sku: "",
+      },
+      "system"
+    )
+  }
+
+  const now = Timestamp.now()
+  await adminDb
+    .collection(ORDERS_COLLECTION)
+    .doc(orderId)
+    .update({
+      status: "refunded",
+      statusHistory: FieldValue.arrayUnion({
+        status: "refunded",
+        at: now,
+        by: "system",
+        note: reason,
+      }),
+      updatedAt: FieldValue.serverTimestamp(),
+    })
+
+  await dispatchNotification({
+    type: "order_refunded",
+    orderId,
+    order,
+    uid: order.userId,
+    channelsSent: [],
+  })
+}
+
+/**
+ * Appends a new entry to `statusHistory` and updates `status` — the one
+ * write path for admin-driven status changes (shipped/delivered/ready/etc).
+ * Never overwrites history, matching every other status transition in this
+ * file (`FieldValue.arrayUnion`).
+ */
+export async function updateOrderStatus(
+  orderId: string,
+  status: OrderStatus,
+  actorUid: string,
+  note?: string
+): Promise<void> {
+  const now = Timestamp.now()
+  await adminDb
+    .collection(ORDERS_COLLECTION)
+    .doc(orderId)
+    .update({
+      status,
+      statusHistory: FieldValue.arrayUnion({
+        status,
+        at: now,
+        by: actorUid,
+        ...(note ? { note } : {}),
+      }),
+      updatedAt: FieldValue.serverTimestamp(),
+    })
+
+  const order = await getOrder(orderId)
+  if (!order) return
+
+  if (status === "shipped") {
+    await dispatchNotification({
+      type: "order_shipped",
+      orderId,
+      order,
+      uid: order.userId,
+      channelsSent: [],
+    })
+  } else if (status === "delivered") {
+    await dispatchNotification({
+      type: "order_delivered",
+      orderId,
+      order,
+      uid: order.userId,
+      channelsSent: [],
+    })
+  }
+}
+
+export interface OrderAdminSearchParams {
+  status: OrderStatus | "all"
+  /** An order-number prefix (starts with "MS-") or an exact customer email —
+   * mutually exclusive with `status` filtering to avoid needing a 3-way
+   * composite index; a deliberate, documented scope limit for this sprint. */
+  search: string
+  sort: "createdAt_desc" | "totalMinor_desc"
+  cursor: string | null
+}
+
+const PREFIX_RANGE_END = String.fromCodePoint(0xf8ff)
+
+/**
+ * Admin order listing — cursor-paginated the same way as every other list
+ * in this codebase, so it stays fast against thousands of orders. `search`
+ * and `status` are mutually exclusive (see `OrderAdminSearchParams`); when
+ * neither is set, sorts by `createdAt` or `totalMinor` with no composite
+ * index needed (bare `orderBy` + the implicit `__name__` tiebreak, same
+ * pattern as `services/firestore/products.ts`'s `sortSpecFor` usage).
+ */
+const CSV_EXPORT_LIMIT = 1000
+
+export async function listOrdersAdmin(
+  params: OrderAdminSearchParams,
+  pageSize = PAGE_SIZE
+): Promise<CursorPage<Order>> {
+  const term = params.search.trim()
+
+  let query: FirebaseFirestore.Query
+  if (term) {
+    query = term.toUpperCase().startsWith("MS-")
+      ? adminDb
+          .collection(ORDERS_COLLECTION)
+          .where("orderNumber", ">=", term.toUpperCase())
+          .where("orderNumber", "<=", term.toUpperCase() + PREFIX_RANGE_END)
+          .orderBy("orderNumber", "asc")
+      : adminDb
+          .collection(ORDERS_COLLECTION)
+          .where("customerEmail", "==", term.toLowerCase())
+          .orderBy("createdAt", "desc")
+  } else if (params.status !== "all") {
+    query = adminDb
+      .collection(ORDERS_COLLECTION)
+      .where("status", "==", params.status)
+      .orderBy("createdAt", "desc")
+  } else {
+    const field = params.sort === "totalMinor_desc" ? "totalMinor" : "createdAt"
+    query = adminDb.collection(ORDERS_COLLECTION).orderBy(field, "desc")
+  }
+
+  let paged = query.orderBy("__name__", "desc").limit(pageSize + 1)
+  if (params.cursor) {
+    const decoded = decodeCursor<CursorPayload>(params.cursor)
+    paged = paged.startAfter(decoded.sortValue, decoded.id)
+  }
+
+  let snapshot
+  try {
+    snapshot = await paged.get()
+  } catch (error) {
+    if (isMissingIndexError(error)) {
+      console.error(
+        "[listOrdersAdmin] Firestore composite index missing — returning an empty page instead of crashing. Deploy indexes: firebase deploy --only firestore:indexes",
+        error
+      )
+      return { items: [], nextCursor: null, hasMore: false }
+    }
+    throw error
+  }
+
+  const docs = snapshot.docs.slice(0, pageSize)
+  const hasMore = snapshot.docs.length > pageSize
+  const items = docs.map((doc) => toOrder(doc.id, doc.data()))
+
+  const sortField = term
+    ? term.toUpperCase().startsWith("MS-")
+      ? "orderNumber"
+      : "createdAt"
+    : params.status !== "all"
+      ? "createdAt"
+      : params.sort === "totalMinor_desc"
+        ? "totalMinor"
+        : "createdAt"
+  const lastDoc = docs.at(-1)
+  const nextCursor =
+    hasMore && lastDoc
+      ? encodeCursor({
+          sortValue: lastDoc.get(sortField) ?? null,
+          id: lastDoc.id,
+        } satisfies CursorPayload)
+      : null
+
+  return { items, nextCursor, hasMore }
+}
+
+/** Mirrors `services/firestore/products.ts`'s `exportProductsToCsv` shape. */
+export async function exportOrdersToCsv(
+  params: Pick<OrderAdminSearchParams, "status" | "search" | "sort">
+): Promise<string> {
+  const { items } = await listOrdersAdmin(
+    { ...params, cursor: null },
+    CSV_EXPORT_LIMIT
+  )
+
+  const header = [
+    "orderNumber",
+    "customerEmail",
+    "status",
+    "itemCount",
+    "subtotalMinor",
+    "shippingFeeMinor",
+    "discountMinor",
+    "taxMinor",
+    "totalMinor",
+    "currency",
+    "deliveryMethod",
+    "createdAt",
+  ]
+
+  const rows = items.map((order) => [
+    order.orderNumber,
+    order.customerEmail,
+    order.status,
+    String(order.items.length),
+    String(order.subtotalMinor),
+    String(order.shippingFeeMinor),
+    String(order.discountMinor),
+    String(order.taxMinor),
+    String(order.totalMinor),
+    order.currency,
+    order.delivery.method,
+    order.createdAt.toDate().toISOString(),
+  ])
+
+  const escape = (value: string) =>
+    /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value
+
+  return [header, ...rows].map((row) => row.map(escape).join(",")).join("\n")
 }

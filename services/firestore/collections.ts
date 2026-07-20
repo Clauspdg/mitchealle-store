@@ -110,6 +110,7 @@ export async function createCollection(
     endAt: toTimestampOrNull(input.endAt),
     status: input.status,
     position: input.position,
+    seo: input.seo,
     createdBy: actorUid,
     createdAt: now,
     updatedAt: now,
@@ -156,6 +157,7 @@ export async function updateCollection(
       endAt: toTimestampOrNull(input.endAt),
       status: input.status,
       position: input.position,
+      seo: input.seo,
       updatedAt: FieldValue.serverTimestamp(),
     })
 

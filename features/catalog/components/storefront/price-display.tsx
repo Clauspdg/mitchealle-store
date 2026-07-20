@@ -20,9 +20,13 @@ export function PriceDisplay({
   const priceClass = size === "lg" ? "text-2xl" : "text-base"
 
   return (
-    <div className={cn("flex items-baseline gap-2", className)}>
+    <div className={cn("flex flex-wrap items-baseline gap-x-2", className)}>
       <span
-        className={cn("font-medium", priceClass, onSale && "text-accent-gold")}
+        className={cn(
+          "font-medium",
+          priceClass,
+          onSale && "text-accent-gold-text"
+        )}
       >
         {formatPriceMinor(onSale ? salePriceMinor : basePriceMinor, currency)}
       </span>

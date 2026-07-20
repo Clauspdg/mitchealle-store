@@ -1,14 +1,28 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { ArrowDownIcon, ArrowUpIcon } from "lucide-react"
+import { GripVerticalIcon, Trash2Icon } from "lucide-react"
 import { toast } from "sonner"
 
 import {
+  deleteCategoryAction,
   reorderCategoriesAction,
   setCategoryActiveAction,
 } from "@/features/catalog/actions/category-actions"
 import { CategoryFormDialog } from "@/features/catalog/components/category-form-dialog"
+import { useDragHandle } from "@/hooks/use-drag-handle"
+import { SortableContainer } from "@/components/shared/sortable-container"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import {
@@ -21,34 +35,114 @@ import {
 } from "@/components/ui/table"
 import type { Category } from "@/types/category"
 
-export function CategoriesTable({ categories }: { categories: Category[] }) {
+function CategoryRow({
+  category,
+  categories,
+  categoriesById,
+}: {
+  category: Category
+  categories: Category[]
+  categoriesById: Record<string, Category>
+}) {
   const router = useRouter()
+  const { setNodeRef, attributes, listeners, style } = useDragHandle(
+    category.id
+  )
 
-  async function move(index: number, direction: -1 | 1) {
-    const target = index + direction
-    if (target < 0 || target >= categories.length) return
-
-    const reordered = [...categories]
-    const [moved] = reordered.splice(index, 1)
-    reordered.splice(target, 0, moved)
-
-    const result = await reorderCategoriesAction(
-      reordered.map((category) => category.id)
-    )
-    if (!result.success) {
-      toast.error(result.error)
-      return
-    }
-    router.refresh()
-  }
-
-  async function toggleActive(category: Category, isActive: boolean) {
+  async function toggleActive(isActive: boolean) {
     const result = await setCategoryActiveAction(category.id, isActive)
     if (!result.success) {
       toast.error(result.error)
       return
     }
     toast.success(isActive ? "Catégorie activée." : "Catégorie désactivée.")
+    router.refresh()
+  }
+
+  async function handleDelete() {
+    const result = await deleteCategoryAction(category.id)
+    if (!result.success) {
+      toast.error(result.error)
+      return
+    }
+    toast.success("Catégorie supprimée.")
+    router.refresh()
+  }
+
+  return (
+    <TableRow ref={setNodeRef} style={style}>
+      <TableCell>
+        <button
+          type="button"
+          {...attributes}
+          {...listeners}
+          className="text-muted-foreground cursor-grab active:cursor-grabbing"
+          aria-label="Réordonner"
+        >
+          <GripVerticalIcon className="size-4" />
+        </button>
+      </TableCell>
+      <TableCell className="font-medium">{category.name}</TableCell>
+      <TableCell className="text-muted-foreground">
+        {category.parentId
+          ? (categoriesById[category.parentId]?.name ?? "—")
+          : "—"}
+      </TableCell>
+      <TableCell>
+        <Switch
+          checked={category.isActive}
+          onCheckedChange={toggleActive}
+          aria-label="Basculer l'activation"
+        />
+      </TableCell>
+      <TableCell className="flex justify-end gap-2 text-right">
+        <CategoryFormDialog
+          category={category}
+          categories={categories}
+          trigger={
+            <Button variant="outline" size="sm">
+              Modifier
+            </Button>
+          }
+        />
+        <AlertDialog>
+          <AlertDialogTrigger
+            render={
+              <Button variant="ghost" size="icon-sm" aria-label="Supprimer" />
+            }
+          >
+            <Trash2Icon className="text-destructive" />
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Supprimer cette catégorie ?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Cette action est irréversible. La suppression sera refusée si
+                des produits sont encore associés à cette catégorie.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete}>
+                Supprimer
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </TableCell>
+    </TableRow>
+  )
+}
+
+export function CategoriesTable({ categories }: { categories: Category[] }) {
+  const router = useRouter()
+
+  async function handleReorder(orderedIds: string[]) {
+    const result = await reorderCategoriesAction(orderedIds)
+    if (!result.success) {
+      toast.error(result.error)
+      return
+    }
     router.refresh()
   }
 
@@ -70,7 +164,7 @@ export function CategoriesTable({ categories }: { categories: Category[] }) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-24">Ordre</TableHead>
+            <TableHead className="w-10">Ordre</TableHead>
             <TableHead>Nom</TableHead>
             <TableHead>Parent</TableHead>
             <TableHead>Active</TableHead>
@@ -78,56 +172,16 @@ export function CategoriesTable({ categories }: { categories: Category[] }) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {categories.map((category, index) => (
-            <TableRow key={category.id}>
-              <TableCell>
-                <div className="flex gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    disabled={index === 0}
-                    onClick={() => move(index, -1)}
-                    aria-label="Monter"
-                  >
-                    <ArrowUpIcon />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    disabled={index === categories.length - 1}
-                    onClick={() => move(index, 1)}
-                    aria-label="Descendre"
-                  >
-                    <ArrowDownIcon />
-                  </Button>
-                </div>
-              </TableCell>
-              <TableCell className="font-medium">{category.name}</TableCell>
-              <TableCell className="text-muted-foreground">
-                {category.parentId
-                  ? (categoriesById[category.parentId]?.name ?? "—")
-                  : "—"}
-              </TableCell>
-              <TableCell>
-                <Switch
-                  checked={category.isActive}
-                  onCheckedChange={(checked) => toggleActive(category, checked)}
-                  aria-label="Basculer l'activation"
-                />
-              </TableCell>
-              <TableCell className="text-right">
-                <CategoryFormDialog
-                  category={category}
-                  categories={categories}
-                  trigger={
-                    <Button variant="outline" size="sm">
-                      Modifier
-                    </Button>
-                  }
-                />
-              </TableCell>
-            </TableRow>
-          ))}
+          <SortableContainer items={categories} onReorder={handleReorder}>
+            {categories.map((category) => (
+              <CategoryRow
+                key={category.id}
+                category={category}
+                categories={categories}
+                categoriesById={categoriesById}
+              />
+            ))}
+          </SortableContainer>
         </TableBody>
       </Table>
     </div>

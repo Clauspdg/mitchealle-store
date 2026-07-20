@@ -40,14 +40,22 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import type { Collection } from "@/types/collection"
 
+export interface CollectionProductOption {
+  id: string
+  name: string
+  imageUrl: string | null
+}
+
 interface CollectionFormDialogProps {
   trigger: ReactElement
   collection?: Collection
+  products?: CollectionProductOption[]
 }
 
 export function CollectionFormDialog({
   trigger,
   collection,
+  products = [],
 }: CollectionFormDialogProps) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -57,6 +65,7 @@ export function CollectionFormDialog({
   >(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
   const bannerInputRef = useRef<HTMLInputElement>(null)
+  const [productSearch, setProductSearch] = useState("")
 
   const {
     register,
@@ -117,7 +126,27 @@ export function CollectionFormDialog({
     }
   }
 
-  const productCount = collection?.productIds?.length ?? 0
+  const selectedIds = watch("productIds")
+  const selectedProducts = products.filter((p) => selectedIds.includes(p.id))
+  const filteredProducts = products
+    .filter((p) => !selectedIds.includes(p.id))
+    .filter((p) =>
+      productSearch.trim()
+        ? p.name.toLowerCase().includes(productSearch.trim().toLowerCase())
+        : true
+    )
+    .slice(0, 20)
+
+  function addProduct(id: string) {
+    setValue("productIds", [...selectedIds, id])
+  }
+
+  function removeProduct(id: string) {
+    setValue(
+      "productIds",
+      selectedIds.filter((existing) => existing !== id)
+    )
+  }
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -310,11 +339,64 @@ export function CollectionFormDialog({
             </div>
           </div>
 
-          <p className="text-muted-foreground text-sm">
-            {productCount} produit{productCount === 1 ? "" : "s"} associé
-            {productCount === 1 ? "" : "s"} — gérez l&apos;association depuis la
-            fiche de chaque produit (onglet Général).
-          </p>
+          <div className="flex flex-col gap-2">
+            <Label>Produits associés ({selectedProducts.length})</Label>
+            {selectedProducts.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5">
+                {selectedProducts.map((product) => (
+                  <span
+                    key={product.id}
+                    className="bg-muted flex items-center gap-1.5 rounded-full py-1 pr-1 pl-2.5 text-xs"
+                  >
+                    {product.name}
+                    <button
+                      type="button"
+                      onClick={() => removeProduct(product.id)}
+                      className="hover:bg-background rounded-full p-0.5"
+                      aria-label={`Retirer ${product.name}`}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            ) : null}
+            <Input
+              value={productSearch}
+              onChange={(event) => setProductSearch(event.target.value)}
+              placeholder="Rechercher un produit à ajouter..."
+            />
+            {productSearch.trim() && filteredProducts.length > 0 ? (
+              <div className="max-h-40 overflow-y-auto rounded-md border">
+                {filteredProducts.map((product) => (
+                  <button
+                    key={product.id}
+                    type="button"
+                    onClick={() => {
+                      addProduct(product.id)
+                      setProductSearch("")
+                    }}
+                    className="hover:bg-muted flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm"
+                  >
+                    {product.name}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="col-seo-title">SEO — Meta Title</Label>
+            <Input id="col-seo-title" {...register("seo.title")} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="col-seo-description">SEO — Meta Description</Label>
+            <Textarea
+              id="col-seo-description"
+              rows={2}
+              {...register("seo.description")}
+            />
+          </div>
 
           <DialogFooter>
             <Button type="submit" disabled={submitting}>

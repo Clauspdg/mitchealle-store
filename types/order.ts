@@ -7,17 +7,23 @@ export type OrderType = (typeof ORDER_TYPES)[number]
 export const ORDER_STATUSES = [
   "pending",
   "confirmed",
+  "paid",
   "processing",
   "ready",
   "shipped",
   "delivered",
   "cancelled",
+  "refund_requested",
   "refunded",
 ] as const
 export type OrderStatus = (typeof ORDER_STATUSES)[number]
 
 export const DELIVERY_METHODS = ["pickup", "delivery"] as const
 export type DeliveryMethod = (typeof DELIVERY_METHODS)[number]
+
+/** Only meaningful when `method === "delivery"` — see `OrderDelivery.tier`. */
+export const SHIPPING_TIERS = ["standard", "express"] as const
+export type ShippingTier = (typeof SHIPPING_TIERS)[number]
 
 /** Immutable snapshot of a product/variant at order time — never re-reads `products`. */
 export interface OrderItem {
@@ -39,6 +45,8 @@ export interface OrderStatusHistoryEntry {
 
 export interface OrderDelivery {
   method: DeliveryMethod
+  /** Only meaningful when `method === "delivery"`; `null` for pickup. */
+  tier: ShippingTier | null
   addressSnapshot: Address | null
   trackingNumber: string | null
   estimatedAt: FirestoreTimestamp | null
@@ -61,12 +69,19 @@ export interface OrderPreorder {
 export interface OrderDocument {
   orderNumber: string
   userId: string
+  /** Denormalized at order-creation time — lets admin search by email without
+   * a join against `users`, and gives notifications/invoices a stable target
+   * even if the account's email later changes. */
+  customerEmail: string
   type: OrderType
   status: OrderStatus
   items: OrderItem[]
   subtotalMinor: number
   shippingFeeMinor: number
   discountMinor: number
+  /** Sprint 8: real when a coupon is applied at checkout; still folded into
+   * `totalMinor` the same way it always was. */
+  taxMinor: number
   appliedCouponCode: string | null
   appliedPromotionIds: string[]
   totalMinor: number

@@ -17,6 +17,8 @@ export interface ProductVariant {
   priceMinor: number | null
   stock: number
   isDefault: boolean
+  /** Overrides the product's default image when this variant is selected. */
+  imageUrl: string | null
 }
 
 export interface ProductSeo {
@@ -44,6 +46,11 @@ export interface ProductDocument {
   description: string
   sku: string
   brand: string | null
+  /** Sprint 10A — links to a `brands/{brandId}` document; `brand` above is
+   * kept in sync (denormalized) so existing consumers never need to change. */
+  brandId: string | null
+  upc: string | null
+  costMinor: number | null
   categoryId: string
   collectionIds: string[]
   images: ProductImage[]
@@ -51,6 +58,11 @@ export interface ProductDocument {
   salePriceMinor: number | null
   currency: string
   variants: ProductVariant[]
+  /** Sprint 6 Phase 2 — comparator attributes. Optional/nullable: additive
+   * fields, not yet exposed in the admin product form (see Phase 2 plan). */
+  material: string | null
+  weightGrams: number | null
+  dimensionsCm: string | null
   tags: string[]
   status: ProductStatus
   isComingSoon: boolean

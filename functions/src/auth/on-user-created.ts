@@ -2,6 +2,7 @@ import { FieldValue } from "firebase-admin/firestore"
 import * as functionsV1 from "firebase-functions/v1"
 
 import { adminDb } from "../lib/admin"
+import { sendWelcomeEmail } from "../lib/send-welcome-email"
 
 /**
  * Creates the `users/{uid}` profile document right after Firebase Auth
@@ -29,4 +30,8 @@ export const onUserCreated = functionsV1.auth.user().onCreate(async (user) => {
       createdAt: now,
       updatedAt: now,
     })
+
+  // Sprint 9 — additive side effect, never blocks or fails the profile
+  // write above (`sendWelcomeEmail` swallows its own errors).
+  await sendWelcomeEmail(user.email ?? "", user.displayName ?? "")
 })

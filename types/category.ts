@@ -14,6 +14,7 @@ export interface CategoryDocument {
   icon: string | null
   parentId: string | null
   imageUrl: string | null
+  bannerImageUrl: string | null
   position: number
   isActive: boolean
   seo: CategorySeo

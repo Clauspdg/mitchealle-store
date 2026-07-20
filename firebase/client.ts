@@ -16,6 +16,11 @@ import {
   getStorage,
   type FirebaseStorage,
 } from "firebase/storage"
+import {
+  connectFunctionsEmulator,
+  getFunctions,
+  type Functions,
+} from "firebase/functions"
 
 import { clientEnv } from "@/lib/env.client"
 
@@ -41,6 +46,8 @@ const firebaseApp: FirebaseApp = getApps()[0] ?? initializeApp(firebaseConfig)
 const auth: Auth = getAuth(firebaseApp)
 const db: Firestore = getFirestore(firebaseApp)
 const storage: FirebaseStorage = getStorage(firebaseApp)
+// Matches `functions/src/http/set-user-role.ts`'s deploy region.
+const functions: Functions = getFunctions(firebaseApp, "europe-west1")
 
 // Module-scoped flag: Next.js Fast Refresh re-runs this file, and the
 // emulator SDKs throw if `connect*Emulator` is called on an instance twice.
@@ -52,6 +59,7 @@ if (clientEnv.NEXT_PUBLIC_USE_FIREBASE_EMULATORS && !emulatorsConnected) {
   })
   connectFirestoreEmulator(db, "127.0.0.1", 8080)
   connectStorageEmulator(storage, "127.0.0.1", 9199)
+  connectFunctionsEmulator(functions, "127.0.0.1", 5001)
   emulatorsConnected = true
 }
 
@@ -79,4 +87,4 @@ if (
   })
 }
 
-export { firebaseApp, auth, db, storage, appCheck }
+export { firebaseApp, auth, db, storage, functions, appCheck }

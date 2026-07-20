@@ -8,9 +8,11 @@ function validCategory(overrides: Partial<Record<string, unknown>> = {}) {
     description: "",
     icon: null,
     imageUrl: null,
+    bannerImageUrl: null,
     parentId: null,
     position: 0,
     isActive: true,
+    customSlug: null,
     seo: { title: "", description: "" },
     ...overrides,
   }

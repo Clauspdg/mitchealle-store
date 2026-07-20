@@ -17,6 +17,7 @@ export function collectionToFormDefaults(
       endAt: null,
       status: "draft",
       position: 0,
+      seo: { title: "", description: "" },
     }
   }
 
@@ -32,5 +33,6 @@ export function collectionToFormDefaults(
     endAt: collection.endAt ? collection.endAt.toDate() : null,
     status: collection.status,
     position: collection.position,
+    seo: collection.seo ?? { title: "", description: "" },
   }
 }

@@ -8,7 +8,7 @@ import {
   createPendingPayment,
   getOrder,
 } from "@/services/firestore/orders"
-import { stripe } from "@/lib/stripe.server"
+import { getPaymentProvider } from "@/features/payment/lib/get-payment-provider"
 import { clientEnv } from "@/lib/env.client"
 import { createOrderSchema } from "@/schemas/order.schema"
 import type { ActionResult } from "@/types/action-result"
@@ -35,9 +35,12 @@ export async function createCheckoutSessionAction(
   let order
   try {
     order = await createOrderFromCart(session.uid, {
+      customerEmail: session.email ?? "",
       deliveryMethod: parsed.data.deliveryMethod,
+      shippingTier: parsed.data.shippingTier,
       addressSnapshot,
       notes: parsed.data.notes,
+      couponCode: parsed.data.couponCode,
     })
   } catch (error) {
     return {
@@ -50,48 +53,44 @@ export async function createCheckoutSessionAction(
   }
 
   const lineItems = order.items.map((item) => ({
-    price_data: {
-      currency: order.currency,
-      unit_amount: item.unitPriceMinor,
-      product_data: {
-        name: item.nameSnapshot,
-        images: item.imageSnapshot ? [item.imageSnapshot] : [],
-      },
-    },
+    name: item.nameSnapshot,
+    unitAmountMinor: item.unitPriceMinor,
     quantity: item.quantity,
+    imageUrl: item.imageSnapshot || undefined,
   }))
 
   if (order.shippingFeeMinor > 0) {
     lineItems.push({
-      price_data: {
-        currency: order.currency,
-        unit_amount: order.shippingFeeMinor,
-        product_data: { name: "Frais de livraison", images: [] },
-      },
+      name: "Frais de livraison",
+      unitAmountMinor: order.shippingFeeMinor,
       quantity: 1,
+      imageUrl: undefined,
     })
   }
 
   // The order is already created and inventory already reserved at this
   // point (see `createOrderFromCart` above, which also clears the cart) —
-  // if Stripe itself fails (bad key, outage), the customer must not be left
-  // with an empty cart and an orphaned "pending" order they can never pay
-  // for. Roll back via the same `cancelUnpaidOrder` path the expiry webhook
-  // uses, and surface a normal `ActionResult` error instead of a 500.
+  // if the payment provider itself fails (bad key, outage), the customer
+  // must not be left with an empty cart and an orphaned "pending" order
+  // they can never pay for. Roll back via the same `cancelUnpaidOrder` path
+  // the expiry webhook uses, and surface a normal `ActionResult` error
+  // instead of a 500.
+  const paymentProvider = getPaymentProvider(parsed.data.paymentMethod)
+
   let checkoutSession
   try {
-    checkoutSession = await stripe.checkout.sessions.create({
-      mode: "payment",
-      customer_email: session.email ?? undefined,
-      line_items: lineItems,
-      metadata: { orderId: order.id },
-      success_url: `${clientEnv.NEXT_PUBLIC_APP_URL}/checkout/confirmation?orderId=${order.id}`,
-      cancel_url: `${clientEnv.NEXT_PUBLIC_APP_URL}/checkout?cancelled=1`,
+    checkoutSession = await paymentProvider.createCheckoutSession({
+      orderId: order.id,
+      currency: order.currency,
+      customerEmail: session.email ?? null,
+      lineItems,
+      successUrl: `${clientEnv.NEXT_PUBLIC_APP_URL}/checkout/confirmation?orderId=${order.id}`,
+      cancelUrl: `${clientEnv.NEXT_PUBLIC_APP_URL}/checkout?cancelled=1`,
     })
   } catch (error) {
     await cancelUnpaidOrder(
       order.id,
-      "Échec de la création de la session Stripe"
+      "Échec de la création de la session de paiement"
     )
     return {
       success: false,
@@ -102,15 +101,11 @@ export async function createCheckoutSessionAction(
     }
   }
 
-  if (!checkoutSession.url) {
-    await cancelUnpaidOrder(order.id, "Session Stripe sans URL de redirection")
-    return { success: false, error: "Impossible de démarrer le paiement." }
-  }
-
   await createPendingPayment(order.id, {
     amountMinor: order.totalMinor,
     currency: order.currency,
-    providerRef: checkoutSession.id,
+    providerRef: checkoutSession.providerRef,
+    provider: paymentProvider.name,
   })
 
   return { success: true, data: { url: checkoutSession.url } }

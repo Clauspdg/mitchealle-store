@@ -1,38 +1,141 @@
 import type { Metadata } from "next"
 
-import { requireSession } from "@/lib/session.server"
+import { requirePermission } from "@/lib/session.server"
+import {
+  getCouponUsageStats,
+  getOrdersByDay,
+  getSalesOverview,
+  getTopBrands,
+  getTopCategories,
+  getTopCustomers,
+  getTopProducts,
+} from "@/services/firestore/analytics"
+import { formatPriceMinor } from "@/utils/currency"
 import { AdminSidebar } from "@/components/layout/admin-sidebar"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { StatTile } from "@/features/analytics/components/stat-tile"
+import { OrdersByDayChart } from "@/features/analytics/components/orders-by-day-chart"
+import { TopEntriesChart } from "@/features/analytics/components/top-entries-chart"
+import { CouponUsageTable } from "@/features/analytics/components/coupon-usage-table"
+import { ExportAnalyticsButtons } from "@/features/analytics/components/export-analytics-buttons"
 
 export const metadata: Metadata = { title: "Administration" }
+// Live order/sales data must never be baked into the build output.
+export const dynamic = "force-dynamic"
+
+const RANGE_DAYS = 90
 
 export default async function AdminPage() {
-  const session = await requireSession("staff")
+  await requirePermission("dashboard")
+
+  const [
+    overview,
+    ordersByDay,
+    topProducts,
+    topCategories,
+    topBrands,
+    topCustomers,
+    coupons,
+  ] = await Promise.all([
+    getSalesOverview(RANGE_DAYS),
+    getOrdersByDay(30),
+    getTopProducts(RANGE_DAYS),
+    getTopCategories(RANGE_DAYS),
+    getTopBrands(RANGE_DAYS),
+    getTopCustomers(RANGE_DAYS),
+    getCouponUsageStats(),
+  ])
 
   return (
     <div className="flex flex-1">
       <AdminSidebar />
 
-      <div className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 px-6 py-12">
-        <h1 className="text-xl font-semibold tracking-tight">Administration</h1>
+      <div className="flex w-full flex-col gap-6 px-6 py-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight">
+              Tableau de bord
+            </h1>
+            <p className="text-muted-foreground text-sm">
+              Les {overview.rangeDays} derniers jours
+              {overview.truncated
+                ? " (données tronquées au-delà de 2000 commandes)"
+                : ""}
+            </p>
+          </div>
+          <ExportAnalyticsButtons rangeDays={RANGE_DAYS} />
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-3">
+          <StatTile
+            label="Revenus"
+            value={formatPriceMinor(
+              overview.totalRevenueMinor,
+              overview.currency
+            )}
+          />
+          <StatTile label="Commandes" value={String(overview.orderCount)} />
+          <StatTile
+            label="Panier moyen"
+            value={formatPriceMinor(
+              overview.averageOrderValueMinor,
+              overview.currency
+            )}
+          />
+        </div>
+
+        <Card>
+          <CardContent>
+            <OrdersByDayChart data={ordersByDay} />
+          </CardContent>
+        </Card>
+
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Top produits</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <TopEntriesChart data={topProducts} />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Top catégories</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <TopEntriesChart data={topCategories} />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Top marques</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <TopEntriesChart data={topBrands} />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Top clients</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <TopEntriesChart
+                data={topCustomers.map((c) => ({
+                  label: c.label,
+                  revenueMinor: c.revenueMinor,
+                }))}
+              />
+            </CardContent>
+          </Card>
+        </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Accès confirmé</CardTitle>
+            <CardTitle>Utilisation des coupons</CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col gap-2 text-sm">
-            <p className="text-muted-foreground">
-              Cette page est réservée au staff, aux admins et aux super admins.
-              Les modules Produits, Commandes et Paiements seront ajoutés lors
-              d&apos;un prochain sprint.
-            </p>
-            <p className="flex items-center gap-2">
-              <span className="text-muted-foreground">
-                Connecté en tant que :{" "}
-              </span>
-              <Badge variant="secondary">{session.role}</Badge>
-            </p>
+          <CardContent>
+            <CouponUsageTable stats={coupons} />
           </CardContent>
         </Card>
       </div>

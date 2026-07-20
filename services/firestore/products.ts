@@ -3,12 +3,17 @@ import { FieldValue, Timestamp } from "firebase-admin/firestore"
 
 import { adminDb } from "@/firebase/admin"
 import { generateUniqueSlug } from "@/validators/slug.validator"
+import { getBrand } from "@/services/firestore/brands"
 import { encodeCursor, decodeCursor } from "@/utils/pagination"
 import { isMissingIndexError } from "@/utils/firestore-errors"
 import type {
   ProductFormInput,
   ProductSearchParams,
 } from "@/schemas/product.schema"
+import {
+  hasPremiumFilters,
+  type CatalogSearchParams,
+} from "@/schemas/storefront.schema"
 import type { CursorPage } from "@/types/pagination"
 import type { Product, ProductDocument, ProductStatus } from "@/types/product"
 
@@ -70,10 +75,41 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
  * time. Capped at 200 — reasonable for a small/mid catalog; revisit with a
  * real search-as-you-type picker if the catalog outgrows this.
  */
+const MAX_COMPARE_PRODUCTS = 4
+
+/**
+ * Fetches a bounded, caller-specified set of products by ID (the
+ * comparator's session-local selection). No new query shape — parallel
+ * `getProduct` calls, same as everywhere else this pattern is needed.
+ */
+export async function getProductsByIds(ids: string[]): Promise<Product[]> {
+  const boundedIds = ids.slice(0, MAX_COMPARE_PRODUCTS)
+  const products = await Promise.all(boundedIds.map((id) => getProduct(id)))
+  return products.filter((product): product is Product => product !== null)
+}
+
 export async function listAllProducts(limit = 200): Promise<Product[]> {
   const snapshot = await adminDb
     .collection(PRODUCTS_COLLECTION)
     .where("status", "!=", "archived")
+    .limit(limit)
+    .get()
+  return snapshot.docs.map((doc) => toProduct(doc.id, doc.data()))
+}
+
+/**
+ * Customer-safe counterpart to `listAllProducts` — forces `status ==
+ * "published"` (that function includes drafts, fine for admin pickers but
+ * never safe to expose to a customer-facing search index). Same bound of
+ * 200: fine for a small/mid catalog, would need real search infrastructure
+ * (and per-query composite indexes) well beyond that.
+ */
+export async function listPublishedProductsForSearch(
+  limit = 200
+): Promise<Product[]> {
+  const snapshot = await adminDb
+    .collection(PRODUCTS_COLLECTION)
+    .where("status", "==", "published")
     .limit(limit)
     .get()
   return snapshot.docs.map((doc) => toProduct(doc.id, doc.data()))
@@ -87,6 +123,12 @@ function buildDocData(input: ProductFormInput) {
     description: input.description,
     sku: input.sku,
     brand: input.brand,
+    brandId: input.brandId,
+    upc: input.upc,
+    costMinor: input.costMinor,
+    material: input.material,
+    weightGrams: input.weightGrams,
+    dimensionsCm: input.dimensionsCm,
     categoryId: input.categoryId,
     collectionIds: input.collectionIds,
     images: input.images,
@@ -104,15 +146,32 @@ function buildDocData(input: ProductFormInput) {
   }
 }
 
+/**
+ * A selected `brandId` is the source of truth for the free-text `brand`
+ * field — denormalized at write time so every existing consumer of
+ * `product.brand` (catalog filters, `getTopBrands` analytics) keeps working
+ * unchanged. Falls back to whatever free text was typed if no brand is
+ * selected (pre-Sprint-10A products, or a brand outside the managed list).
+ */
+async function resolveBrandName(
+  input: ProductFormInput
+): Promise<string | null> {
+  if (!input.brandId) return input.brand
+  const brand = await getBrand(input.brandId)
+  return brand?.name ?? input.brand
+}
+
 export async function createProduct(
   input: ProductFormInput,
   actorUid: string
 ): Promise<Product> {
   const slug = await generateUniqueSlug(input.name, productSlugExists)
   const now = FieldValue.serverTimestamp()
+  const brand = await resolveBrandName(input)
 
   const docData = {
     ...buildDocData(input),
+    brand,
     slug,
     // Not exposed in the Sprint 2A form — see docs/firestore-architecture.md
     // §2.3 note. Reserved for a future fixed-window preorder campaign.
@@ -147,12 +206,14 @@ export async function updateProduct(
     input.name === current.name
       ? current.slug
       : await generateUniqueSlug(input.name, productSlugExists, current.slug)
+  const brand = await resolveBrandName(input)
 
   await adminDb
     .collection(PRODUCTS_COLLECTION)
     .doc(id)
     .update({
       ...buildDocData(input),
+      brand,
       slug,
       updatedAt: FieldValue.serverTimestamp(),
     })
@@ -326,6 +387,159 @@ export async function listProducts(
   return { items, nextCursor, hasMore }
 }
 
+function compareProducts(a: Product, b: Product, field: string): number {
+  if (field === "createdAt") {
+    return a.createdAt.toMillis() - b.createdAt.toMillis()
+  }
+  if (field === "basePriceMinor") {
+    return a.basePriceMinor - b.basePriceMinor
+  }
+  if (field === "ratingCount") {
+    return a.ratingCount - b.ratingCount
+  }
+  return a.nameLower.localeCompare(b.nameLower)
+}
+
+interface OffsetCursorPayload {
+  offset: number
+}
+
+/**
+ * Storefront listing with the Sprint 6 "premium filters" (price range,
+ * size, color, brand, gender-tag, on-sale, in-stock). Delegates to the
+ * existing `listProducts` byte-for-byte when none of those are active — the
+ * common case is completely unchanged. When any are active, this fetches the
+ * bounded published catalog once (`listPublishedProductsForSearch`) and
+ * filters/sorts/paginates in memory, deliberately avoiding new Firestore
+ * composite indexes for every extra filter dimension (see the Sprint 6
+ * Phase 1 plan for why). Correct and fast at the current catalog size (a
+ * couple hundred products); would need real query-level filtering with
+ * dedicated indexes if the catalog grows far beyond that.
+ */
+export async function listProductsFiltered(
+  params: CatalogSearchParams & { status: ProductSearchParams["status"] }
+): Promise<CursorPage<Product>> {
+  if (!hasPremiumFilters(params)) {
+    // `hasPremiumFilters` just confirmed `sort !== "popularity_desc"` (it's
+    // one of the conditions it checks), so this cast only narrows back to
+    // the enum `listProducts` already accepts — TS can't infer that from an
+    // opaque boolean-returning function.
+    return listProducts({
+      ...params,
+      sort: params.sort as ProductSearchParams["sort"],
+    })
+  }
+
+  const pool = await listPublishedProductsForSearch()
+  const term = params.q.trim().toLowerCase()
+
+  const filtered = pool.filter((product) => {
+    if (params.categoryId && product.categoryId !== params.categoryId) {
+      return false
+    }
+    if (
+      params.collectionId &&
+      !product.collectionIds.includes(params.collectionId)
+    ) {
+      return false
+    }
+    if (params.brand && product.brand !== params.brand) return false
+    if (
+      params.size &&
+      !product.variants.some((variant) => variant.size === params.size)
+    ) {
+      return false
+    }
+    if (
+      params.color &&
+      !product.variants.some((variant) => variant.color === params.color)
+    ) {
+      return false
+    }
+    if (params.gender && !product.tags.includes(params.gender)) return false
+    if (params.onSale === "1" && product.salePriceMinor === null) return false
+    if (
+      params.available === "1" &&
+      !product.variants.some((variant) => variant.stock > 0)
+    ) {
+      return false
+    }
+    const effectivePriceMajor =
+      (product.salePriceMinor ?? product.basePriceMinor) / 100
+    if (
+      params.priceMin !== undefined &&
+      effectivePriceMajor < params.priceMin
+    ) {
+      return false
+    }
+    if (
+      params.priceMax !== undefined &&
+      effectivePriceMajor > params.priceMax
+    ) {
+      return false
+    }
+    if (term && !product.nameLower.includes(term)) return false
+    return true
+  })
+
+  // "popularity_desc" (Sprint 7) has no Firestore-`orderBy`-able equivalent
+  // in `sortSpecFor` (shared with the admin listing) — handled here instead
+  // of extending that shared function's field set.
+  const sort: SortSpec =
+    params.sort === "popularity_desc"
+      ? { field: "ratingCount", direction: "desc" }
+      : sortSpecFor(params.sort)
+  const sorted = filtered.sort((a, b) => {
+    const cmp = compareProducts(a, b, sort.field)
+    return sort.direction === "asc" ? cmp : -cmp
+  })
+
+  const offset = params.cursor
+    ? decodeCursor<OffsetCursorPayload>(params.cursor).offset
+    : 0
+  const items = sorted.slice(offset, offset + PAGE_SIZE)
+  const hasMore = offset + PAGE_SIZE < sorted.length
+  const nextCursor = hasMore
+    ? encodeCursor({ offset: offset + PAGE_SIZE } satisfies OffsetCursorPayload)
+    : null
+
+  return { items, nextCursor, hasMore }
+}
+
+export interface ProductFacets {
+  brands: string[]
+  sizes: string[]
+  colors: string[]
+}
+
+/**
+ * Distinct brand/size/color values across the published catalog, for the
+ * storefront's premium-filter dropdowns. Computed from the same bounded
+ * published-catalog fetch `listProductsFiltered` uses — no new Firestore
+ * query shape.
+ */
+export async function getProductFacets(): Promise<ProductFacets> {
+  const products = await listPublishedProductsForSearch()
+
+  const brands = new Set<string>()
+  const sizes = new Set<string>()
+  const colors = new Set<string>()
+
+  for (const product of products) {
+    if (product.brand) brands.add(product.brand)
+    for (const variant of product.variants) {
+      if (variant.size) sizes.add(variant.size)
+      if (variant.color) colors.add(variant.color)
+    }
+  }
+
+  return {
+    brands: [...brands].sort(),
+    sizes: [...sizes].sort(),
+    colors: [...colors].sort(),
+  }
+}
+
 export async function countProductsByStatus(): Promise<
   Record<ProductStatus | "all", number>
 > {
@@ -354,6 +568,28 @@ export async function countProductsByStatus(): Promise<
     published: published.data().count,
     archived: archived.data().count,
   }
+}
+
+/**
+ * Published-product count per category, for storefront category tiles
+ * ("nombre de produits"). Equality-only filters (categoryId + status) need
+ * no composite index — same reasoning as every other query in this file.
+ */
+export async function countPublishedProductsByCategory(
+  categoryIds: string[]
+): Promise<Record<string, number>> {
+  const entries = await Promise.all(
+    categoryIds.map(async (categoryId) => {
+      const snapshot = await adminDb
+        .collection(PRODUCTS_COLLECTION)
+        .where("categoryId", "==", categoryId)
+        .where("status", "==", "published")
+        .count()
+        .get()
+      return [categoryId, snapshot.data().count] as const
+    })
+  )
+  return Object.fromEntries(entries)
 }
 
 /**

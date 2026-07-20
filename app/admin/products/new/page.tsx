@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { requireSession } from "@/lib/session.server"
 import { listCategories } from "@/services/firestore/categories"
 import { listCollections } from "@/services/firestore/collections"
+import { listBrands } from "@/services/firestore/brands"
 import { AdminSidebar } from "@/components/layout/admin-sidebar"
 import { ProductForm } from "@/features/catalog/components/product-form"
 
@@ -11,9 +12,10 @@ export const metadata: Metadata = { title: "Ajouter un produit" }
 export default async function NewProductPage() {
   await requireSession("staff")
 
-  const [categories, collections] = await Promise.all([
+  const [categories, collections, brands] = await Promise.all([
     listCategories(),
     listCollections(),
+    listBrands(),
   ])
 
   return (
@@ -23,7 +25,11 @@ export default async function NewProductPage() {
         <h1 className="text-xl font-semibold tracking-tight">
           Ajouter un produit
         </h1>
-        <ProductForm categories={categories} collections={collections} />
+        <ProductForm
+          categories={categories}
+          collections={collections}
+          brands={brands}
+        />
       </div>
     </div>
   )

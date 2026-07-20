@@ -7,14 +7,19 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-serif-display);
   --color-accent-gold: var(--accent-gold);
   --color-accent-gold-foreground: var(--accent-gold-foreground);
   --color-accent-gold-muted: var(--accent-gold-muted);
+  --color-accent-gold-text: var(--accent-gold-text);
   --color-surface-ink: var(--surface-ink);
   --color-surface-ink-foreground: var(--surface-ink-foreground);
+  --color-surface-beige: var(--surface-beige);
+  --color-surface-beige-foreground: var(--surface-beige-foreground);
+  --color-accent-rose: var(--accent-rose);
+  --color-accent-rose-foreground: var(--accent-rose-foreground);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -92,8 +97,22 @@
   --accent-gold: oklch(0.78 0.14 85);
   --accent-gold-foreground: oklch(0.145 0 0);
   --accent-gold-muted: oklch(0.93 0.03 85);
+  /* Text-on-light-background variant of --accent-gold: the base gold is only
+     ~2:1 against white (fails WCAG AA's 4.5:1 for text) — this darkened value
+     hits ~4.7:1 while staying visually "gold". Only for small body/label text
+     on light surfaces (e.g. sale price, verified-purchase label); badges/icons
+     already pair gold with a foreground color or a dark backdrop and don't
+     need this. */
+  --accent-gold-text: oklch(0.56 0.14 85);
   --surface-ink: oklch(0.16 0.01 280);
   --surface-ink-foreground: oklch(0.96 0.01 85);
+  --surface-beige: oklch(0.94 0.02 80);
+  --surface-beige-foreground: oklch(0.32 0.02 80);
+
+  /* Scoped to the newsletter CTA button only (per Sprint 5 mockup) — not a
+     palette-wide addition, everything else stays on the gold/ink/beige system. */
+  --accent-rose: oklch(0.72 0.15 5);
+  --accent-rose-foreground: oklch(0.98 0 0);
 }
 
 .dark {
@@ -128,6 +147,10 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  /* Dark surfaces (--card/--popover ~oklch(0.205)) give the base gold ample
+     contrast already, so the dark-mode text-safe variant can stay the
+     original vibrant color instead of the light-mode-only darkened one. */
+  --accent-gold-text: oklch(0.78 0.14 85);
 }
 
 @layer base {
@@ -139,5 +162,34 @@
   }
   html {
     @apply font-sans;
+  }
+}
+
+@layer utilities {
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+  .animate-marquee {
+    animation: marquee 30s linear infinite;
+  }
+
+  @keyframes hero-progress {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+  .animate-hero-progress {
+    animation-name: hero-progress;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+    transform-origin: left;
   }
 }

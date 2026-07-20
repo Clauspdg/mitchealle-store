@@ -1,7 +1,10 @@
 import type { Metadata } from "next"
 
 import { getSession } from "@/lib/session.server"
-import { listProducts } from "@/services/firestore/products"
+import {
+  getProductFacets,
+  listProductsFiltered,
+} from "@/services/firestore/products"
 import { listCategories } from "@/services/firestore/categories"
 import { listCollections } from "@/services/firestore/collections"
 import { listWishlistItems } from "@/services/firestore/wishlists"
@@ -28,6 +31,14 @@ export default async function ProductsPage({
     collectionId: rawParams.collectionId,
     sort: rawParams.sort,
     cursor: typeof rawParams.cursor === "string" ? rawParams.cursor : null,
+    brand: rawParams.brand,
+    size: rawParams.size,
+    color: rawParams.color,
+    gender: rawParams.gender,
+    onSale: rawParams.onSale,
+    available: rawParams.available,
+    priceMin: rawParams.priceMin,
+    priceMax: rawParams.priceMax,
   })
 
   const session = await getSession()
@@ -36,11 +47,13 @@ export default async function ProductsPage({
     { items: products, nextCursor, hasMore },
     categories,
     collections,
+    facets,
     wishlist,
   ] = await Promise.all([
-    listProducts({ ...parsed, status: "published" }),
+    listProductsFiltered({ ...parsed, status: "published" }),
     listCategories({ activeOnly: true }),
     listCollections({ activeOnly: true }),
+    getProductFacets(),
     session ? listWishlistItems(session.uid) : Promise.resolve([]),
   ])
 
@@ -53,6 +66,9 @@ export default async function ProductsPage({
       <CatalogFilters
         categories={categories.map(({ id, name }) => ({ id, name }))}
         collections={collections.map(({ id, name }) => ({ id, name }))}
+        brands={facets.brands}
+        sizes={facets.sizes}
+        colors={facets.colors}
       />
       <ProductGrid
         products={products}

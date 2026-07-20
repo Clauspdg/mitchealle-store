@@ -20,9 +20,15 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == uid;
     }
 
+    // Sprint 10A adds `support` (below staff) and `manager` (above staff) —
+    // this stays a coarse, defense-in-depth allow-list (every real read in
+    // this app goes through the Admin SDK, which bypasses these rules
+    // entirely; see file header). The actual fine-grained capability matrix
+    // (e.g. `support` only sees Orders/Returns in the admin UI) is enforced
+    // application-side by `lib/permissions.ts`, not here.
     function isStaffOrAbove() {
       return isSignedIn() &&
-        request.auth.token.role in ['staff', 'admin', 'superAdmin'];
+        request.auth.token.role in ['support', 'staff', 'manager', 'admin', 'superAdmin'];
     }
 
     match /products/{productId} {
@@ -37,6 +43,13 @@ service cloud.firestore {
 
     match /collections/{collectionId} {
       allow read: if resource.data.status == 'active' || isStaffOrAbove();
+      allow write: if false;
+    }
+
+    // Sprint 6 Phase 2 — public read (reviews are always shown), no
+    // submission UI yet: writes stay Admin SDK only, same shape as products.
+    match /reviews/{reviewId} {
+      allow read: if true;
       allow write: if false;
     }
 
@@ -73,6 +86,103 @@ service cloud.firestore {
             == request.auth.uid || isStaffOrAbove());
         allow write: if false; // Payment webhook (Admin SDK) only.
       }
+    }
+
+    // Sprint 8 — coupon codes are a secret worth protecting (unlike the
+    // public product/category/collection catalog): no customer-facing read.
+    // Validation happens server-side via a Server Action (Admin SDK), which
+    // bypasses rules entirely, same as every write in this file.
+    match /coupons/{couponId} {
+      allow read: if isStaffOrAbove();
+      allow write: if false;
+    }
+
+    // Sprint 8 — audit trail for the notification-dispatch abstraction
+    // (features/notifications/dispatch.ts). No real email/SMS/push is sent
+    // yet; this just records that an event was raised, for admin visibility.
+    match /notificationLog/{logId} {
+      allow read: if isStaffOrAbove();
+      allow write: if false;
+    }
+
+    // Sprint 8 — invoices are derived, immutable snapshots of an order at
+    // payment-confirmation time. Same visibility as the order they belong to.
+    match /invoices/{invoiceId} {
+      allow read: if isSignedIn() &&
+        (resource.data.userId == request.auth.uid || isStaffOrAbove());
+      allow write: if false;
+    }
+
+    // Sprint 9 — unified activity log (error/payment/refund/coupon/
+    // notification/admin_action). Supersedes the Sprint 8 `notificationLog`
+    // block above for new writes; that block stays so any existing data
+    // there remains readable (additive migration, nothing deleted).
+    match /activityLog/{logId} {
+      allow read: if isStaffOrAbove();
+      allow write: if false;
+    }
+
+    // Sprint 9 — same owner-or-staff visibility as `orders`.
+    match /returns/{returnId} {
+      allow read: if isSignedIn() &&
+        (resource.data.userId == request.auth.uid || isStaffOrAbove());
+      allow write: if false; // Server Action (Admin SDK) only.
+    }
+
+    // Sprint 10A — CMS/settings singleton documents. `store` is public
+    // (storefront header/footer/contact page need it); write is Admin SDK
+    // only via staff-gated Server Actions, same discipline as every other
+    // collection in this file.
+    match /settings/store {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /settings/shipping {
+      allow read: if true; // Checkout needs the live fee/threshold/tax rate.
+      allow write: if false;
+    }
+
+    match /settings/{domain} {
+      // payment / notifications / security — internal only.
+      allow read: if isStaffOrAbove();
+      allow write: if false;
+    }
+
+    // Sprint 10A — homepage hero + other placements.
+    match /banners/{bannerId} {
+      allow read: if resource.data.isActive == true || isStaffOrAbove();
+      allow write: if false;
+    }
+
+    // Sprint 10A — homepage section builder.
+    match /homepage/{sectionId} {
+      allow read: if resource.data.isActive == true || isStaffOrAbove();
+      allow write: if false;
+    }
+
+    // Sprint 10A — product brands.
+    match /brands/{brandId} {
+      allow read: if resource.data.isActive == true || isStaffOrAbove();
+      allow write: if false;
+    }
+
+    // Sprint 10A — internal upload tracking, no public read.
+    match /mediaLibrary/{mediaId} {
+      allow read: if isStaffOrAbove();
+      allow write: if false;
+    }
+
+    // Sprint 10A — editable site content (About/Contact/FAQ/Legal/Shipping).
+    match /content/{pageKey} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Sprint 10A — header/footer menu manager.
+    match /menus/{menuId} {
+      allow read: if true;
+      allow write: if false;
     }
 
     match /{document=**} {

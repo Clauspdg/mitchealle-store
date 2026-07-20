@@ -13,6 +13,28 @@ const serverEnvSchema = z.object({
   FIREBASE_STORAGE_BUCKET: z.string().min(1),
   STRIPE_SECRET_KEY: z.string().min(1),
   STRIPE_WEBHOOK_SECRET: z.string().min(1),
+  // Sprint 9 — every field below is optional and gates a specific feature at
+  // the point of use, never at module load. Adding these as *required*
+  // fields would crash the entire app in any environment without them
+  // configured (including this one, today) — see the Sprint 9 plan's
+  // "critical constraint" note. Each provider checks its own key and
+  // no-ops/returns a clear error instead of throwing here.
+  RESEND_API_KEY: z.string().min(1).optional(),
+  // Resend's own sandbox sender works with no domain verification — a safe
+  // default for local/dev environments; production deployments should set
+  // this to a verified domain address.
+  // Not `.email()`-validated: Resend's `from` field accepts the RFC 5322
+  // "Display Name <email@domain>" mailbox format, not a bare address.
+  RESEND_FROM_EMAIL: z
+    .string()
+    .min(1)
+    .optional()
+    .default("Mitchaella Store <onboarding@resend.dev>"),
+  ADMIN_NOTIFICATION_EMAIL: z.string().email().optional(),
+  PAYPAL_CLIENT_ID: z.string().min(1).optional(),
+  PAYPAL_CLIENT_SECRET: z.string().min(1).optional(),
+  PAYPAL_WEBHOOK_ID: z.string().min(1).optional(),
+  PAYPAL_API_BASE: z.string().url().optional(),
 })
 
 function loadServerEnv() {
@@ -23,6 +45,13 @@ function loadServerEnv() {
     FIREBASE_STORAGE_BUCKET: process.env.FIREBASE_STORAGE_BUCKET,
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
+    RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
+    ADMIN_NOTIFICATION_EMAIL: process.env.ADMIN_NOTIFICATION_EMAIL,
+    PAYPAL_CLIENT_ID: process.env.PAYPAL_CLIENT_ID,
+    PAYPAL_CLIENT_SECRET: process.env.PAYPAL_CLIENT_SECRET,
+    PAYPAL_WEBHOOK_ID: process.env.PAYPAL_WEBHOOK_ID,
+    PAYPAL_API_BASE: process.env.PAYPAL_API_BASE,
   })
 
   if (!parsed.success) {

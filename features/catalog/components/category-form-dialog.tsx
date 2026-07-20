@@ -55,7 +55,9 @@ export function CategoryFormDialog({
   const [open, setOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [uploadingBanner, setUploadingBanner] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const bannerInputRef = useRef<HTMLInputElement>(null)
 
   const {
     register,
@@ -89,6 +91,24 @@ export function CategoryFormDialog({
     } finally {
       setUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ""
+    }
+  }
+
+  async function handleBannerUpload(file: File | undefined) {
+    if (!file) return
+    setUploadingBanner(true)
+    try {
+      const formData = new FormData()
+      formData.set("file", file)
+      const result = await uploadCategoryImageAction(formData)
+      if (!result.success) {
+        toast.error(result.error)
+        return
+      }
+      setValue("bannerImageUrl", result.data.url)
+    } finally {
+      setUploadingBanner(false)
+      if (bannerInputRef.current) bannerInputRef.current.value = ""
     }
   }
 
@@ -202,6 +222,57 @@ export function CategoryFormDialog({
                 {uploading ? "Envoi..." : "Choisir une image"}
               </Button>
             </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label>Bannière (catégorie)</Label>
+            <div className="flex items-center gap-3">
+              {watch("bannerImageUrl") ? (
+                // eslint-disable-next-line @next/next/no-img-element -- external Storage URL
+                <img
+                  src={watch("bannerImageUrl") ?? undefined}
+                  alt=""
+                  className="h-12 w-20 rounded-md object-cover"
+                />
+              ) : (
+                <div className="bg-muted h-12 w-20 rounded-md" />
+              )}
+              <input
+                ref={bannerInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/avif"
+                className="hidden"
+                onChange={(event) =>
+                  handleBannerUpload(event.target.files?.[0])
+                }
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={uploadingBanner}
+                onClick={() => bannerInputRef.current?.click()}
+              >
+                <UploadIcon />
+                {uploadingBanner ? "Envoi..." : "Choisir une bannière"}
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="cat-custom-slug">
+              URL personnalisée (optionnel)
+            </Label>
+            <Input
+              id="cat-custom-slug"
+              value={watch("customSlug") ?? ""}
+              onChange={(event) =>
+                setValue("customSlug", event.target.value || null)
+              }
+              placeholder={
+                category?.slug ?? "laissez vide pour générer depuis le nom"
+              }
+            />
           </div>
 
           <div className="flex flex-col gap-1.5">

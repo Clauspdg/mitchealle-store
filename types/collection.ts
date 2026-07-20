@@ -12,6 +12,11 @@ export interface CollectionRule {
   value: string
 }
 
+export interface CollectionSeo {
+  title: string
+  description: string
+}
+
 /** Exact shape of a `collections/{collectionId}` document — see docs/firestore-architecture.md §2.12. */
 export interface CollectionDocument {
   name: string
@@ -28,6 +33,7 @@ export interface CollectionDocument {
   endAt: FirestoreTimestamp | null
   status: CollectionStatus
   position: number
+  seo: CollectionSeo | null
   createdBy: string
   createdAt: FirestoreTimestamp
   updatedAt: FirestoreTimestamp

@@ -8,9 +8,11 @@ export function categoryToFormDefaults(category?: Category): CategoryFormInput {
       description: "",
       icon: null,
       imageUrl: null,
+      bannerImageUrl: null,
       parentId: null,
       position: 0,
       isActive: true,
+      customSlug: null,
       seo: { title: "", description: "" },
     }
   }
@@ -20,9 +22,11 @@ export function categoryToFormDefaults(category?: Category): CategoryFormInput {
     description: category.description,
     icon: category.icon,
     imageUrl: category.imageUrl,
+    bannerImageUrl: category.bannerImageUrl,
     parentId: category.parentId,
     position: category.position,
     isActive: category.isActive,
+    customSlug: null,
     seo: category.seo,
   }
 }

@@ -83,7 +83,9 @@ export async function createCategory(
   input: CategoryFormInput,
   actorUid: string
 ): Promise<Category> {
-  const slug = await generateUniqueSlug(input.name, categorySlugExists)
+  const slug = input.customSlug
+    ? await generateUniqueSlug(input.customSlug, categorySlugExists)
+    : await generateUniqueSlug(input.name, categorySlugExists)
   const now = FieldValue.serverTimestamp()
 
   const docData = {
@@ -93,6 +95,7 @@ export async function createCategory(
     description: input.description,
     icon: input.icon,
     imageUrl: input.imageUrl,
+    bannerImageUrl: input.bannerImageUrl,
     parentId: input.parentId,
     position: input.position,
     isActive: input.isActive,
@@ -116,8 +119,13 @@ export async function updateCategory(
     throw new Error(`Category ${id} not found`)
   }
 
-  const slug =
-    input.name === current.name
+  const slug = input.customSlug
+    ? await generateUniqueSlug(
+        input.customSlug,
+        categorySlugExists,
+        current.slug
+      )
+    : input.name === current.name
       ? current.slug
       : await generateUniqueSlug(input.name, categorySlugExists, current.slug)
 
@@ -128,6 +136,7 @@ export async function updateCategory(
     description: input.description,
     icon: input.icon,
     imageUrl: input.imageUrl,
+    bannerImageUrl: input.bannerImageUrl,
     parentId: input.parentId,
     position: input.position,
     isActive: input.isActive,
@@ -136,6 +145,29 @@ export async function updateCategory(
   })
 
   return (await getCategory(id))!
+}
+
+/**
+ * Guarded delete: rejects if any product still references this category
+ * (draft/archived included, not just published — an orphaned `categoryId`
+ * would be worse than a blocked delete). Categories have no archive/restore
+ * state machine like products/collections, so a real delete is this
+ * collection's only "remove" action.
+ */
+export async function deleteCategory(id: string): Promise<void> {
+  const snapshot = await adminDb
+    .collection("products")
+    .where("categoryId", "==", id)
+    .count()
+    .get()
+
+  if (snapshot.data().count > 0) {
+    throw new Error(
+      "Impossible de supprimer : des produits sont encore associés à cette catégorie."
+    )
+  }
+
+  await adminDb.collection(CATEGORIES_COLLECTION).doc(id).delete()
 }
 
 export async function setCategoryActive(

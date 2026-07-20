@@ -26,6 +26,10 @@ export const collectionFormSchema = z
     endAt: z.date().nullable(),
     status: z.enum(["draft", "active", "archived"]),
     position: z.number().int().min(0),
+    seo: z.object({
+      title: z.string().max(70, "70 caractères maximum."),
+      description: z.string().max(160, "160 caractères maximum."),
+    }),
   })
   .refine((data) => !data.startAt || !data.endAt || data.startAt < data.endAt, {
     error: "La date de fin doit être après la date de début.",

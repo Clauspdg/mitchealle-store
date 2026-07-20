@@ -5,15 +5,19 @@ import { usePathname } from "next/navigation"
 
 import { adminNav } from "@/config/nav"
 import { useAuth } from "@/hooks/use-auth"
-import { hasRoleAtLeast } from "@/types/roles"
+import { hasPermission } from "@/lib/permissions"
 import { cn } from "@/lib/utils"
 
 export function AdminSidebar() {
   const pathname = usePathname()
   const { role } = useAuth()
 
+  // Sprint 10A — filters by the fixed capability matrix (`lib/permissions.ts`)
+  // instead of a single role threshold, so `support` (ranked below `staff`)
+  // still sees the sections its permission set actually grants (Orders,
+  // Retours) without seeing catalog/settings sections it can't access.
   const items = adminNav.filter(
-    (item) => role && hasRoleAtLeast(role, item.minimumRole)
+    (item) => role && hasPermission(role, item.permission)
   )
 
   return (

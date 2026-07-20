@@ -6,6 +6,7 @@ import { requireSession } from "@/lib/session.server"
 import { categoryFormSchema } from "@/schemas/category.schema"
 import {
   createCategory,
+  deleteCategory,
   reorderCategories,
   setCategoryActive,
   updateCategory,
@@ -81,6 +82,17 @@ export async function reorderCategoriesAction(
   await requireSession("staff")
   try {
     await reorderCategories(orderedIds)
+    revalidatePath("/admin/categories")
+    return { success: true, data: undefined }
+  } catch (error) {
+    return { success: false, error: errorMessage(error) }
+  }
+}
+
+export async function deleteCategoryAction(id: string): Promise<ActionResult> {
+  await requireSession("staff")
+  try {
+    await deleteCategory(id)
     revalidatePath("/admin/categories")
     return { success: true, data: undefined }
   } catch (error) {

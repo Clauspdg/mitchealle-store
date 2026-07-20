@@ -15,6 +15,7 @@ function validCollection(overrides: Partial<Record<string, unknown>> = {}) {
     endAt: null,
     status: "draft",
     position: 0,
+    seo: { title: "", description: "" },
     ...overrides,
   }
 }

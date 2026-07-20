@@ -18,6 +18,7 @@ describe("computeOrderTotals", () => {
       subtotalMinor: 2500,
       shippingFeeMinor: 500,
       discountMinor: 0,
+      taxMinor: 0,
       totalMinor: 3000,
     })
   })
@@ -29,6 +30,17 @@ describe("computeOrderTotals", () => {
       200
     )
     expect(totals.totalMinor).toBe(800)
+  })
+
+  it("adds tax after the discount", () => {
+    const totals = computeOrderTotals(
+      [{ unitPriceMinor: 1000, quantity: 1 }],
+      0,
+      200,
+      50
+    )
+    expect(totals.taxMinor).toBe(50)
+    expect(totals.totalMinor).toBe(850)
   })
 
   it("returns zero totals for an empty item list", () => {

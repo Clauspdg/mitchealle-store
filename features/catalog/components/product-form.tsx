@@ -36,6 +36,7 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
+import type { Brand } from "@/types/brand"
 import type { Category } from "@/types/category"
 import type { Collection } from "@/types/collection"
 import type { Product } from "@/types/product"
@@ -44,12 +45,14 @@ interface ProductFormProps {
   product?: Product
   categories: Category[]
   collections: Collection[]
+  brands: Brand[]
 }
 
 export function ProductForm({
   product,
   categories,
   collections,
+  brands,
 }: ProductFormProps) {
   const router = useRouter()
   const [submitting, setSubmitting] = useState(false)
@@ -169,7 +172,43 @@ export function ProductForm({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="brand">Marque</Label>
-                <Input id="brand" {...register("brand")} />
+                {brands.length > 0 ? (
+                  <Select
+                    value={watch("brandId") ?? "none"}
+                    onValueChange={(value) => {
+                      if (value === "none") {
+                        setValue("brandId", null)
+                        return
+                      }
+                      setValue("brandId", value)
+                      setValue(
+                        "brand",
+                        brands.find((b) => b.id === value)?.name ?? null
+                      )
+                    }}
+                  >
+                    <SelectTrigger id="brand">
+                      <SelectValue placeholder="Aucune" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Aucune / texte libre</SelectItem>
+                      {brands.map((brand) => (
+                        <SelectItem key={brand.id} value={brand.id}>
+                          {brand.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : null}
+                {!watch("brandId") ? (
+                  <Input
+                    value={watch("brand") ?? ""}
+                    onChange={(event) =>
+                      setValue("brand", event.target.value || null)
+                    }
+                    placeholder="Nom de la marque (texte libre)"
+                  />
+                ) : null}
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="sku">SKU</Label>
@@ -183,6 +222,60 @@ export function ProductForm({
                     {errors.sku.message}
                   </p>
                 )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="upc">UPC / Code-barres</Label>
+                <Input
+                  id="upc"
+                  value={watch("upc") ?? ""}
+                  onChange={(event) =>
+                    setValue("upc", event.target.value || null)
+                  }
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="material">Matière</Label>
+                <Input
+                  id="material"
+                  value={watch("material") ?? ""}
+                  onChange={(event) =>
+                    setValue("material", event.target.value || null)
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="weightGrams">Poids (grammes)</Label>
+                <Input
+                  id="weightGrams"
+                  type="number"
+                  min="0"
+                  value={watch("weightGrams") ?? ""}
+                  onChange={(event) =>
+                    setValue(
+                      "weightGrams",
+                      event.target.value === ""
+                        ? null
+                        : Number(event.target.value)
+                    )
+                  }
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="dimensionsCm">Dimensions (cm)</Label>
+                <Input
+                  id="dimensionsCm"
+                  value={watch("dimensionsCm") ?? ""}
+                  onChange={(event) =>
+                    setValue("dimensionsCm", event.target.value || null)
+                  }
+                  placeholder="L × l × H"
+                />
               </div>
             </div>
 
@@ -263,6 +356,14 @@ export function ProductForm({
 
           <TabsContent value="pricing" className="flex flex-col gap-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="costMinor">Coût</Label>
+                <MoneyInput
+                  id="costMinor"
+                  valueMinor={watch("costMinor")}
+                  onChangeMinor={(minor) => setValue("costMinor", minor)}
+                />
+              </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="basePriceMinor">Prix</Label>
                 <MoneyInput

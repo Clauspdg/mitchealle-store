@@ -3,9 +3,12 @@ import type { Metadata } from "next"
 
 import { requireSession } from "@/lib/session.server"
 import { getOrder, listPaymentsForOrder } from "@/services/firestore/orders"
+import { getInvoiceForOrder } from "@/services/firestore/invoices"
 import { formatPriceMinor } from "@/utils/currency"
 import { OrderStatusBadge } from "@/features/orders/components/order-status-badge"
 import { OrderTimeline } from "@/features/orders/components/order-timeline"
+import { DownloadInvoiceButton } from "@/features/invoices/components/download-invoice-button"
+import { RequestReturnDialog } from "@/features/returns/components/request-return-dialog"
 
 export const metadata: Metadata = { title: "Détail de la commande" }
 
@@ -22,7 +25,10 @@ export default async function OrderDetailPage({
   const order = await getOrder(orderId)
   if (!order || order.userId !== session.uid) notFound()
 
-  const payments = await listPaymentsForOrder(orderId)
+  const [payments, invoice] = await Promise.all([
+    listPaymentsForOrder(orderId),
+    getInvoiceForOrder(orderId),
+  ])
 
   return (
     <div className="flex flex-col gap-6">
@@ -30,7 +36,13 @@ export default async function OrderDetailPage({
         <h1 className="font-heading text-xl font-semibold tracking-tight">
           Commande {order.orderNumber}
         </h1>
-        <OrderStatusBadge status={order.status} />
+        <div className="flex items-center gap-2">
+          {invoice ? <DownloadInvoiceButton orderId={order.id} /> : null}
+          {order.status === "delivered" ? (
+            <RequestReturnDialog order={order} />
+          ) : null}
+          <OrderStatusBadge status={order.status} />
+        </div>
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2">
@@ -62,6 +74,25 @@ export default async function OrderDetailPage({
                 {formatPriceMinor(order.shippingFeeMinor, order.currency)}
               </span>
             </div>
+            {order.discountMinor > 0 ? (
+              <div className="text-muted-foreground flex justify-between">
+                <span>
+                  Réduction
+                  {order.appliedCouponCode
+                    ? ` (${order.appliedCouponCode})`
+                    : ""}
+                </span>
+                <span>
+                  -{formatPriceMinor(order.discountMinor, order.currency)}
+                </span>
+              </div>
+            ) : null}
+            {order.taxMinor > 0 ? (
+              <div className="text-muted-foreground flex justify-between">
+                <span>Taxes</span>
+                <span>{formatPriceMinor(order.taxMinor, order.currency)}</span>
+              </div>
+            ) : null}
             <div className="flex justify-between border-t pt-2 font-medium">
               <span>Total</span>
               <span>{formatPriceMinor(order.totalMinor, order.currency)}</span>

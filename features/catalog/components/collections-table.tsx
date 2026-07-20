@@ -1,11 +1,16 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { ArrowDownIcon, ArrowUpIcon } from "lucide-react"
+import { GripVerticalIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import { reorderCollectionsAction } from "@/features/catalog/actions/collection-actions"
-import { CollectionFormDialog } from "@/features/catalog/components/collection-form-dialog"
+import {
+  CollectionFormDialog,
+  type CollectionProductOption,
+} from "@/features/catalog/components/collection-form-dialog"
+import { useDragHandle } from "@/hooks/use-drag-handle"
+import { SortableContainer } from "@/components/shared/sortable-container"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -33,22 +38,78 @@ const STATUS_VARIANTS: Record<
   archived: "destructive",
 }
 
+function CollectionRow({
+  collection,
+  products,
+}: {
+  collection: Collection
+  products: CollectionProductOption[]
+}) {
+  const { setNodeRef, attributes, listeners, style } = useDragHandle(
+    collection.id
+  )
+
+  return (
+    <TableRow ref={setNodeRef} style={style}>
+      <TableCell>
+        <button
+          type="button"
+          {...attributes}
+          {...listeners}
+          className="text-muted-foreground cursor-grab active:cursor-grabbing"
+          aria-label="Réordonner"
+        >
+          <GripVerticalIcon className="size-4" />
+        </button>
+      </TableCell>
+      <TableCell className="font-medium">
+        <span className="flex items-center gap-2">
+          {collection.primaryColor && (
+            <span
+              className="size-3 rounded-full border"
+              style={{ backgroundColor: collection.primaryColor }}
+            />
+          )}
+          {collection.name}
+        </span>
+      </TableCell>
+      <TableCell className="text-muted-foreground">
+        {collection.type === "manual" ? "Manuelle" : "Automatique"}
+      </TableCell>
+      <TableCell className="text-muted-foreground">
+        {collection.productIds?.length ?? 0}
+      </TableCell>
+      <TableCell>
+        <Badge variant={STATUS_VARIANTS[collection.status]}>
+          {STATUS_LABELS[collection.status]}
+        </Badge>
+      </TableCell>
+      <TableCell className="text-right">
+        <CollectionFormDialog
+          collection={collection}
+          products={products}
+          trigger={
+            <Button variant="outline" size="sm">
+              Modifier
+            </Button>
+          }
+        />
+      </TableCell>
+    </TableRow>
+  )
+}
+
 export function CollectionsTable({
   collections,
+  products = [],
 }: {
   collections: Collection[]
+  products?: CollectionProductOption[]
 }) {
   const router = useRouter()
 
-  async function move(index: number, direction: -1 | 1) {
-    const target = index + direction
-    if (target < 0 || target >= collections.length) return
-
-    const reordered = [...collections]
-    const [moved] = reordered.splice(index, 1)
-    reordered.splice(target, 0, moved)
-
-    const result = await reorderCollectionsAction(reordered.map((c) => c.id))
+  async function handleReorder(orderedIds: string[]) {
+    const result = await reorderCollectionsAction(orderedIds)
     if (!result.success) {
       toast.error(result.error)
       return
@@ -72,7 +133,7 @@ export function CollectionsTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-24">Ordre</TableHead>
+            <TableHead className="w-10">Ordre</TableHead>
             <TableHead>Nom</TableHead>
             <TableHead>Type</TableHead>
             <TableHead>Produits</TableHead>
@@ -81,64 +142,15 @@ export function CollectionsTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {collections.map((collection, index) => (
-            <TableRow key={collection.id}>
-              <TableCell>
-                <div className="flex gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    disabled={index === 0}
-                    onClick={() => move(index, -1)}
-                    aria-label="Monter"
-                  >
-                    <ArrowUpIcon />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    disabled={index === collections.length - 1}
-                    onClick={() => move(index, 1)}
-                    aria-label="Descendre"
-                  >
-                    <ArrowDownIcon />
-                  </Button>
-                </div>
-              </TableCell>
-              <TableCell className="font-medium">
-                <span className="flex items-center gap-2">
-                  {collection.primaryColor && (
-                    <span
-                      className="size-3 rounded-full border"
-                      style={{ backgroundColor: collection.primaryColor }}
-                    />
-                  )}
-                  {collection.name}
-                </span>
-              </TableCell>
-              <TableCell className="text-muted-foreground">
-                {collection.type === "manual" ? "Manuelle" : "Automatique"}
-              </TableCell>
-              <TableCell className="text-muted-foreground">
-                {collection.productIds?.length ?? 0}
-              </TableCell>
-              <TableCell>
-                <Badge variant={STATUS_VARIANTS[collection.status]}>
-                  {STATUS_LABELS[collection.status]}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-right">
-                <CollectionFormDialog
-                  collection={collection}
-                  trigger={
-                    <Button variant="outline" size="sm">
-                      Modifier
-                    </Button>
-                  }
-                />
-              </TableCell>
-            </TableRow>
-          ))}
+          <SortableContainer items={collections} onReorder={handleReorder}>
+            {collections.map((collection) => (
+              <CollectionRow
+                key={collection.id}
+                collection={collection}
+                products={products}
+              />
+            ))}
+          </SortableContainer>
         </TableBody>
       </Table>
     </div>

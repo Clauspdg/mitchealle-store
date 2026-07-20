@@ -4,6 +4,7 @@ import { redirect } from "next/navigation"
 
 import { adminAuth } from "@/firebase/admin"
 import { hasRoleAtLeast, isRole, type Role } from "@/types/roles"
+import { hasPermission, type PermissionKey } from "@/lib/permissions"
 import type { SessionUser } from "@/types/session"
 
 export const SESSION_COOKIE_NAME = "session"
@@ -56,6 +57,29 @@ export async function requireSession(
   }
 
   if (!hasRoleAtLeast(session.role, minimumRole)) {
+    redirect("/")
+  }
+
+  return session
+}
+
+/**
+ * Sprint 10A — same guard shape as `requireSession`, but gates on the fixed
+ * capability matrix (`lib/permissions.ts`) instead of a role threshold.
+ * Used by the newly-added admin sections (settings/*, media, brands, menus,
+ * content, logs); every already-shipped admin page keeps its existing
+ * `requireSession(minimumRole)` call untouched.
+ */
+export async function requirePermission(
+  key: PermissionKey
+): Promise<SessionUser> {
+  const session = await getSession()
+
+  if (!session) {
+    redirect("/login")
+  }
+
+  if (!hasPermission(session.role, key)) {
     redirect("/")
   }
 
