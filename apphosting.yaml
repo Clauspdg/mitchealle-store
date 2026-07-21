@@ -1,0 +1,90 @@
+# Firebase App Hosting runtime/build configuration.
+# Sensitive values (Firebase Admin credentials, Stripe keys) are stored in
+# Secret Manager (see `firebase apphosting:secrets:set`) and referenced
+# here by name — never as literal values. Everything under NEXT_PUBLIC_* is
+# safe as a plain value: these are the same public Firebase client-SDK
+# config values already embedded in every browser bundle.
+runConfig:
+  minInstances: 0
+
+env:
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: "AIzaSyAhXAJgKkkf8P87MEEPgMTg3SLLM2W2qCk"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: "mictchealla-store.firebaseapp.com"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: "mictchealla-store"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: "mictchealla-store.firebasestorage.app"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: "918135097716"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: "1:918135097716:web:5a0c25b96dffe08fe24421"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+    value: "G-ZXLVVCHE1V"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_APP_URL
+    value: "https://mitchealle-store--mictchealla-store.us-east4.hosted.app"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_USE_FIREBASE_EMULATORS
+    value: "false"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_ENABLE_APP_CHECK
+    value: "false"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: FIREBASE_PROJECT_ID
+    value: "mictchealla-store"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: FIREBASE_STORAGE_BUCKET
+    value: "mictchealla-store.firebasestorage.app"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: FIREBASE_CLIENT_EMAIL
+    secret: FIREBASE_CLIENT_EMAIL
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: FIREBASE_PRIVATE_KEY
+    secret: FIREBASE_PRIVATE_KEY
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: STRIPE_SECRET_KEY
+    secret: STRIPE_SECRET_KEY
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: STRIPE_WEBHOOK_SECRET
+    secret: STRIPE_WEBHOOK_SECRET
+    availability:
+      - BUILD
+      - RUNTIME
