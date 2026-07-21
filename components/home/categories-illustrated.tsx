@@ -3,6 +3,7 @@ import Link from "next/link"
 
 import type { Category } from "@/types/category"
 import { Reveal } from "@/components/shared/reveal"
+import { ScrollCarousel } from "@/components/shared/scroll-carousel"
 import { getCategoryIcon } from "@/features/catalog/lib/category-icon-map"
 
 interface CategoriesIllustratedProps {
@@ -12,62 +13,48 @@ interface CategoriesIllustratedProps {
 
 export function CategoriesIllustrated({
   categories,
-  productCounts,
 }: CategoriesIllustratedProps) {
   if (categories.length === 0) return null
 
   return (
-    <section className="mx-auto w-full max-w-6xl px-6 py-16">
+    <section className="mx-auto w-full max-w-6xl px-6 py-8 sm:py-10">
       <Reveal>
-        <h2 className="font-heading mb-6 text-2xl font-medium">Catégories</h2>
+        <h2 className="font-heading mb-4 text-xl font-medium sm:text-2xl">
+          Catégories
+        </h2>
       </Reveal>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+      <ScrollCarousel itemClassName="w-20 sm:w-24">
         {categories.map((category, index) => {
           const Icon = getCategoryIcon(category.icon)
-          const count = productCounts?.[category.id]
           return (
-            <Reveal key={category.id} delay={index * 0.06}>
+            <Reveal key={category.id} delay={index * 0.04}>
               <Link
                 href={`/categories/${category.slug}`}
-                className="group from-muted to-accent-gold-muted/40 relative flex aspect-square flex-col items-center justify-center gap-3 overflow-hidden rounded-2xl border bg-gradient-to-br shadow-sm transition-shadow duration-300 hover:shadow-lg"
+                className="group flex flex-col items-center gap-2"
               >
-                {category.imageUrl ? (
-                  <>
+                <div className="from-muted to-accent-gold-muted/40 relative size-20 shrink-0 overflow-hidden rounded-full border bg-gradient-to-br shadow-sm transition-shadow duration-300 group-hover:shadow-md sm:size-24">
+                  {category.imageUrl ? (
                     <Image
                       src={category.imageUrl}
                       alt={category.name}
                       fill
-                      sizes="(min-width: 1024px) 20vw, (min-width: 640px) 33vw, 50vw"
+                      sizes="96px"
                       className="object-cover transition-transform duration-500 group-hover:scale-105"
                     />
-                    <div className="absolute inset-0 bg-black/40" />
-                    <span className="font-heading relative text-sm font-medium text-white sm:text-base">
-                      {category.name}
-                    </span>
-                    {count !== undefined ? (
-                      <span className="relative text-xs text-white/70">
-                        {count} produit{count > 1 ? "s" : ""}
-                      </span>
-                    ) : null}
-                  </>
-                ) : (
-                  <>
-                    <Icon className="text-accent-gold size-8 transition-transform duration-300 group-hover:scale-110" />
-                    <span className="font-heading text-sm font-medium sm:text-base">
-                      {category.name}
-                    </span>
-                    {count !== undefined ? (
-                      <span className="text-muted-foreground text-xs">
-                        {count} produit{count > 1 ? "s" : ""}
-                      </span>
-                    ) : null}
-                  </>
-                )}
+                  ) : (
+                    <div className="flex size-full items-center justify-center">
+                      <Icon className="text-accent-gold size-7 transition-transform duration-300 group-hover:scale-110" />
+                    </div>
+                  )}
+                </div>
+                <span className="max-w-20 truncate text-center text-xs font-medium sm:max-w-24 sm:text-sm">
+                  {category.name}
+                </span>
               </Link>
             </Reveal>
           )
         })}
-      </div>
+      </ScrollCarousel>
     </section>
   )
 }

@@ -1,12 +1,24 @@
 "use client"
 
+import { useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { SearchIcon } from "lucide-react"
+import { FilterIcon, SearchIcon } from "lucide-react"
 
+import { cn } from "@/lib/utils"
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
+import { Button } from "@/components/ui/button"
+import {
+  Sheet,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  SheetClose,
+} from "@/components/ui/sheet"
 import {
   Select,
   SelectContent,
@@ -37,24 +49,131 @@ const GENDER_OPTIONS = [
   { value: "unisexe", label: "Unisexe" },
 ]
 
-export function CatalogFilters({
-  categories,
-  collections,
-  brands,
-  sizes,
-  colors,
-}: CatalogFiltersProps) {
+export function CatalogFilters(props: CatalogFiltersProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const [isSheetOpen, setIsSheetOpen] = useState(false)
 
   function setParam(key: string, value: string | null) {
     const params = new URLSearchParams(searchParams.toString())
     if (value) params.set(key, value)
     else params.delete(key)
     params.delete("cursor")
+    params.delete("pages")
     router.push(`${pathname}?${params.toString()}`)
   }
+
+  function resetAll() {
+    router.push(pathname)
+  }
+
+  const activeCount = [
+    "categoryId",
+    "collectionId",
+    "brand",
+    "size",
+    "color",
+    "gender",
+    "priceMin",
+    "priceMax",
+    "onSale",
+    "available",
+  ].filter((key) => Boolean(searchParams.get(key))).length
+
+  const debouncedSetMobileSearch = useDebouncedCallback(
+    (value: string) => setParam("q", value || null),
+    300
+  )
+
+  const shared = { ...props, searchParams, setParam }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {/* Desktop / tablet: inline toolbar, always visible. */}
+      <div className="hidden sm:flex sm:flex-col sm:gap-3">
+        <FilterFields {...shared} layout="inline" />
+      </div>
+
+      {/* Mobile: everything collapses behind a single "Filtres" trigger that
+          opens a bottom sheet — the same `setParam`/URL mechanism applies
+          changes live, the sheet is just a compact presentation shell. */}
+      <div className="flex items-center gap-2 sm:hidden">
+        <div className="relative flex-1">
+          <SearchIcon className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
+          <Input
+            placeholder="Rechercher..."
+            defaultValue={searchParams.get("q") ?? ""}
+            onChange={(event) => debouncedSetMobileSearch(event.target.value)}
+            className="h-11 pl-8"
+          />
+        </div>
+        <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+          <SheetTrigger
+            render={
+              <Button variant="outline" className="h-11 shrink-0 gap-1.5" />
+            }
+          >
+            <FilterIcon className="size-4" />
+            Filtres
+            {activeCount > 0 ? (
+              <span className="bg-accent-gold text-accent-gold-foreground ml-0.5 flex size-4 items-center justify-center rounded-full text-[0.65rem]">
+                {activeCount}
+              </span>
+            ) : null}
+          </SheetTrigger>
+          <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto">
+            <SheetHeader>
+              <SheetTitle>Filtres</SheetTitle>
+            </SheetHeader>
+            <div className="px-4">
+              <FilterFields {...shared} layout="stacked" />
+            </div>
+            <SheetFooter className="flex-row gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 flex-1"
+                onClick={resetAll}
+              >
+                Réinitialiser
+              </Button>
+              <SheetClose
+                render={<Button type="button" className="h-11 flex-1" />}
+              >
+                Appliquer
+              </SheetClose>
+            </SheetFooter>
+          </SheetContent>
+        </Sheet>
+      </div>
+    </div>
+  )
+}
+
+interface FilterFieldsProps extends CatalogFiltersProps {
+  searchParams: URLSearchParams
+  setParam: (key: string, value: string | null) => void
+  layout: "inline" | "stacked"
+}
+
+/** Every filter control, shared between the desktop toolbar and the mobile
+ * bottom sheet — only the wrapping layout differs between the two. */
+function FilterFields({
+  categories,
+  collections,
+  brands,
+  sizes,
+  colors,
+  searchParams,
+  setParam,
+  layout,
+}: FilterFieldsProps) {
+  const stacked = layout === "stacked"
+  const rowClass = stacked
+    ? "flex flex-col gap-3"
+    : "flex flex-wrap items-center gap-2"
+  const fieldWidth = stacked ? "h-11 w-full" : ""
 
   const debouncedSetSearch = useDebouncedCallback(
     (value: string) => setParam("q", value),
@@ -66,36 +185,46 @@ export function CatalogFilters({
   )
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative">
-          <SearchIcon className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
-          <Input
-            placeholder="Rechercher..."
-            defaultValue={searchParams.get("q") ?? ""}
-            onChange={(event) => debouncedSetSearch(event.target.value)}
-            className="w-56 pl-8"
-          />
-        </div>
+    <>
+      <div className={rowClass}>
+        {!stacked ? (
+          <div className="relative">
+            <SearchIcon className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
+            <Input
+              placeholder="Rechercher..."
+              defaultValue={searchParams.get("q") ?? ""}
+              onChange={(event) => debouncedSetSearch(event.target.value)}
+              className="w-56 rounded-full pl-8"
+            />
+          </div>
+        ) : null}
 
-        <Select
-          value={searchParams.get("categoryId") ?? "all"}
-          onValueChange={(value) =>
-            setParam("categoryId", value === "all" ? "" : value)
-          }
-        >
-          <SelectTrigger className="w-48" aria-label="Filtrer par catégorie">
-            <SelectValue placeholder="Catégorie" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Toutes les catégories</SelectItem>
-            {categories.map((category) => (
-              <SelectItem key={category.id} value={category.id}>
-                {category.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {categories.length > 0 ? (
+          <Select
+            value={searchParams.get("categoryId") ?? "all"}
+            onValueChange={(value) =>
+              setParam("categoryId", value === "all" ? "" : value)
+            }
+          >
+            <SelectTrigger
+              className={cn(
+                stacked ? "w-full" : "w-44 rounded-full",
+                fieldWidth
+              )}
+              aria-label="Filtrer par catégorie"
+            >
+              <SelectValue placeholder="Catégorie" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Toutes les catégories</SelectItem>
+              {categories.map((category) => (
+                <SelectItem key={category.id} value={category.id}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : null}
 
         <Select
           value={searchParams.get("collectionId") ?? "all"}
@@ -103,7 +232,10 @@ export function CatalogFilters({
             setParam("collectionId", value === "all" ? "" : value)
           }
         >
-          <SelectTrigger className="w-48" aria-label="Filtrer par collection">
+          <SelectTrigger
+            className={cn(stacked ? "w-full" : "w-44 rounded-full", fieldWidth)}
+            aria-label="Filtrer par collection"
+          >
             <SelectValue placeholder="Collection" />
           </SelectTrigger>
           <SelectContent>
@@ -121,7 +253,10 @@ export function CatalogFilters({
           onValueChange={(value) => setParam("sort", value)}
         >
           <SelectTrigger
-            className="ml-auto w-48"
+            className={cn(
+              stacked ? "w-full" : "ml-auto w-44 rounded-full",
+              fieldWidth
+            )}
             aria-label="Trier les produits"
           >
             <SelectValue placeholder="Trier par" />
@@ -137,27 +272,33 @@ export function CatalogFilters({
         </Select>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Input
-          type="number"
-          min={0}
-          placeholder="Prix min"
-          defaultValue={searchParams.get("priceMin") ?? ""}
-          onChange={(event) =>
-            debouncedSetPrice("priceMin", event.target.value)
-          }
-          className="w-28"
-        />
-        <Input
-          type="number"
-          min={0}
-          placeholder="Prix max"
-          defaultValue={searchParams.get("priceMax") ?? ""}
-          onChange={(event) =>
-            debouncedSetPrice("priceMax", event.target.value)
-          }
-          className="w-28"
-        />
+      <div className={rowClass}>
+        <div className={cn("flex items-center gap-2", stacked && "w-full")}>
+          <Input
+            type="number"
+            min={0}
+            placeholder="Prix min"
+            defaultValue={searchParams.get("priceMin") ?? ""}
+            onChange={(event) =>
+              debouncedSetPrice("priceMin", event.target.value)
+            }
+            className={cn(
+              stacked ? "h-11 w-full rounded-full" : "w-28 rounded-full"
+            )}
+          />
+          <Input
+            type="number"
+            min={0}
+            placeholder="Prix max"
+            defaultValue={searchParams.get("priceMax") ?? ""}
+            onChange={(event) =>
+              debouncedSetPrice("priceMax", event.target.value)
+            }
+            className={cn(
+              stacked ? "h-11 w-full rounded-full" : "w-28 rounded-full"
+            )}
+          />
+        </div>
 
         {brands.length > 0 ? (
           <Select
@@ -166,7 +307,13 @@ export function CatalogFilters({
               setParam("brand", value === "all" ? "" : value)
             }
           >
-            <SelectTrigger className="w-40" aria-label="Filtrer par marque">
+            <SelectTrigger
+              className={cn(
+                stacked ? "w-full" : "w-36 rounded-full",
+                fieldWidth
+              )}
+              aria-label="Filtrer par marque"
+            >
               <SelectValue placeholder="Marque" />
             </SelectTrigger>
             <SelectContent>
@@ -187,7 +334,13 @@ export function CatalogFilters({
               setParam("size", value === "all" ? "" : value)
             }
           >
-            <SelectTrigger className="w-32" aria-label="Filtrer par taille">
+            <SelectTrigger
+              className={cn(
+                stacked ? "w-full" : "w-28 rounded-full",
+                fieldWidth
+              )}
+              aria-label="Filtrer par taille"
+            >
               <SelectValue placeholder="Taille" />
             </SelectTrigger>
             <SelectContent>
@@ -208,7 +361,13 @@ export function CatalogFilters({
               setParam("color", value === "all" ? "" : value)
             }
           >
-            <SelectTrigger className="w-36" aria-label="Filtrer par couleur">
+            <SelectTrigger
+              className={cn(
+                stacked ? "w-full" : "w-32 rounded-full",
+                fieldWidth
+              )}
+              aria-label="Filtrer par couleur"
+            >
               <SelectValue placeholder="Couleur" />
             </SelectTrigger>
             <SelectContent>
@@ -228,7 +387,10 @@ export function CatalogFilters({
             setParam("gender", value === "all" ? "" : value)
           }
         >
-          <SelectTrigger className="w-32" aria-label="Filtrer par genre">
+          <SelectTrigger
+            className={cn(stacked ? "w-full" : "w-28 rounded-full", fieldWidth)}
+            aria-label="Filtrer par genre"
+          >
             <SelectValue placeholder="Sexe" />
           </SelectTrigger>
           <SelectContent>
@@ -243,30 +405,36 @@ export function CatalogFilters({
 
         <div className="flex items-center gap-2">
           <Switch
-            id="filter-on-sale"
+            id={`filter-on-sale-${layout}`}
             checked={searchParams.get("onSale") === "1"}
             onCheckedChange={(checked) =>
               setParam("onSale", checked ? "1" : "")
             }
           />
-          <Label htmlFor="filter-on-sale" className="text-sm font-normal">
+          <Label
+            htmlFor={`filter-on-sale-${layout}`}
+            className="text-sm font-normal"
+          >
             En promotion
           </Label>
         </div>
 
         <div className="flex items-center gap-2">
           <Switch
-            id="filter-available"
+            id={`filter-available-${layout}`}
             checked={searchParams.get("available") === "1"}
             onCheckedChange={(checked) =>
               setParam("available", checked ? "1" : "")
             }
           />
-          <Label htmlFor="filter-available" className="text-sm font-normal">
+          <Label
+            htmlFor={`filter-available-${layout}`}
+            className="text-sm font-normal"
+          >
             En stock
           </Label>
         </div>
       </div>
-    </div>
+    </>
   )
 }

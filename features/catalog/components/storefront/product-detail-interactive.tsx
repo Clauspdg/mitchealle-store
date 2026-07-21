@@ -55,7 +55,7 @@ export function ProductDetailInteractive({
   const displaySalePrice = hasVariantPriceOverride ? null : salePriceMinor
 
   return (
-    <div className="grid gap-8 lg:grid-cols-2">
+    <div className="grid gap-4 lg:grid-cols-2 lg:gap-8">
       <ProductGallery
         images={images}
         productName={productName}

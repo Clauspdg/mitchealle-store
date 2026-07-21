@@ -16,7 +16,6 @@ import { cn } from "@/lib/utils"
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback"
 import { useLocalStorage } from "@/hooks/use-local-storage"
 import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/shared/empty-state"
 import {
   getSearchIndexAction,
@@ -35,8 +34,7 @@ const GROUP_LABELS: Record<SearchIndexEntry["type"], string> = {
 }
 
 interface SearchCommandProps {
-  isOpen: boolean
-  onOpenChange: (open: boolean) => void
+  className?: string
 }
 
 /** Wraps Fuse's matched character ranges (for the "name" key) in `<mark>`. */
@@ -77,13 +75,14 @@ type NavItem =
     }
   | { kind: "all-results" }
 
-export function SearchCommand({ isOpen, onOpenChange }: SearchCommandProps) {
+export function SearchCommand({ className }: SearchCommandProps) {
   const router = useRouter()
   const containerRef = useRef<HTMLDivElement>(null)
   const fuseRef = useRef<Fuse<SearchIndexEntry> | null>(null)
   const valueRef = useRef("")
   const [indexData, setIndexData] = useState<SearchIndexEntry[]>([])
   const [isIndexReady, setIsIndexReady] = useState(false)
+  const [isOpen, setIsOpen] = useState(false)
   const [value, setValue] = useState("")
   const [results, setResults] = useState<FuseResult<SearchIndexEntry>[]>([])
   const [activeIndex, setActiveIndex] = useState(-1)
@@ -116,12 +115,12 @@ export function SearchCommand({ isOpen, onOpenChange }: SearchCommandProps) {
   }, [isOpen])
 
   const close = useCallback(() => {
-    onOpenChange(false)
+    setIsOpen(false)
     setValue("")
     valueRef.current = ""
     setResults([])
     setActiveIndex(-1)
-  }, [onOpenChange])
+  }, [])
 
   const runSearch = useDebouncedCallback((term: string) => {
     if (!fuseRef.current || !term.trim()) {
@@ -261,22 +260,23 @@ export function SearchCommand({ isOpen, onOpenChange }: SearchCommandProps) {
   return (
     <div
       ref={containerRef}
-      className="relative flex items-center"
+      className={cn("relative flex w-full items-center", className)}
       onKeyDown={handleKeyDown}
     >
-      <form onSubmit={handleSubmit} className="flex items-center">
+      <form onSubmit={handleSubmit} className="flex w-full items-center">
         <div
           className={cn(
-            "flex items-center overflow-hidden rounded-md transition-all duration-300",
-            isOpen ? "w-48 border sm:w-64" : "w-0 border-transparent"
+            "relative flex w-full items-center rounded-full border transition-shadow duration-200",
+            isOpen && "ring-ring/40 ring-2"
           )}
         >
+          <SearchIcon className="text-muted-foreground pointer-events-none absolute left-3 size-4" />
           <Input
             value={value}
             onChange={(event) => handleChange(event.target.value)}
+            onFocus={() => setIsOpen(true)}
             placeholder="Rechercher..."
-            className="h-9 border-0 shadow-none focus-visible:ring-0"
-            autoFocus={isOpen}
+            className="h-9 border-0 pr-8 pl-9 shadow-none focus-visible:ring-0"
             role="combobox"
             aria-expanded={isOpen}
             aria-controls="search-command-listbox"
@@ -286,16 +286,17 @@ export function SearchCommand({ isOpen, onOpenChange }: SearchCommandProps) {
                 : undefined
             }
           />
+          {value ? (
+            <button
+              type="button"
+              aria-label="Effacer la recherche"
+              onClick={close}
+              className="text-muted-foreground hover:text-foreground absolute right-2.5"
+            >
+              <XIcon className="size-3.5" />
+            </button>
+          ) : null}
         </div>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          aria-label={isOpen ? "Fermer la recherche" : "Rechercher"}
-          onClick={() => onOpenChange(!isOpen)}
-        >
-          {isOpen ? <XIcon /> : <SearchIcon />}
-        </Button>
       </form>
 
       {isOpen ? (

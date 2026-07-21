@@ -13,7 +13,7 @@ interface ScrollCarouselProps {
   scrollAmount?: number
 }
 
-const DEFAULT_ITEM_CLASSNAME = "w-[45vw] sm:w-[28vw] lg:w-[22vw]"
+const DEFAULT_ITEM_CLASSNAME = "w-[42vw] sm:w-[24vw] lg:w-[18vw]"
 const DEFAULT_SCROLL_AMOUNT = 320
 
 /**

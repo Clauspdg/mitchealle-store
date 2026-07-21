@@ -45,7 +45,6 @@ export function Header({
 }) {
   const { user, loading } = useAuth()
   const [isScrolled, setIsScrolled] = useState(false)
-  const [isSearchOpen, setIsSearchOpen] = useState(false)
 
   useEffect(() => {
     function onScroll() {
@@ -136,26 +135,22 @@ export function Header({
           </Link>
         </div>
 
-        <nav className="hidden items-center justify-center gap-6 md:flex">
-          {mainNav.map((item) => (
-            <Link
-              key={item.id}
-              href={item.href}
-              className="text-muted-foreground hover:text-foreground text-sm transition-colors"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <div className="hidden min-w-0 items-center justify-center gap-6 md:flex">
+          <nav className="flex items-center gap-6">
+            {mainNav.map((item) => (
+              <Link
+                key={item.id}
+                href={item.href}
+                className="text-muted-foreground hover:text-foreground text-sm whitespace-nowrap transition-colors"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+          <SearchCommand className="w-64" />
+        </div>
 
         <div className="flex items-center justify-end gap-1">
-          <div className="hidden sm:block">
-            <SearchCommand
-              isOpen={isSearchOpen}
-              onOpenChange={setIsSearchOpen}
-            />
-          </div>
-
           <ModeToggle />
 
           <Button
@@ -224,6 +219,13 @@ export function Header({
             </>
           )}
         </div>
+      </div>
+
+      {/* Mobile: the header's main row has no room for the always-visible
+          search bar alongside the wordmark and action icons, so it gets its
+          own full-width row instead of squeezing into the grid above. */}
+      <div className="border-t px-4 py-2 md:hidden">
+        <SearchCommand className="w-full" />
       </div>
     </header>
   )

@@ -36,7 +36,7 @@ export function ProductCard({
   const roundedRating = Math.round(product.ratingAverage)
 
   return (
-    <div className="group relative flex flex-col gap-3 transition-transform duration-200 hover:-translate-y-1">
+    <div className="group relative flex flex-col gap-1.5 transition-transform duration-200 hover:-translate-y-1">
       <div className="bg-muted relative aspect-[3/4] overflow-hidden rounded-2xl shadow-sm transition-shadow duration-300 group-hover:shadow-xl">
         <Link href={`/products/${product.slug}`} className="absolute inset-0">
           {image ? (
@@ -45,7 +45,7 @@ export function ProductCard({
               alt={image.alt || product.name}
               fill
               preload={priority}
-              sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+              sizes="(min-width: 1536px) 16vw, (min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
               className="object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : null}
@@ -54,7 +54,7 @@ export function ProductCard({
               src={hoverImage.url}
               alt={hoverImage.alt || product.name}
               fill
-              sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+              sizes="(min-width: 1536px) 16vw, (min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
               className="object-cover opacity-0 transition-opacity duration-300 group-hover:opacity-100"
             />
           ) : null}
@@ -80,7 +80,23 @@ export function ProductCard({
           <CompareToggleButton productId={product.id} />
         </div>
 
-        <div className="absolute right-3 bottom-3 flex flex-col items-end gap-2">
+        {/* Mobile: hover never fires on touch, so the quick-add action gets
+            its own always-visible floating button instead of relying on the
+            desktop hover-reveal stack below. */}
+        {canQuickAdd && defaultVariant ? (
+          <div className="absolute right-2 bottom-2 sm:hidden">
+            <AddToCartButton
+              productId={product.id}
+              variantId={defaultVariant.id}
+              quantity={1}
+              disabled={defaultVariant.stock <= 0}
+              iconOnly
+              className="bg-background/90 text-foreground hover:bg-background size-10 shadow-md backdrop-blur"
+            />
+          </div>
+        ) : null}
+
+        <div className="absolute right-3 bottom-3 hidden flex-col items-end gap-2 sm:flex">
           <div className="translate-y-2 opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
             <QuickViewDialog
               product={{
@@ -128,13 +144,16 @@ export function ProductCard({
         </div>
       </div>
 
-      <Link href={`/products/${product.slug}`} className="flex flex-col gap-1">
+      <Link
+        href={`/products/${product.slug}`}
+        className="flex flex-col gap-0.5"
+      >
         {product.brand ? (
-          <span className="text-muted-foreground text-xs tracking-wide uppercase">
+          <span className="text-muted-foreground text-[0.65rem] tracking-wide uppercase">
             {product.brand}
           </span>
         ) : null}
-        <span className="font-heading text-base leading-snug">
+        <span className="font-heading truncate text-sm leading-snug sm:text-base">
           {product.name}
         </span>
         <PriceDisplay
@@ -148,14 +167,14 @@ export function ProductCard({
               <StarIcon
                 key={index}
                 className={cn(
-                  "size-3",
+                  "size-2.5",
                   index < roundedRating
                     ? "fill-accent-gold text-accent-gold"
                     : "fill-muted text-muted"
                 )}
               />
             ))}
-            <span className="text-muted-foreground ml-1 text-xs">
+            <span className="text-muted-foreground ml-1 text-[0.65rem]">
               ({product.ratingCount})
             </span>
           </span>

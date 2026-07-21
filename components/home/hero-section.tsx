@@ -58,7 +58,7 @@ export function HeroSection({ slides }: { slides: HeroSlideView[] }) {
       ref={containerRef}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      className="bg-surface-ink text-surface-ink-foreground relative flex h-[85vh] min-h-[560px] items-center overflow-hidden"
+      className="bg-surface-ink text-surface-ink-foreground relative flex h-[42vh] min-h-[320px] items-center overflow-hidden sm:h-[48vh] sm:min-h-[380px]"
     >
       <motion.div
         style={shouldReduceMotion ? undefined : { y: parallaxY }}
@@ -96,7 +96,7 @@ export function HeroSection({ slides }: { slides: HeroSlideView[] }) {
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
       </motion.div>
 
-      <div className="relative mx-auto flex w-full max-w-6xl flex-col items-start gap-6 px-6">
+      <div className="relative mx-auto flex w-full max-w-6xl flex-col items-start gap-3 px-6">
         <AnimatePresence mode="wait">
           <motion.div
             key={slide.title}
@@ -104,23 +104,24 @@ export function HeroSection({ slides }: { slides: HeroSlideView[] }) {
             animate={{ opacity: 1, y: 0 }}
             exit={shouldReduceMotion ? undefined : { opacity: 0, y: -12 }}
             transition={{ duration: shouldReduceMotion ? 0 : 0.5 }}
-            className="flex flex-col items-start gap-6"
+            className="flex flex-col items-start gap-2"
           >
-            <p className="text-accent-gold text-xs font-medium tracking-[0.2em] uppercase">
+            <p className="text-accent-gold text-[0.65rem] font-medium tracking-[0.2em] uppercase sm:text-xs">
               {slide.eyebrow}
             </p>
-            <h1 className="font-heading max-w-2xl text-5xl leading-tight font-medium sm:text-7xl">
+            <h1 className="font-heading max-w-2xl text-3xl leading-tight font-medium sm:text-5xl">
               {slide.title}
             </h1>
-            <p className="max-w-md text-base text-white/70">{slide.subtitle}</p>
+            <p className="max-w-md text-sm text-white/70 sm:text-base">
+              {slide.subtitle}
+            </p>
           </motion.div>
         </AnimatePresence>
 
-        <div className="mt-2 flex flex-wrap gap-3">
+        <div className="mt-1 flex flex-wrap gap-2">
           <Button
             render={<Link href={slide.primaryButtonHref} />}
             nativeButton={false}
-            size="lg"
             className="bg-accent-gold text-accent-gold-foreground hover:bg-accent-gold/90 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
           >
             {slide.primaryButtonLabel}
@@ -129,7 +130,6 @@ export function HeroSection({ slides }: { slides: HeroSlideView[] }) {
             <Button
               render={<Link href={slide.secondaryButtonHref} />}
               nativeButton={false}
-              size="lg"
               variant="outline"
               className="border-white/40 bg-transparent text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10 hover:shadow-lg"
             >
@@ -138,7 +138,7 @@ export function HeroSection({ slides }: { slides: HeroSlideView[] }) {
           ) : null}
         </div>
 
-        <div className="mt-4 flex gap-2">
+        <div className="mt-2 flex gap-1.5">
           {slides.map((s, slideIndex) => (
             <button
               key={s.id}
@@ -147,10 +147,10 @@ export function HeroSection({ slides }: { slides: HeroSlideView[] }) {
               aria-label={`Aller à la diapositive ${slideIndex + 1}`}
               aria-current={slideIndex === index}
               className={cn(
-                "relative h-2 overflow-hidden rounded-full transition-all duration-300",
+                "relative h-1.5 overflow-hidden rounded-full transition-all duration-300",
                 slideIndex === index
-                  ? "w-8 bg-white/25"
-                  : "w-2 bg-white/40 hover:bg-white/60"
+                  ? "w-6 bg-white/25"
+                  : "w-1.5 bg-white/40 hover:bg-white/60"
               )}
             >
               {slideIndex === index && !shouldReduceMotion ? (
