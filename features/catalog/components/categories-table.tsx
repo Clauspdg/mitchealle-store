@@ -33,16 +33,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import type { Category } from "@/types/category"
+import type { ClientSafeCategory } from "@/types/category"
 
 function CategoryRow({
   category,
   categories,
   categoriesById,
 }: {
-  category: Category
-  categories: Category[]
-  categoriesById: Record<string, Category>
+  category: ClientSafeCategory
+  categories: ClientSafeCategory[]
+  categoriesById: Record<string, ClientSafeCategory>
 }) {
   const router = useRouter()
   const { setNodeRef, attributes, listeners, style } = useDragHandle(
@@ -134,7 +134,11 @@ function CategoryRow({
   )
 }
 
-export function CategoriesTable({ categories }: { categories: Category[] }) {
+export function CategoriesTable({
+  categories,
+}: {
+  categories: ClientSafeCategory[]
+}) {
   const router = useRouter()
 
   async function handleReorder(orderedIds: string[]) {

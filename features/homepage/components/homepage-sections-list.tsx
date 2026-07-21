@@ -12,7 +12,7 @@ import { useDragHandle } from "@/hooks/use-drag-handle"
 import { SortableContainer } from "@/components/shared/sortable-container"
 import { Switch } from "@/components/ui/switch"
 import type {
-  HomepageSection,
+  ClientSafeHomepageSection,
   HomepageSectionType,
 } from "@/types/homepage-section"
 
@@ -27,7 +27,7 @@ const SECTION_LABELS: Record<HomepageSectionType, string> = {
   newsletterSignup: "Newsletter",
 }
 
-function SectionRow({ section }: { section: HomepageSection }) {
+function SectionRow({ section }: { section: ClientSafeHomepageSection }) {
   const router = useRouter()
   const { setNodeRef, attributes, listeners, style } = useDragHandle(section.id)
 
@@ -70,7 +70,7 @@ function SectionRow({ section }: { section: HomepageSection }) {
 export function HomepageSectionsList({
   sections,
 }: {
-  sections: HomepageSection[]
+  sections: ClientSafeHomepageSection[]
 }) {
   const router = useRouter()
 

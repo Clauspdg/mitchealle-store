@@ -38,6 +38,11 @@ export interface StoreSettings extends StoreSettingsDocument {
   id: "store"
 }
 
+/** `StoreSettings` without the Firestore `Timestamp` field — for passing
+ * into Client Components, which can't receive class instances like
+ * `Timestamp` across the Server/Client boundary. */
+export type ClientSafeStoreSettings = Omit<StoreSettings, "updatedAt">
+
 export interface ShippingSettingsDocument {
   standardFeeMinor: number
   expressFeeMinor: number

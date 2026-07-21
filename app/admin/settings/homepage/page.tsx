@@ -11,6 +11,10 @@ export const dynamic = "force-dynamic"
 export default async function HomepageBuilderPage() {
   await requirePermission("homepage")
   const sections = await getOrSeedHomepageSections()
+  // Firestore `Timestamp` fields can't cross into a Client Component as raw
+  // props — HomepageSectionsList never reads `updatedAt`, so it's dropped
+  // here rather than passed down.
+  const clientSafeSections = sections.map(({ updatedAt, ...rest }) => rest)
 
   return (
     <div className="flex flex-1">
@@ -25,7 +29,7 @@ export default async function HomepageBuilderPage() {
             d&apos;accueil.
           </p>
         </div>
-        <HomepageSectionsList sections={sections} />
+        <HomepageSectionsList sections={clientSafeSections} />
       </div>
     </div>
   )

@@ -1,7 +1,9 @@
 import type { CategoryFormInput } from "@/schemas/category.schema"
-import type { Category } from "@/types/category"
+import type { ClientSafeCategory } from "@/types/category"
 
-export function categoryToFormDefaults(category?: Category): CategoryFormInput {
+export function categoryToFormDefaults(
+  category?: ClientSafeCategory
+): CategoryFormInput {
   if (!category) {
     return {
       name: "",

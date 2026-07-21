@@ -38,12 +38,12 @@ import {
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
-import type { Category } from "@/types/category"
+import type { ClientSafeCategory } from "@/types/category"
 
 interface CategoryFormDialogProps {
   trigger: ReactElement
-  category?: Category
-  categories: Category[]
+  category?: ClientSafeCategory
+  categories: ClientSafeCategory[]
 }
 
 export function CategoryFormDialog({

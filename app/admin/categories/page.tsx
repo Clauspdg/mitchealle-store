@@ -13,6 +13,13 @@ export const metadata: Metadata = { title: "Catégories" }
 export default async function CategoriesPage() {
   await requireSession("staff")
   const categories = await listCategories()
+  // Firestore `Timestamp` fields (createdAt/updatedAt) are class instances
+  // and cannot cross into a Client Component as raw props — neither
+  // CategoriesTable nor CategoryFormDialog reads them, so they're dropped
+  // here rather than passed down.
+  const clientSafeCategories = categories.map(
+    ({ createdAt, updatedAt, ...rest }) => rest
+  )
 
   return (
     <div className="flex flex-1">
@@ -21,7 +28,7 @@ export default async function CategoriesPage() {
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-semibold tracking-tight">Catégories</h1>
           <CategoryFormDialog
-            categories={categories}
+            categories={clientSafeCategories}
             trigger={
               <Button>
                 <PlusIcon />
@@ -31,7 +38,7 @@ export default async function CategoriesPage() {
           />
         </div>
 
-        <CategoriesTable categories={categories} />
+        <CategoriesTable categories={clientSafeCategories} />
       </div>
     </div>
   )

@@ -11,6 +11,10 @@ export const dynamic = "force-dynamic"
 export default async function StoreSettingsPage() {
   await requirePermission("settingsStore")
   const settings = await getStoreSettings()
+  // Firestore `Timestamp` fields can't cross into a Client Component as raw
+  // props — StoreSettingsForm never reads `updatedAt`, so it's dropped here
+  // rather than passed down.
+  const { updatedAt: _updatedAt, ...clientSafeSettings } = settings
 
   return (
     <div className="flex flex-1">
@@ -19,7 +23,7 @@ export default async function StoreSettingsPage() {
         <h1 className="text-xl font-semibold tracking-tight">
           Paramètres de la boutique
         </h1>
-        <StoreSettingsForm settings={settings} />
+        <StoreSettingsForm settings={clientSafeSettings} />
       </div>
     </div>
   )

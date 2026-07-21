@@ -25,3 +25,8 @@ export interface CategoryDocument {
 export interface Category extends CategoryDocument {
   id: string
 }
+
+/** `Category` without the Firestore `Timestamp` fields — for passing into
+ * Client Components, which can't receive class instances like `Timestamp`
+ * across the Server/Client boundary. */
+export type ClientSafeCategory = Omit<Category, "createdAt" | "updatedAt">

@@ -20,9 +20,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import type { StoreSettings } from "@/types/settings"
+import type { ClientSafeStoreSettings } from "@/types/settings"
 
-function toFormDefaults(settings: StoreSettings): StoreSettingsFormInput {
+function toFormDefaults(
+  settings: ClientSafeStoreSettings
+): StoreSettingsFormInput {
   return {
     storeName: settings.storeName,
     logoUrl: settings.logoUrl,
@@ -115,7 +117,11 @@ function AssetUploadField({
   )
 }
 
-export function StoreSettingsForm({ settings }: { settings: StoreSettings }) {
+export function StoreSettingsForm({
+  settings,
+}: {
+  settings: ClientSafeStoreSettings
+}) {
   const router = useRouter()
   const [submitting, setSubmitting] = useState(false)
 

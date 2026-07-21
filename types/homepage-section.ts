@@ -37,3 +37,8 @@ export interface HomepageSectionDocument {
 export interface HomepageSection extends HomepageSectionDocument {
   id: string
 }
+
+/** `HomepageSection` without the Firestore `Timestamp` field — for passing
+ * into Client Components, which can't receive class instances like
+ * `Timestamp` across the Server/Client boundary. */
+export type ClientSafeHomepageSection = Omit<HomepageSection, "updatedAt">
