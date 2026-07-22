@@ -85,11 +85,15 @@ export interface Product extends ProductDocument {
 
 /** `Product` without the Firestore `Timestamp`-bearing fields — for passing
  * into Client Components, which can't receive class instances like
- * `Timestamp` across the Server/Client boundary. Drops `preorderWindow`
- * (nested Timestamps) and `availableFrom` along with `createdAt`/
- * `updatedAt` — call sites that need preorder scheduling info should read it
- * server-side instead of relying on this type. */
+ * `Timestamp` across the Server/Client boundary. `availableFrom` and
+ * `updatedAt` are still read by the product form (date picker default,
+ * "last updated" display), so they're converted to plain millis instead of
+ * dropped; `preorderWindow` (nested Timestamps) and `createdAt` are unused
+ * anywhere and are dropped entirely. */
 export type ClientSafeProduct = Omit<
   Product,
   "preorderWindow" | "availableFrom" | "createdAt" | "updatedAt"
->
+> & {
+  availableFrom: number | null
+  updatedAt: number
+}

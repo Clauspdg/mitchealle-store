@@ -10,6 +10,7 @@ import {
   getTopCustomers,
   getTopProducts,
 } from "@/services/firestore/analytics"
+import { toCsv } from "@/lib/csv"
 import type { ActionResult } from "@/types/action-result"
 
 async function buildReport(rangeDays: number) {
@@ -40,10 +41,6 @@ async function buildReport(rangeDays: number) {
     topCustomers,
     coupons,
   }
-}
-
-function escapeCsv(value: string): string {
-  return /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value
 }
 
 export async function exportAnalyticsAction(
@@ -99,8 +96,7 @@ export async function exportAnalyticsAction(
       ]),
     ]
 
-    const csv = rows.map((row) => row.map(escapeCsv).join(",")).join("\n")
-    return { success: true, data: csv }
+    return { success: true, data: toCsv(rows) }
   } catch (error) {
     return {
       success: false,

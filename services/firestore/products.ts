@@ -4,11 +4,14 @@ import { FieldValue, Timestamp } from "firebase-admin/firestore"
 import { adminDb } from "@/firebase/admin"
 import { generateUniqueSlug } from "@/validators/slug.validator"
 import { getBrand } from "@/services/firestore/brands"
+import { listCategories } from "@/services/firestore/categories"
 import { encodeCursor, decodeCursor } from "@/utils/pagination"
 import { isMissingIndexError } from "@/utils/firestore-errors"
-import type {
-  ProductFormInput,
-  ProductSearchParams,
+import { toCsv } from "@/lib/csv"
+import {
+  productFormSchema,
+  type ProductFormInput,
+  type ProductSearchParams,
 } from "@/schemas/product.schema"
 import {
   hasPremiumFilters,
@@ -21,6 +24,10 @@ const PRODUCTS_COLLECTION = "products"
 const COLLECTIONS_COLLECTION = "collections"
 const PAGE_SIZE = 20
 const CSV_EXPORT_LIMIT = 1000
+/** Rows are created sequentially (predictable per-row error reporting,
+ * no burst of concurrent writes) — this cap keeps one import request
+ * bounded and honest about scope, same idiom as `CSV_EXPORT_LIMIT`. */
+const CSV_IMPORT_LIMIT = 500
 // Highest possible Unicode code point — the standard Firestore trick for a
 // prefix range query: `[term, term + PREFIX_RANGE_END)`.
 const PREFIX_RANGE_END = String.fromCodePoint(0xf8ff)
@@ -191,6 +198,62 @@ export async function createProduct(
 
   const created = await ref.get()
   return toProduct(created.id, created.data()!)
+}
+
+/**
+ * Duplicates a product into a brand-new draft — same catalog data (images,
+ * variants, pricing, SEO), a fresh slug/ids, and `status: "draft"` so the
+ * copy never appears on the storefront until reviewed and published.
+ * `upc` isn't copied (a barcode identifies one physical SKU, not a copy of
+ * it); variant ids are regenerated so edits to the copy never touch the
+ * original's variants.
+ */
+export async function duplicateProduct(
+  id: string,
+  actorUid: string
+): Promise<Product> {
+  const source = await getProduct(id)
+  if (!source) {
+    throw new Error(`Product ${id} not found`)
+  }
+
+  const input: ProductFormInput = {
+    name: `${source.name} (copie)`,
+    shortDescription: source.shortDescription,
+    description: source.description,
+    sku: `${source.sku}-COPY-${Date.now().toString(36).toUpperCase()}`,
+    // `?? null` throughout: fields added after this store's earliest
+    // products (brandId, costMinor, material...) are `undefined` on those
+    // older documents even though the type says `T | null` — Firestore
+    // rejects `undefined` in a write, so every nullable field is coerced
+    // explicitly rather than trusting the type.
+    brand: source.brand ?? null,
+    brandId: source.brandId ?? null,
+    upc: null,
+    costMinor: source.costMinor ?? null,
+    material: source.material ?? null,
+    weightGrams: source.weightGrams ?? null,
+    dimensionsCm: source.dimensionsCm ?? null,
+    categoryId: source.categoryId,
+    collectionIds: source.collectionIds ?? [],
+    images: source.images ?? [],
+    basePriceMinor: source.basePriceMinor,
+    salePriceMinor: source.salePriceMinor ?? null,
+    currency: source.currency,
+    variants: (source.variants ?? []).map((variant) => ({
+      ...variant,
+      id: crypto.randomUUID(),
+    })),
+    tags: source.tags ?? [],
+    status: "draft",
+    isComingSoon: false,
+    isPreorderable: false,
+    preorderMessage: null,
+    availableFrom: null,
+    seo: source.seo ?? { title: "", description: "", keywords: [] },
+  }
+
+  return createProduct(input, actorUid)
 }
 
 export async function updateProduct(
@@ -592,6 +655,30 @@ export async function countPublishedProductsByCategory(
   return Object.fromEntries(entries)
 }
 
+/** Column order shared between `exportProductsToCsv` and
+ * `importProductsFromCsv` — re-exporting and re-importing the same file
+ * round-trips every field this pair understands. */
+export const PRODUCT_CSV_COLUMNS = [
+  "id",
+  "name",
+  "sku",
+  "status",
+  "categoryId",
+  "categoryName",
+  "brand",
+  "basePriceMinor",
+  "salePriceMinor",
+  "currency",
+  "upc",
+  "weightGrams",
+  "dimensionsCm",
+  "shortDescription",
+  "description",
+  "imageUrl",
+  "stock",
+  "createdAt",
+] as const
+
 /**
  * Exports up to `CSV_EXPORT_LIMIT` matching products as CSV rows — reuses
  * the same filters as the admin table (see
@@ -604,40 +691,194 @@ export async function exportProductsToCsv(
   >
 ): Promise<string> {
   const { query, sort } = buildProductsQuery(params)
-  const snapshot = await query
-    .orderBy("__name__", sort.direction)
-    .limit(CSV_EXPORT_LIMIT)
-    .get()
-
-  const header = [
-    "id",
-    "name",
-    "sku",
-    "status",
-    "categoryId",
-    "basePriceMinor",
-    "salePriceMinor",
-    "currency",
-    "createdAt",
-  ]
+  const [snapshot, categories] = await Promise.all([
+    query.orderBy("__name__", sort.direction).limit(CSV_EXPORT_LIMIT).get(),
+    listCategories(),
+  ])
+  const categoryNameById = new Map(categories.map((c) => [c.id, c.name]))
 
   const rows = snapshot.docs.map((doc) => {
     const data = toProduct(doc.id, doc.data())
+    const defaultVariant =
+      data.variants.find((v) => v.isDefault) ?? data.variants[0]
     return [
       data.id,
       data.name,
       data.sku,
       data.status,
       data.categoryId,
+      categoryNameById.get(data.categoryId) ?? "",
+      data.brand ?? "",
       String(data.basePriceMinor),
       data.salePriceMinor !== null ? String(data.salePriceMinor) : "",
       data.currency,
+      data.upc ?? "",
+      data.weightGrams !== null ? String(data.weightGrams) : "",
+      data.dimensionsCm ?? "",
+      data.shortDescription,
+      data.description,
+      data.images[0]?.url ?? "",
+      defaultVariant ? String(defaultVariant.stock) : "0",
       data.createdAt.toDate().toISOString(),
     ]
   })
 
-  const escape = (value: string) =>
-    /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value
+  return toCsv([[...PRODUCT_CSV_COLUMNS], ...rows])
+}
 
-  return [header, ...rows].map((row) => row.map(escape).join(",")).join("\n")
+export interface ProductCsvImportError {
+  row: number
+  message: string
+}
+
+export interface ProductCsvImportResult {
+  created: number
+  errors: ProductCsvImportError[]
+}
+
+/**
+ * Bulk-creates products from parsed CSV records (see `PRODUCT_CSV_COLUMNS`
+ * for the expected header) — each row goes through the exact same
+ * `productFormSchema` validation and `createProduct` path as the manual
+ * form, so an imported product is indistinguishable from a hand-created
+ * one. Rows import sequentially so one bad row doesn't abort the batch —
+ * every row gets its own success/failure outcome, reported back by row
+ * number (2-based: row 1 is the header).
+ *
+ * Only creates products — there's no SKU-based upsert yet (see the Sprint
+ * 12 Phase 3 report for that as a follow-up). Imported products always
+ * land as `status: "draft"` regardless of any `status` column, so nothing
+ * goes live on the storefront without an explicit publish.
+ */
+export async function importProductsFromCsv(
+  records: Record<string, string>[],
+  actorUid: string
+): Promise<ProductCsvImportResult> {
+  const categories = await listCategories()
+  const categoryIds = new Set(categories.map((c) => c.id))
+  const categoryIdByName = new Map(
+    categories.map((c) => [c.name.trim().toLowerCase(), c.id])
+  )
+
+  const bounded = records.slice(0, CSV_IMPORT_LIMIT)
+  const errors: ProductCsvImportError[] = []
+  let created = 0
+
+  for (let index = 0; index < bounded.length; index++) {
+    const rowNumber = index + 2
+    const record = bounded[index]
+
+    try {
+      const name = record.name?.trim()
+      if (!name) throw new Error("La colonne « name » est requise.")
+
+      const sku = record.sku?.trim()
+      if (!sku) throw new Error("La colonne « sku » est requise.")
+
+      const imageUrl = record.imageUrl?.trim()
+      if (!imageUrl) {
+        throw new Error(
+          "La colonne « imageUrl » est requise (chaque produit a besoin d'au moins une image)."
+        )
+      }
+
+      let categoryId = record.categoryId?.trim() ?? ""
+      if (!categoryId || !categoryIds.has(categoryId)) {
+        const byName = record.categoryName?.trim().toLowerCase()
+        categoryId = (byName && categoryIdByName.get(byName)) || ""
+      }
+      if (!categoryId) {
+        throw new Error(
+          `Catégorie introuvable : "${record.categoryName || record.categoryId || ""}".`
+        )
+      }
+
+      const basePriceMinor = Number(record.basePriceMinor)
+      if (!Number.isInteger(basePriceMinor) || basePriceMinor <= 0) {
+        throw new Error(
+          "« basePriceMinor » doit être un nombre entier positif."
+        )
+      }
+
+      const salePriceMinorRaw = record.salePriceMinor?.trim()
+      const salePriceMinor = salePriceMinorRaw
+        ? Number(salePriceMinorRaw)
+        : null
+      if (
+        salePriceMinor !== null &&
+        (!Number.isInteger(salePriceMinor) || salePriceMinor <= 0)
+      ) {
+        throw new Error(
+          "« salePriceMinor » doit être un nombre entier positif, ou vide."
+        )
+      }
+
+      const stockRaw = record.stock?.trim()
+      const stock = stockRaw ? Number(stockRaw) : 0
+      if (!Number.isInteger(stock) || stock < 0) {
+        throw new Error("« stock » doit être un nombre entier positif ou nul.")
+      }
+
+      const weightGramsRaw = record.weightGrams?.trim()
+      const weightGrams =
+        weightGramsRaw && Number.isInteger(Number(weightGramsRaw))
+          ? Number(weightGramsRaw)
+          : null
+
+      const input: ProductFormInput = {
+        name,
+        shortDescription: record.shortDescription?.trim() ?? "",
+        description: record.description?.trim() || name,
+        sku,
+        brand: record.brand?.trim() || null,
+        brandId: null,
+        upc: record.upc?.trim() || null,
+        costMinor: null,
+        material: null,
+        weightGrams,
+        dimensionsCm: record.dimensionsCm?.trim() || null,
+        categoryId,
+        collectionIds: [],
+        images: [{ url: imageUrl, alt: name, position: 0 }],
+        basePriceMinor,
+        salePriceMinor,
+        currency: record.currency?.trim() || "HTG",
+        variants: [
+          {
+            id: crypto.randomUUID(),
+            sku,
+            size: null,
+            color: null,
+            priceMinor: null,
+            stock,
+            isDefault: true,
+          },
+        ],
+        tags: [],
+        status: "draft",
+        isComingSoon: false,
+        isPreorderable: false,
+        preorderMessage: null,
+        availableFrom: null,
+        seo: { title: "", description: "", keywords: [] },
+      }
+
+      const parsed = productFormSchema.safeParse(input)
+      if (!parsed.success) {
+        throw new Error(
+          parsed.error.issues[0]?.message ?? "Données de produit invalides."
+        )
+      }
+
+      await createProduct(parsed.data, actorUid)
+      created++
+    } catch (error) {
+      errors.push({
+        row: rowNumber,
+        message: error instanceof Error ? error.message : "Erreur inconnue.",
+      })
+    }
+  }
+
+  return { created, errors }
 }

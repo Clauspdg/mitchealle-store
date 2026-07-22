@@ -10,23 +10,30 @@ import {
 import {
   archiveProduct,
   createProduct,
+  duplicateProduct,
   exportProductsToCsv,
+  importProductsFromCsv,
   publishProduct,
   restoreProduct,
   unpublishProduct,
   updateProduct,
+  type ProductCsvImportResult,
 } from "@/services/firestore/products"
 import { uploadImage } from "@/services/storage/images"
+import { parseCsvRecords } from "@/lib/csv"
 import type { ActionResult } from "@/types/action-result"
-import type { Product } from "@/types/product"
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Une erreur est survenue."
 }
 
+// Only `{ id }` is ever returned here, never the full `Product` — its
+// `createdAt`/`updatedAt` are Firestore `Timestamp` class instances, and a
+// Server Action's return value crosses the same Server/Client boundary as
+// any Server Component prop, so it can't carry one either.
 export async function createProductAction(
   input: unknown
-): Promise<ActionResult<Product>> {
+): Promise<ActionResult<{ id: string }>> {
   const session = await requireSession("staff")
   const parsed = productFormSchema.safeParse(input)
   if (!parsed.success) {
@@ -39,7 +46,7 @@ export async function createProductAction(
   try {
     const product = await createProduct(parsed.data, session.uid)
     revalidatePath("/admin/products")
-    return { success: true, data: product }
+    return { success: true, data: { id: product.id } }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }
@@ -48,7 +55,7 @@ export async function createProductAction(
 export async function updateProductAction(
   id: string,
   input: unknown
-): Promise<ActionResult<Product>> {
+): Promise<ActionResult<{ id: string }>> {
   await requireSession("staff")
   const parsed = productFormSchema.safeParse(input)
   if (!parsed.success) {
@@ -62,7 +69,20 @@ export async function updateProductAction(
     const product = await updateProduct(id, parsed.data)
     revalidatePath("/admin/products")
     revalidatePath(`/admin/products/${id}`)
-    return { success: true, data: product }
+    return { success: true, data: { id: product.id } }
+  } catch (error) {
+    return { success: false, error: errorMessage(error) }
+  }
+}
+
+export async function duplicateProductAction(
+  id: string
+): Promise<ActionResult<{ id: string }>> {
+  const session = await requireSession("staff")
+  try {
+    const product = await duplicateProduct(id, session.uid)
+    revalidatePath("/admin/products")
+    return { success: true, data: { id: product.id } }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }
@@ -125,6 +145,24 @@ export async function exportProductsCsvAction(
   try {
     const csv = await exportProductsToCsv(parsed.data)
     return { success: true, data: csv }
+  } catch (error) {
+    return { success: false, error: errorMessage(error) }
+  }
+}
+
+export async function importProductsCsvAction(
+  csvText: string
+): Promise<ActionResult<ProductCsvImportResult>> {
+  const session = await requireSession("staff")
+  const records = parseCsvRecords(csvText)
+  if (records.length === 0) {
+    return { success: false, error: "Le fichier CSV est vide ou illisible." }
+  }
+
+  try {
+    const result = await importProductsFromCsv(records, session.uid)
+    revalidatePath("/admin/products")
+    return { success: true, data: result }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }

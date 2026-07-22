@@ -32,6 +32,37 @@ export default async function EditProductPage({
     notFound()
   }
 
+  // Firestore `Timestamp` fields can't cross into a Client Component as raw
+  // props. ProductForm reads `availableFrom` (date picker default) and
+  // `updatedAt` ("last modified" display), so those are converted to millis
+  // instead of dropped; `preorderWindow`/`createdAt` are unused and dropped
+  // entirely — same treatment for categories/collections/brands.
+  const {
+    preorderWindow: _preorderWindow,
+    availableFrom,
+    createdAt: _productCreatedAt,
+    updatedAt,
+    ...restProduct
+  } = product
+  const clientSafeProduct = {
+    ...restProduct,
+    availableFrom: availableFrom?.toMillis() ?? null,
+    updatedAt: updatedAt.toMillis(),
+  }
+  const clientSafeCategories = categories.map(
+    ({ createdAt, updatedAt, ...rest }) => rest
+  )
+  const clientSafeCollections = collections.map(
+    ({ startAt, endAt, createdAt, updatedAt, ...rest }) => ({
+      ...rest,
+      startAt: startAt?.toMillis() ?? null,
+      endAt: endAt?.toMillis() ?? null,
+    })
+  )
+  const clientSafeBrands = brands.map(
+    ({ createdAt, updatedAt, ...rest }) => rest
+  )
+
   return (
     <div className="flex flex-1">
       <AdminSidebar />
@@ -40,10 +71,10 @@ export default async function EditProductPage({
           Modifier « {product.name} »
         </h1>
         <ProductForm
-          product={product}
-          categories={categories}
-          collections={collections}
-          brands={brands}
+          product={clientSafeProduct}
+          categories={clientSafeCategories}
+          collections={clientSafeCollections}
+          brands={clientSafeBrands}
         />
       </div>
     </div>

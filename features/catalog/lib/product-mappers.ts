@@ -1,7 +1,9 @@
 import type { ProductFormInput } from "@/schemas/product.schema"
-import type { Product } from "@/types/product"
+import type { ClientSafeProduct } from "@/types/product"
 
-export function productToFormDefaults(product?: Product): ProductFormInput {
+export function productToFormDefaults(
+  product?: ClientSafeProduct
+): ProductFormInput {
   if (!product) {
     return {
       name: "",
@@ -57,7 +59,7 @@ export function productToFormDefaults(product?: Product): ProductFormInput {
     isPreorderable: product.isPreorderable,
     preorderMessage: product.preorderMessage,
     availableFrom: product.availableFrom
-      ? product.availableFrom.toDate()
+      ? new Date(product.availableFrom)
       : null,
     seo: product.seo,
   }

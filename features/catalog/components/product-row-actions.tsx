@@ -2,11 +2,13 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { MoreHorizontalIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import {
   archiveProductAction,
+  duplicateProductAction,
   publishProductAction,
   restoreProductAction,
   unpublishProductAction,
@@ -45,8 +47,19 @@ export function ProductRowActions({
   productId,
   status,
 }: ProductRowActionsProps) {
+  const router = useRouter()
   const [menuOpen, setMenuOpen] = useState(false)
   const [archiveOpen, setArchiveOpen] = useState(false)
+
+  async function handleDuplicate() {
+    const result = await duplicateProductAction(productId)
+    if (!result.success) {
+      toast.error(result.error)
+      return
+    }
+    toast.success("Produit dupliqué.")
+    router.push(`/admin/products/${result.data.id}`)
+  }
 
   return (
     <>
@@ -61,6 +74,9 @@ export function ProductRowActions({
             render={<Link href={`/admin/products/${productId}`} />}
           >
             Modifier
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleDuplicate}>
+            Dupliquer
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           {status !== "published" && (

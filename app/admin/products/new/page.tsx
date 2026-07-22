@@ -17,6 +17,22 @@ export default async function NewProductPage() {
     listCollections(),
     listBrands(),
   ])
+  // Firestore `Timestamp` fields can't cross into a Client Component as raw
+  // props — ProductForm never reads categories'/collections'/brands' own
+  // Timestamp fields, so they're dropped here rather than passed down.
+  const clientSafeCategories = categories.map(
+    ({ createdAt, updatedAt, ...rest }) => rest
+  )
+  const clientSafeCollections = collections.map(
+    ({ startAt, endAt, createdAt, updatedAt, ...rest }) => ({
+      ...rest,
+      startAt: startAt?.toMillis() ?? null,
+      endAt: endAt?.toMillis() ?? null,
+    })
+  )
+  const clientSafeBrands = brands.map(
+    ({ createdAt, updatedAt, ...rest }) => rest
+  )
 
   return (
     <div className="flex flex-1">
@@ -26,9 +42,9 @@ export default async function NewProductPage() {
           Ajouter un produit
         </h1>
         <ProductForm
-          categories={categories}
-          collections={collections}
-          brands={brands}
+          categories={clientSafeCategories}
+          collections={clientSafeCollections}
+          brands={clientSafeBrands}
         />
       </div>
     </div>

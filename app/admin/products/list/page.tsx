@@ -45,6 +45,23 @@ export default async function ProductsListPage({
     categories.map((category) => [category.id, category.name])
   )
 
+  // Firestore `Timestamp` fields can't cross into a Client Component as raw
+  // props — ProductsToolbar never reads them, so they're dropped here rather
+  // than passed down. `startAt`/`endAt` are converted to millis (not just
+  // dropped) to match `ClientSafeCollection`'s shape, even though this
+  // toolbar doesn't use them either — keeps one canonical safe type instead
+  // of a bespoke one for this call site.
+  const clientSafeCategories = categories.map(
+    ({ createdAt, updatedAt, ...rest }) => rest
+  )
+  const clientSafeCollections = collections.map(
+    ({ startAt, endAt, createdAt, updatedAt, ...rest }) => ({
+      ...rest,
+      startAt: startAt?.toMillis() ?? null,
+      endAt: endAt?.toMillis() ?? null,
+    })
+  )
+
   // `Product.createdAt`/`updatedAt` are Firestore `Timestamp` class
   // instances — React rejects passing non-plain objects from a Server
   // Component to a Client Component, so this strips them down to a plain,
@@ -72,7 +89,10 @@ export default async function ProductsListPage({
           </Button>
         </div>
 
-        <ProductsToolbar categories={categories} collections={collections} />
+        <ProductsToolbar
+          categories={clientSafeCategories}
+          collections={clientSafeCollections}
+        />
         <ProductsTable
           products={productRows}
           categoryNamesById={categoryNamesById}

@@ -36,16 +36,16 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
-import type { Brand } from "@/types/brand"
-import type { Category } from "@/types/category"
-import type { Collection } from "@/types/collection"
-import type { Product } from "@/types/product"
+import type { ClientSafeBrand } from "@/types/brand"
+import type { ClientSafeCategory } from "@/types/category"
+import type { ClientSafeCollection } from "@/types/collection"
+import type { ClientSafeProduct } from "@/types/product"
 
 interface ProductFormProps {
-  product?: Product
-  categories: Category[]
-  collections: Collection[]
-  brands: Brand[]
+  product?: ClientSafeProduct
+  categories: ClientSafeCategory[]
+  collections: ClientSafeCollection[]
+  brands: ClientSafeBrand[]
 }
 
 export function ProductForm({
@@ -542,7 +542,7 @@ export function ProductForm({
           {product && (
             <Badge variant="secondary" className="ml-2">
               Dernière modification :{" "}
-              {product.updatedAt.toDate().toLocaleString("fr-FR")}
+              {new Date(product.updatedAt).toLocaleString("fr-FR")}
             </Badge>
           )}
         </div>

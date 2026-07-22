@@ -6,6 +6,7 @@ import { toast } from "sonner"
 
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback"
 import { exportProductsCsvAction } from "@/features/catalog/actions/product-actions"
+import { ImportProductsDialog } from "@/features/catalog/components/import-products-dialog"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import {
@@ -15,12 +16,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import type { Category } from "@/types/category"
-import type { Collection } from "@/types/collection"
+import type { ClientSafeCategory } from "@/types/category"
+import type { ClientSafeCollection } from "@/types/collection"
 
 interface ProductsToolbarProps {
-  categories: Category[]
-  collections: Collection[]
+  categories: ClientSafeCategory[]
+  collections: ClientSafeCollection[]
 }
 
 export function ProductsToolbar({
@@ -150,10 +151,13 @@ export function ProductsToolbar({
         </SelectContent>
       </Select>
 
-      <Button variant="outline" onClick={handleExport} className="ml-auto">
-        <DownloadIcon />
-        Exporter CSV
-      </Button>
+      <div className="ml-auto flex gap-2">
+        <ImportProductsDialog />
+        <Button variant="outline" onClick={handleExport}>
+          <DownloadIcon />
+          Exporter CSV
+        </Button>
+      </div>
     </div>
   )
 }

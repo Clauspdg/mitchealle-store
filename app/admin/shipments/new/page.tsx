@@ -16,13 +16,17 @@ export default async function NewShipmentPage() {
     listAllProducts(),
   ])
   // Firestore `Timestamp` fields can't cross into a Client Component as raw
-  // props — neither ShipmentForm nor ProductVariantPicker reads them, so
-  // they're dropped here rather than passed down.
+  // props — neither ShipmentForm nor ProductVariantPicker reads any of
+  // these, so they're dropped here rather than passed down.
   const clientSafeSuppliers = suppliers.map(
     ({ createdAt, updatedAt, ...rest }) => rest
   )
   const clientSafeProducts = products.map(
-    ({ preorderWindow, availableFrom, createdAt, updatedAt, ...rest }) => rest
+    ({ preorderWindow, availableFrom, createdAt, updatedAt, ...rest }) => ({
+      ...rest,
+      availableFrom: availableFrom?.toMillis() ?? null,
+      updatedAt: updatedAt.toMillis(),
+    })
   )
 
   return (
