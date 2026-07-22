@@ -4,6 +4,10 @@ import { Timestamp } from "firebase-admin/firestore"
 import { adminDb } from "@/firebase/admin"
 import { listCoupons } from "@/services/firestore/coupons"
 import {
+  countProductsByStatus,
+  listPublishedProductsForSearch,
+} from "@/services/firestore/products"
+import {
   computeOrdersByDay,
   computeTopProducts,
   type OrdersByDayPoint,
@@ -11,6 +15,19 @@ import {
 } from "@/validators/analytics.validator"
 import type { Order, OrderStatus } from "@/types/order"
 import type { Product, ProductDocument } from "@/types/product"
+import type { UserProfile } from "@/types/user"
+
+const USERS_COLLECTION = "users"
+/** Matches `product-badges.ts`'s own low-stock threshold, so the dashboard's
+ * "stock faible" bucket means the same thing as the storefront's badge. */
+const LOW_STOCK_THRESHOLD = 5
+/** Same honest-bounded-scope idiom as `MAX_ORDERS_SCANNED` above — a single
+ * `where("role", "==", "customer")` equality filter needs no composite
+ * index, but adding an `orderBy("createdAt")` on top of it would (a
+ * different field), so this is a plain capped fetch filtered in memory
+ * rather than a "most recent N" query. Fine at this store's current
+ * customer volume. */
+const MAX_CUSTOMERS_SCANNED = 2000
 
 export type { OrdersByDayPoint, TopEntry }
 
@@ -230,4 +247,106 @@ export async function getCouponUsageStats(): Promise<CouponUsageStat[]> {
       maxUses: coupon.maxUses,
     }))
     .sort((a, b) => b.usedCount - a.usedCount)
+}
+
+/** Same rolling window as `getSalesOverview`/`getOrdersByDay` — a count of
+ * this store's `type: "preorder"` orders, not a separate query dimension. */
+export async function getPreorderOrderCount(rangeDays = 90): Promise<number> {
+  const orders = await listOrdersSince(rangeDays)
+  return orders.filter((order) => order.type === "preorder").length
+}
+
+export interface ProductHealthCounts {
+  /** Published-product count — the authoritative `count()` query, not
+   * capped by the 200-doc scan below. */
+  active: number
+  /** Among up to 200 published products (same honest bounded scope as
+   * `listPublishedProductsForSearch` itself) — every variant sold out. */
+  outOfStock: number
+  /** Same 200-doc scope — `isPreorderable` or `isComingSoon`. */
+  preorderable: number
+}
+
+export async function getProductHealthCounts(): Promise<ProductHealthCounts> {
+  const [statusCounts, products] = await Promise.all([
+    countProductsByStatus(),
+    listPublishedProductsForSearch(),
+  ])
+
+  let outOfStock = 0
+  let preorderable = 0
+  for (const product of products) {
+    const hasVariants = product.variants.length > 0
+    const soldOut = hasVariants && product.variants.every((v) => v.stock <= 0)
+    if (soldOut) outOfStock++
+    if (product.isPreorderable || product.isComingSoon) preorderable++
+  }
+
+  return { active: statusCounts.published, outOfStock, preorderable }
+}
+
+export interface CustomerCounts {
+  /** All `role: "customer"` accounts, all-time. */
+  total: number
+  /** `role: "customer"` accounts created within `rangeDays`. */
+  newInRange: number
+}
+
+export async function getCustomerCounts(
+  rangeDays = 90
+): Promise<CustomerCounts> {
+  const sinceMillis = Date.now() - rangeDays * 24 * 60 * 60 * 1000
+
+  const [totalSnapshot, customersSnapshot] = await Promise.all([
+    adminDb
+      .collection(USERS_COLLECTION)
+      .where("role", "==", "customer")
+      .count()
+      .get(),
+    adminDb
+      .collection(USERS_COLLECTION)
+      .where("role", "==", "customer")
+      .limit(MAX_CUSTOMERS_SCANNED)
+      .get(),
+  ])
+
+  const newInRange = customersSnapshot.docs.filter((doc) => {
+    const createdAt = (doc.data() as UserProfile).createdAt
+    return createdAt.toMillis() >= sinceMillis
+  }).length
+
+  return {
+    total: totalSnapshot.data().count,
+    newInRange,
+  }
+}
+
+export interface StockLevelBucket {
+  status: "good" | "warning" | "critical"
+  label: string
+  count: number
+}
+
+/** Per-variant stock health across up to 200 published products (same
+ * bounded scope as `listPublishedProductsForSearch`) — for the dashboard's
+ * "stocks" chart. Thresholds match `product-badges.ts`'s own low-stock rule. */
+export async function getStockLevelBreakdown(): Promise<StockLevelBucket[]> {
+  const products = await listPublishedProductsForSearch()
+
+  let inStock = 0
+  let low = 0
+  let out = 0
+  for (const product of products) {
+    for (const variant of product.variants) {
+      if (variant.stock <= 0) out++
+      else if (variant.stock <= LOW_STOCK_THRESHOLD) low++
+      else inStock++
+    }
+  }
+
+  return [
+    { status: "good", label: "En stock", count: inStock },
+    { status: "warning", label: "Stock faible", count: low },
+    { status: "critical", label: "Rupture", count: out },
+  ]
 }

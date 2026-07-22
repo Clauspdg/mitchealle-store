@@ -3,8 +3,12 @@ import type { Metadata } from "next"
 import { requirePermission } from "@/lib/session.server"
 import {
   getCouponUsageStats,
+  getCustomerCounts,
   getOrdersByDay,
+  getPreorderOrderCount,
+  getProductHealthCounts,
   getSalesOverview,
+  getStockLevelBreakdown,
   getTopBrands,
   getTopCategories,
   getTopCustomers,
@@ -16,6 +20,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { StatTile } from "@/features/analytics/components/stat-tile"
 import { OrdersByDayChart } from "@/features/analytics/components/orders-by-day-chart"
 import { TopEntriesChart } from "@/features/analytics/components/top-entries-chart"
+import { StockLevelChart } from "@/features/analytics/components/stock-level-chart"
 import { CouponUsageTable } from "@/features/analytics/components/coupon-usage-table"
 import { ExportAnalyticsButtons } from "@/features/analytics/components/export-analytics-buttons"
 
@@ -36,6 +41,10 @@ export default async function AdminPage() {
     topBrands,
     topCustomers,
     coupons,
+    preorderCount,
+    productHealth,
+    customerCounts,
+    stockLevels,
   ] = await Promise.all([
     getSalesOverview(RANGE_DAYS),
     getOrdersByDay(30),
@@ -44,6 +53,10 @@ export default async function AdminPage() {
     getTopBrands(RANGE_DAYS),
     getTopCustomers(RANGE_DAYS),
     getCouponUsageStats(),
+    getPreorderOrderCount(RANGE_DAYS),
+    getProductHealthCounts(),
+    getCustomerCounts(RANGE_DAYS),
+    getStockLevelBreakdown(),
   ])
 
   return (
@@ -66,7 +79,7 @@ export default async function AdminPage() {
           <ExportAnalyticsButtons rangeDays={RANGE_DAYS} />
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-4">
           <StatTile
             label="Revenus"
             value={formatPriceMinor(
@@ -82,11 +95,34 @@ export default async function AdminPage() {
               overview.currency
             )}
           />
+          <StatTile label="Précommandes" value={String(preorderCount)} />
+          <StatTile
+            label="Produits actifs"
+            value={String(productHealth.active)}
+          />
+          <StatTile
+            label="Produits en rupture"
+            value={String(productHealth.outOfStock)}
+          />
+          <StatTile label="Clients" value={String(customerCounts.total)} />
+          <StatTile
+            label="Nouveaux clients"
+            value={String(customerCounts.newInRange)}
+          />
         </div>
 
         <Card>
           <CardContent>
             <OrdersByDayChart data={ordersByDay} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Stocks</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <StockLevelChart data={stockLevels} />
           </CardContent>
         </Card>
 
