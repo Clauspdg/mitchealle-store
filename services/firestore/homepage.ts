@@ -5,6 +5,7 @@ import { adminDb } from "@/firebase/admin"
 import {
   HOMEPAGE_SECTION_TYPES,
   type HomepageSection,
+  type HomepageSectionConfig,
   type HomepageSectionDocument,
 } from "@/types/homepage-section"
 
@@ -86,6 +87,18 @@ export async function setHomepageSectionActive(
 ): Promise<void> {
   await adminDb.collection(HOMEPAGE_COLLECTION).doc(id).update({
     isActive,
+    updatedBy: actorUid,
+    updatedAt: FieldValue.serverTimestamp(),
+  })
+}
+
+export async function updateHomepageSectionConfig(
+  id: string,
+  config: HomepageSectionConfig,
+  actorUid: string
+): Promise<void> {
+  await adminDb.collection(HOMEPAGE_COLLECTION).doc(id).update({
+    config,
     updatedBy: actorUid,
     updatedAt: FieldValue.serverTimestamp(),
   })

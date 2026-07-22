@@ -14,6 +14,7 @@ import { heroSlides } from "@/lib/demo-content"
 import type { HeroSlideView } from "@/components/home/hero-section"
 import type { Category } from "@/types/category"
 import type { Collection } from "@/types/collection"
+import type { HomepageSectionConfig } from "@/types/homepage-section"
 import type { Product } from "@/types/product"
 
 // Live catalog data (stock, published status) must never be baked into the
@@ -103,8 +104,6 @@ export default async function Home() {
     .filter((product) => product.salePriceMinor !== null)
     .slice(0, 8)
 
-  const featuredCollections = collections.slice(0, 6)
-
   function renderCarouselRail(
     heading: string,
     rail: Product[],
@@ -141,12 +140,12 @@ export default async function Home() {
     )
   }
 
-  function renderNewArrivals() {
+  function renderNewArrivals(heading: string) {
     return (
       <section className="mx-auto w-full max-w-6xl px-6 py-16">
         <Reveal>
           <div className="mb-6 flex items-center justify-between">
-            <h2 className="font-heading text-2xl font-medium">Nouveautés</h2>
+            <h2 className="font-heading text-2xl font-medium">{heading}</h2>
             <Link
               href="/products"
               className="text-muted-foreground hover:text-foreground text-sm underline underline-offset-4"
@@ -167,8 +166,9 @@ export default async function Home() {
 
   function renderSection(
     type: (typeof homepageSections)[number]["type"],
+    config: HomepageSectionConfig | null,
     categories: Category[],
-    featuredCollections: Collection[]
+    collections: Collection[]
   ) {
     switch (type) {
       case "heroBanner":
@@ -181,8 +181,15 @@ export default async function Home() {
             <PromoBanner />
           </>
         )
-      case "featuredCollections":
-        return <CollectionsShowcase collections={featuredCollections} />
+      case "featuredCollections": {
+        // `config.collectionIds` (admin-picked) takes priority; otherwise
+        // fall back to the 6 most recent active collections (pre-existing
+        // zero-configuration default).
+        const picked = config?.collectionIds
+          ? collections.filter((c) => config.collectionIds!.includes(c.id))
+          : collections.slice(0, 6)
+        return <CollectionsShowcase collections={picked} />
+      }
       case "categoriesShowcase":
         return (
           <CategoriesIllustrated
@@ -191,11 +198,21 @@ export default async function Home() {
           />
         )
       case "popularProducts":
-        return renderCarouselRail("Produits populaires", popularProducts, false)
+        return renderCarouselRail(
+          config?.heading || "Produits populaires",
+          popularProducts,
+          false
+        )
       case "newArrivals":
-        return newArrivals.length > 0 ? renderNewArrivals() : null
+        return newArrivals.length > 0
+          ? renderNewArrivals(config?.heading || "Nouveautés")
+          : null
       case "promotionBanner":
-        return renderCarouselRail("Promotions", promoProducts, true)
+        return renderCarouselRail(
+          config?.heading || "Promotions",
+          promoProducts,
+          true
+        )
       case "brandsStrip":
         return <BrandsStrip />
       case "newsletterSignup":
@@ -219,7 +236,12 @@ export default async function Home() {
         .filter((section) => section.isActive)
         .map((section) => (
           <div key={section.id}>
-            {renderSection(section.type, categories, featuredCollections)}
+            {renderSection(
+              section.type,
+              section.config,
+              categories,
+              collections
+            )}
           </div>
         ))}
     </div>

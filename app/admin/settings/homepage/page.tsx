@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 
 import { requirePermission } from "@/lib/session.server"
 import { getOrSeedHomepageSections } from "@/services/firestore/homepage"
+import { listCollections } from "@/services/firestore/collections"
 import { AdminSidebar } from "@/components/layout/admin-sidebar"
 import { HomepageSectionsList } from "@/features/homepage/components/homepage-sections-list"
 
@@ -10,11 +11,18 @@ export const dynamic = "force-dynamic"
 
 export default async function HomepageBuilderPage() {
   await requirePermission("homepage")
-  const sections = await getOrSeedHomepageSections()
+  const [sections, collections] = await Promise.all([
+    getOrSeedHomepageSections(),
+    listCollections({ activeOnly: true }),
+  ])
   // Firestore `Timestamp` fields can't cross into a Client Component as raw
   // props — HomepageSectionsList never reads `updatedAt`, so it's dropped
   // here rather than passed down.
   const clientSafeSections = sections.map(({ updatedAt, ...rest }) => rest)
+  const collectionOptions = collections.map((collection) => ({
+    id: collection.id,
+    name: collection.name,
+  }))
 
   return (
     <div className="flex flex-1">
@@ -29,7 +37,10 @@ export default async function HomepageBuilderPage() {
             d&apos;accueil.
           </p>
         </div>
-        <HomepageSectionsList sections={clientSafeSections} />
+        <HomepageSectionsList
+          sections={clientSafeSections}
+          collections={collectionOptions}
+        />
       </div>
     </div>
   )

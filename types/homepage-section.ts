@@ -21,6 +21,9 @@ export interface HomepageSectionConfig {
   /** `featuredCollections` only — `null` means auto-pick (today's behavior:
    * the 6 most recent active collections). */
   collectionIds: string[] | null
+  /** `popularProducts` / `newArrivals` / `promotionBanner` only — overrides
+   * the section's default heading text. `null` keeps the default. */
+  heading: string | null
 }
 
 /** Exact shape of a `homepage/{sectionId}` document — see
