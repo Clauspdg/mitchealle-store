@@ -64,6 +64,12 @@ export const adminNav: Array<
     permission: "returns",
   },
   {
+    title: "Clients",
+    href: "/admin/customers",
+    minimumRole: "staff",
+    permission: "customers",
+  },
+  {
     title: "Stock",
     href: "/admin/stock",
     minimumRole: "staff",

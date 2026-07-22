@@ -10,6 +10,7 @@ export const PERMISSION_KEYS = [
   "dashboard",
   "orders",
   "returns",
+  "customers",
   "products",
   "categories",
   "collections",
@@ -36,6 +37,7 @@ const SUPPORT_PERMISSIONS: PermissionKey[] = ["dashboard", "orders", "returns"]
 
 const STAFF_PERMISSIONS: PermissionKey[] = [
   ...SUPPORT_PERMISSIONS,
+  "customers",
   "products",
   "categories",
   "collections",

@@ -12,6 +12,9 @@ export interface UserProfile {
   locale: string
   defaultAddressId: string | null
   marketingOptIn: boolean
+  /** Internal, staff-only note about this customer — never shown to the
+   * customer themselves. */
+  adminNotes: string | null
   createdAt: FirestoreTimestamp
   updatedAt: FirestoreTimestamp
 }
