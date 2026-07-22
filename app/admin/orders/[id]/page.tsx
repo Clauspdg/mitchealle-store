@@ -6,14 +6,17 @@ import Link from "next/link"
 import { requirePermission } from "@/lib/session.server"
 import { getOrder, listPaymentsForOrder } from "@/services/firestore/orders"
 import { getInvoiceForOrder } from "@/services/firestore/invoices"
+import { listReturnsForOrder } from "@/services/firestore/returns"
 import { formatPriceMinor } from "@/utils/currency"
 import { AdminSidebar } from "@/components/layout/admin-sidebar"
 import { Button } from "@/components/ui/button"
 import { OrderStatusBadge } from "@/features/orders/components/order-status-badge"
 import { OrderTimeline } from "@/features/orders/components/order-timeline"
 import { OrderStatusControl } from "@/features/orders/components/order-status-control"
+import { OrderNotesEditor } from "@/features/orders/components/order-notes-editor"
 import { PrintOrderButton } from "@/features/orders/components/print-order-button"
 import { DownloadInvoiceButton } from "@/features/invoices/components/download-invoice-button"
+import { ReturnStatusBadge } from "@/features/returns/components/return-status-badge"
 
 export const metadata: Metadata = { title: "Détail de la commande" }
 export const dynamic = "force-dynamic"
@@ -31,9 +34,10 @@ export default async function AdminOrderDetailPage({
   const order = await getOrder(id)
   if (!order) notFound()
 
-  const [payments, invoice] = await Promise.all([
+  const [payments, invoice, returns] = await Promise.all([
     listPaymentsForOrder(id),
     getInvoiceForOrder(id),
+    listReturnsForOrder(id),
   ])
 
   return (
@@ -156,17 +160,80 @@ export default async function AdminOrderDetailPage({
               </div>
             )}
 
-            {order.notes ? (
+            {order.type === "preorder" && order.preorder ? (
               <div className="border-t pt-3 text-sm">
-                <span className="text-muted-foreground">Notes : </span>
-                {order.notes}
+                <span className="text-muted-foreground">Précommande : </span>
+                <div className="mt-1 flex flex-col gap-1">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Acompte versé</span>
+                    <span>
+                      {formatPriceMinor(
+                        order.preorder.depositMinor,
+                        order.currency
+                      )}
+                      {order.preorder.depositPaidAt
+                        ? ` (${order.preorder.depositPaidAt.toDate().toLocaleDateString("fr-FR")})`
+                        : ""}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Solde restant</span>
+                    <span>
+                      {formatPriceMinor(
+                        order.preorder.balanceDueMinor,
+                        order.currency
+                      )}
+                      {order.preorder.balanceDueAt
+                        ? ` (dû le ${order.preorder.balanceDueAt.toDate().toLocaleDateString("fr-FR")})`
+                        : ""}
+                    </span>
+                  </div>
+                  {order.preorder.estimatedReadyAt ? (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">
+                        Disponibilité estimée
+                      </span>
+                      <span>
+                        {order.preorder.estimatedReadyAt
+                          .toDate()
+                          .toLocaleDateString("fr-FR")}
+                      </span>
+                    </div>
+                  ) : null}
+                </div>
               </div>
             ) : null}
+
+            {returns.length > 0 ? (
+              <div className="border-t pt-3 text-sm">
+                <span className="text-muted-foreground">
+                  Retours associés :
+                </span>
+                <div className="mt-1 flex flex-col gap-1.5">
+                  {returns.map((returnRequest) => (
+                    <Link
+                      key={returnRequest.id}
+                      href={`/admin/returns/${returnRequest.id}`}
+                      className="flex items-center justify-between hover:underline"
+                    >
+                      <span>{returnRequest.items.length} article(s)</span>
+                      <ReturnStatusBadge status={returnRequest.status} />
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            <div className="print:hidden">
+              <OrderNotesEditor orderId={order.id} notes={order.notes} />
+            </div>
           </div>
 
           <div className="flex flex-col gap-6">
             <div className="print:hidden">
-              <OrderStatusControl order={order} />
+              <OrderStatusControl
+                order={{ id: order.id, status: order.status }}
+              />
             </div>
 
             <div className="flex flex-col gap-4 rounded-xl border p-4">

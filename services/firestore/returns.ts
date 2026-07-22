@@ -117,6 +117,16 @@ export async function listReturnsForUser(
   return { items, nextCursor, hasMore }
 }
 
+/** Bounded, unpaginated — a single order has at most a handful of return
+ * requests, unlike the paginated listings above. */
+export async function listReturnsForOrder(orderId: string): Promise<Return[]> {
+  const snapshot = await adminDb
+    .collection(RETURNS_COLLECTION)
+    .where("orderId", "==", orderId)
+    .get()
+  return snapshot.docs.map((doc) => toReturn(doc.id, doc.data()))
+}
+
 export interface ReturnAdminSearchParams {
   status: ReturnStatus | "all"
   cursor: string | null

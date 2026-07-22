@@ -7,6 +7,7 @@ import {
   exportOrdersToCsv,
   refundOrder,
   requestRefund,
+  updateOrderNotes,
   updateOrderStatus,
   type OrderAdminSearchParams,
 } from "@/services/firestore/orders"
@@ -61,6 +62,20 @@ export async function refundOrderAction(
   try {
     await refundOrder(orderId, reason)
     revalidatePath("/admin/orders")
+    revalidatePath(`/admin/orders/${orderId}`)
+    return { success: true, data: undefined }
+  } catch (error) {
+    return { success: false, error: errorMessage(error) }
+  }
+}
+
+export async function updateOrderNotesAction(
+  orderId: string,
+  notes: string
+): Promise<ActionResult> {
+  await requireSession("staff")
+  try {
+    await updateOrderNotes(orderId, notes)
     revalidatePath(`/admin/orders/${orderId}`)
     return { success: true, data: undefined }
   } catch (error) {

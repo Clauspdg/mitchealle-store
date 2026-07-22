@@ -651,6 +651,19 @@ export async function updateOrderStatus(
   }
 }
 
+export async function updateOrderNotes(
+  orderId: string,
+  notes: string
+): Promise<void> {
+  await adminDb
+    .collection(ORDERS_COLLECTION)
+    .doc(orderId)
+    .update({
+      notes: notes.trim() || null,
+      updatedAt: FieldValue.serverTimestamp(),
+    })
+}
+
 export interface OrderAdminSearchParams {
   status: OrderStatus | "all"
   /** An order-number prefix (starts with "MS-") or an exact customer email —

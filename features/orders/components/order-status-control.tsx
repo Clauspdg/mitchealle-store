@@ -39,7 +39,11 @@ const PLAIN_STATUS_OPTIONS = ORDER_STATUSES.filter(
   (status) => status !== "refund_requested" && status !== "refunded"
 )
 
-export function OrderStatusControl({ order }: { order: Order }) {
+export function OrderStatusControl({
+  order,
+}: {
+  order: Pick<Order, "id" | "status">
+}) {
   const router = useRouter()
   const [status, setStatus] = useState<OrderStatus>(order.status)
   const [submitting, setSubmitting] = useState(false)
