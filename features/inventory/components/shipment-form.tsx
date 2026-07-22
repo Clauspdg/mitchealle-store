@@ -31,13 +31,13 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import type { IncomingShipment } from "@/types/incoming-shipment"
-import type { Product } from "@/types/product"
-import type { Supplier } from "@/types/supplier"
+import type { ClientSafeProduct } from "@/types/product"
+import type { ClientSafeSupplier } from "@/types/supplier"
 
 interface ShipmentFormProps {
   shipment?: IncomingShipment
-  suppliers: Supplier[]
-  products: Product[]
+  suppliers: ClientSafeSupplier[]
+  products: ClientSafeProduct[]
 }
 
 export function ShipmentForm({

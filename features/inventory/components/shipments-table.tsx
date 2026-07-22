@@ -15,12 +15,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import type { IncomingShipment } from "@/types/incoming-shipment"
-import type { Supplier } from "@/types/supplier"
+import type { ClientSafeIncomingShipment } from "@/types/incoming-shipment"
+import type { ClientSafeSupplier } from "@/types/supplier"
 
 interface ShipmentsTableProps {
-  shipments: IncomingShipment[]
-  suppliersById: Record<string, Supplier>
+  shipments: ClientSafeIncomingShipment[]
+  suppliersById: Record<string, ClientSafeSupplier>
 }
 
 export function ShipmentsTable({
@@ -71,8 +71,9 @@ export function ShipmentsTable({
                 </Badge>
               </TableCell>
               <TableCell className="text-muted-foreground">
-                {shipment.expectedAt?.toDate().toLocaleDateString("fr-FR") ??
-                  "—"}
+                {shipment.expectedAt
+                  ? new Date(shipment.expectedAt).toLocaleDateString("fr-FR")
+                  : "—"}
               </TableCell>
               <TableCell className="text-muted-foreground">
                 {shipment.carrier ?? "—"}

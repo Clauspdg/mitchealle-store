@@ -21,6 +21,13 @@ export default async function EcommerceSettingsPage() {
     getPaymentSettings(),
     getNotificationSettings(),
   ])
+  // Firestore `Timestamp` fields can't cross into a Client Component as raw
+  // props — none of the three sections read `updatedAt`, so it's dropped
+  // here rather than passed down.
+  const { updatedAt: _shippingUpdatedAt, ...clientSafeShipping } = shipping
+  const { updatedAt: _paymentUpdatedAt, ...clientSafePayment } = payment
+  const { updatedAt: _notificationsUpdatedAt, ...clientSafeNotifications } =
+    notifications
 
   return (
     <div className="flex flex-1">
@@ -45,9 +52,9 @@ export default async function EcommerceSettingsPage() {
         </div>
 
         <EcommerceSettingsForm
-          shipping={shipping}
-          payment={payment}
-          notifications={notifications}
+          shipping={clientSafeShipping}
+          payment={clientSafePayment}
+          notifications={clientSafeNotifications}
         />
       </div>
     </div>

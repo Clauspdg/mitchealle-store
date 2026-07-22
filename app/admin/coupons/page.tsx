@@ -13,6 +13,16 @@ export const metadata: Metadata = { title: "Coupons" }
 export default async function CouponsPage() {
   await requireSession("staff")
   const coupons = await listCoupons()
+  // Firestore `Timestamp` fields can't cross into a Client Component as raw
+  // props. `expiresAt` is still needed by the table's display and the edit
+  // form's date picker, so it's converted to millis instead of dropped;
+  // `createdAt`/`updatedAt` are unused client-side and are dropped entirely.
+  const clientSafeCoupons = coupons.map(
+    ({ expiresAt, createdAt, updatedAt, ...rest }) => ({
+      ...rest,
+      expiresAt: expiresAt?.toMillis() ?? null,
+    })
+  )
 
   return (
     <div className="flex flex-1">
@@ -30,7 +40,7 @@ export default async function CouponsPage() {
           />
         </div>
 
-        <CouponsTable coupons={coupons} />
+        <CouponsTable coupons={clientSafeCoupons} />
       </div>
     </div>
   )

@@ -13,6 +13,12 @@ export const metadata: Metadata = { title: "Fournisseurs" }
 export default async function SuppliersPage() {
   await requireSession("staff")
   const suppliers = await listAllSuppliers()
+  // Firestore `Timestamp` fields can't cross into a Client Component as raw
+  // props — neither SuppliersTable nor SupplierFormDialog reads them, so
+  // they're dropped here rather than passed down.
+  const clientSafeSuppliers = suppliers.map(
+    ({ createdAt, updatedAt, ...rest }) => rest
+  )
 
   return (
     <div className="flex flex-1">
@@ -30,7 +36,7 @@ export default async function SuppliersPage() {
           />
         </div>
 
-        <SuppliersTable suppliers={suppliers} />
+        <SuppliersTable suppliers={clientSafeSuppliers} />
       </div>
     </div>
   )

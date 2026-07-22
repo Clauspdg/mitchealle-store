@@ -21,9 +21,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import type { Brand } from "@/types/brand"
+import type { ClientSafeBrand } from "@/types/brand"
 
-function BrandRow({ brand }: { brand: Brand }) {
+function BrandRow({ brand }: { brand: ClientSafeBrand }) {
   const router = useRouter()
   const { setNodeRef, attributes, listeners, style } = useDragHandle(brand.id)
 
@@ -88,7 +88,7 @@ function BrandRow({ brand }: { brand: Brand }) {
   )
 }
 
-export function BrandsTable({ brands }: { brands: Brand[] }) {
+export function BrandsTable({ brands }: { brands: ClientSafeBrand[] }) {
   const router = useRouter()
 
   async function handleReorder(orderedIds: string[]) {

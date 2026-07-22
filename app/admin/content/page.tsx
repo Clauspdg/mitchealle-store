@@ -29,6 +29,15 @@ export default async function ContentPage() {
     getContentPage("shipping-returns"),
     getFaqPage(),
   ])
+  // Firestore `Timestamp` fields can't cross into a Client Component as raw
+  // props — neither editor reads `updatedAt`, so it's dropped here rather
+  // than passed down.
+  const { updatedAt: _aboutUpdatedAt, ...clientSafeAbout } = about
+  const { updatedAt: _contactUpdatedAt, ...clientSafeContact } = contact
+  const { updatedAt: _legalUpdatedAt, ...clientSafeLegal } = legal
+  const { updatedAt: _shippingUpdatedAt, ...clientSafeShippingReturns } =
+    shippingReturns
+  const { updatedAt: _faqUpdatedAt, ...clientSafeFaq } = faq
 
   return (
     <div className="flex flex-1">
@@ -55,22 +64,22 @@ export default async function ContentPage() {
             <TabsTrigger value="faq">{TAB_LABELS.faq}</TabsTrigger>
           </TabsList>
           <TabsContent value="about">
-            <ContentPageEditor pageKey="about" page={about} />
+            <ContentPageEditor pageKey="about" page={clientSafeAbout} />
           </TabsContent>
           <TabsContent value="contact">
-            <ContentPageEditor pageKey="contact" page={contact} />
+            <ContentPageEditor pageKey="contact" page={clientSafeContact} />
           </TabsContent>
           <TabsContent value="shipping-returns">
             <ContentPageEditor
               pageKey="shipping-returns"
-              page={shippingReturns}
+              page={clientSafeShippingReturns}
             />
           </TabsContent>
           <TabsContent value="legal">
-            <ContentPageEditor pageKey="legal" page={legal} />
+            <ContentPageEditor pageKey="legal" page={clientSafeLegal} />
           </TabsContent>
           <TabsContent value="faq">
-            <FaqEditor page={faq} />
+            <FaqEditor page={clientSafeFaq} />
           </TabsContent>
         </Tabs>
       </div>

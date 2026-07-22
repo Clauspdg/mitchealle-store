@@ -1,7 +1,9 @@
 import type { SupplierFormInput } from "@/schemas/supplier.schema"
-import type { Supplier } from "@/types/supplier"
+import type { ClientSafeSupplier } from "@/types/supplier"
 
-export function supplierToFormDefaults(supplier?: Supplier): SupplierFormInput {
+export function supplierToFormDefaults(
+  supplier?: ClientSafeSupplier
+): SupplierFormInput {
   if (!supplier) {
     return {
       name: "",

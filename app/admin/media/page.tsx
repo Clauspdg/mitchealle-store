@@ -11,6 +11,10 @@ export const dynamic = "force-dynamic"
 export default async function MediaLibraryPage() {
   await requirePermission("media")
   const { items, nextCursor, hasMore } = await listMedia({ cursor: null })
+  // Firestore `Timestamp` fields can't cross into a Client Component as raw
+  // props — no media component reads `createdAt`, so it's dropped here
+  // rather than passed down.
+  const clientSafeItems = items.map(({ createdAt, ...rest }) => rest)
 
   return (
     <div className="flex flex-1">
@@ -25,7 +29,7 @@ export default async function MediaLibraryPage() {
           </p>
         </div>
         <MediaLibraryBrowser
-          initialItems={items}
+          initialItems={clientSafeItems}
           initialCursor={nextCursor}
           initialHasMore={hasMore}
         />

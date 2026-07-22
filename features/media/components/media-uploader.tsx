@@ -8,14 +8,14 @@ import { uploadMediaAction } from "@/features/media/actions/media-actions"
 import { compressImage } from "@/lib/image-compression"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import type { MediaItem } from "@/types/media"
+import type { ClientSafeMediaItem } from "@/types/media"
 
 export function MediaUploader({
   folder = "library",
   onUploaded,
 }: {
   folder?: string
-  onUploaded: (item: MediaItem) => void
+  onUploaded: (item: ClientSafeMediaItem) => void
 }) {
   const [uploading, setUploading] = useState(false)
   const [isDraggingOver, setIsDraggingOver] = useState(false)

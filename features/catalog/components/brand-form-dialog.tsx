@@ -28,10 +28,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
-import type { Brand } from "@/types/brand"
+import type { ClientSafeBrand } from "@/types/brand"
 
 function toFormDefaults(
-  brand: Brand | undefined,
+  brand: ClientSafeBrand | undefined,
   position: number
 ): BrandFormInput {
   return {
@@ -47,7 +47,7 @@ function toFormDefaults(
 
 interface BrandFormDialogProps {
   trigger: ReactElement
-  brand?: Brand
+  brand?: ClientSafeBrand
   nextPosition: number
 }
 

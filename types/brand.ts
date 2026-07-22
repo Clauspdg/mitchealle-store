@@ -18,3 +18,8 @@ export interface BrandDocument {
 export interface Brand extends BrandDocument {
   id: string
 }
+
+/** `Brand` without the Firestore `Timestamp` fields — for passing into
+ * Client Components, which can't receive class instances like `Timestamp`
+ * across the Server/Client boundary. */
+export type ClientSafeBrand = Omit<Brand, "createdAt" | "updatedAt">

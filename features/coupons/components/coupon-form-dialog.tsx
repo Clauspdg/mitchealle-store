@@ -31,19 +31,19 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import type { Coupon } from "@/types/coupon"
+import type { ClientSafeCoupon } from "@/types/coupon"
 
 interface CouponFormDialogProps {
   trigger: ReactElement
-  coupon?: Coupon
+  coupon?: ClientSafeCoupon
 }
 
-function couponToFormDefaults(coupon?: Coupon): CouponFormInput {
+function couponToFormDefaults(coupon?: ClientSafeCoupon): CouponFormInput {
   return {
     code: coupon?.code ?? "",
     type: coupon?.type ?? "percentage",
     value: coupon?.value ?? 10,
-    expiresAt: coupon?.expiresAt?.toDate() ?? null,
+    expiresAt: coupon?.expiresAt ? new Date(coupon.expiresAt) : null,
     maxUses: coupon?.maxUses ?? null,
     minPurchaseMinor: coupon?.minPurchaseMinor ?? null,
     allowedCategoryIds: coupon?.allowedCategoryIds ?? null,

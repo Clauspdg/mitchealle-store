@@ -32,3 +32,16 @@ export interface CouponDocument {
 export interface Coupon extends CouponDocument {
   id: string
 }
+
+/** `Coupon` without the Firestore `Timestamp` fields — for passing into
+ * Client Components, which can't receive class instances like `Timestamp`
+ * across the Server/Client boundary. `expiresAt` is still needed by the
+ * table's display and the edit form's date picker, so it's converted to
+ * plain millis instead of being dropped outright; `createdAt`/`updatedAt`
+ * are unused by any client component and are dropped entirely. */
+export type ClientSafeCoupon = Omit<
+  Coupon,
+  "expiresAt" | "createdAt" | "updatedAt"
+> & {
+  expiresAt: number | null
+}

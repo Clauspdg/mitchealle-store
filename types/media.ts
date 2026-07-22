@@ -16,3 +16,8 @@ export interface MediaDocument {
 export interface MediaItem extends MediaDocument {
   id: string
 }
+
+/** `MediaItem` without the Firestore `Timestamp` field — for returning from
+ * Server Actions/passing into Client Components, neither of which can
+ * receive a class instance like `Timestamp`. */
+export type ClientSafeMediaItem = Omit<MediaItem, "createdAt">

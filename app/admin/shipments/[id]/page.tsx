@@ -53,7 +53,26 @@ export default async function ShipmentDetailPage({
     getSupplier(shipment.supplierId),
     listAllProducts(),
   ])
-  const productsById = Object.fromEntries(products.map((p) => [p.id, p]))
+  // Firestore `Timestamp` fields can't cross into a Client Component as raw
+  // props. ReceiveShipmentDialog only ever reads `product.name`, so only
+  // that field is passed down; the shipment's own Timestamp fields (all
+  // read directly, server-side, in this page's own JSX below) are dropped
+  // entirely since the dialog doesn't need dates.
+  const productsById = Object.fromEntries(
+    products.map((p) => [p.id, { name: p.name }])
+  )
+  const {
+    orderedAt: _orderedAt,
+    expectedAt,
+    receivedAt: _receivedAt,
+    createdAt: _createdAt,
+    updatedAt: _updatedAt,
+    ...restShipment
+  } = shipment
+  const clientSafeShipment = {
+    ...restShipment,
+    expectedAt: expectedAt?.toMillis() ?? null,
+  }
 
   return (
     <div className="flex flex-1">
@@ -71,7 +90,7 @@ export default async function ShipmentDetailPage({
           <div className="flex gap-2">
             {RECEIVABLE_STATUSES.has(shipment.status) && (
               <ReceiveShipmentDialog
-                shipment={shipment}
+                shipment={clientSafeShipment}
                 productsById={productsById}
                 trigger={<Button>Réceptionner</Button>}
               />

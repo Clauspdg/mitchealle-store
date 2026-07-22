@@ -21,7 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import type { Collection, CollectionStatus } from "@/types/collection"
+import type { ClientSafeCollection, CollectionStatus } from "@/types/collection"
 
 const STATUS_LABELS: Record<CollectionStatus, string> = {
   draft: "Brouillon",
@@ -42,7 +42,7 @@ function CollectionRow({
   collection,
   products,
 }: {
-  collection: Collection
+  collection: ClientSafeCollection
   products: CollectionProductOption[]
 }) {
   const { setNodeRef, attributes, listeners, style } = useDragHandle(
@@ -103,7 +103,7 @@ export function CollectionsTable({
   collections,
   products = [],
 }: {
-  collections: Collection[]
+  collections: ClientSafeCollection[]
   products?: CollectionProductOption[]
 }) {
   const router = useRouter()

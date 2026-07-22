@@ -47,14 +47,14 @@ export function computeProductBadges(product: Product): ProductBadge[] {
       // `text-muted-foreground` on `bg-muted` measures ~4.34:1 — just under
       // WCAG AA's 4.5:1 for this badge's small text. `text-foreground` keeps
       // the same neutral/understated background but reads clearly.
-      className: "bg-muted text-foreground",
+      className: "bg-muted text-foreground shadow-sm",
     })
   }
   if (isNew) {
     badges.push({
       key: "new",
       label: "Nouveau",
-      className: "bg-surface-ink text-surface-ink-foreground",
+      className: "bg-surface-ink text-surface-ink-foreground shadow-sm",
     })
   }
   if (isOnSale) {
@@ -64,35 +64,35 @@ export function computeProductBadges(product: Product): ProductBadge[] {
         discountPercent && discountPercent > 0
           ? `-${discountPercent}%`
           : "Promo",
-      className: "bg-destructive text-white",
+      className: "bg-destructive text-white shadow-sm",
     })
   }
   if (product.tags.includes("bestseller")) {
     badges.push({
       key: "bestseller",
       label: "Best Seller",
-      className: "bg-accent-gold text-accent-gold-foreground",
+      className: "bg-accent-gold text-accent-gold-foreground shadow-sm",
     })
   }
   if (product.tags.includes("limited-edition")) {
     badges.push({
       key: "limited-edition",
       label: "Limited Edition",
-      className: "bg-surface-ink text-surface-ink-foreground",
+      className: "bg-surface-ink text-surface-ink-foreground shadow-sm",
     })
   }
   if (product.tags.includes("online-exclusive")) {
     badges.push({
       key: "online-exclusive",
       label: "Online Exclusive",
-      className: "bg-accent-gold-muted text-accent-gold-foreground",
+      className: "bg-accent-gold-muted text-accent-gold-foreground shadow-sm",
     })
   }
   if (lowStock) {
     badges.push({
       key: "low-stock",
       label: "Low Stock",
-      className: "bg-destructive/10 text-destructive",
+      className: "bg-destructive/10 text-destructive shadow-sm",
     })
   }
 

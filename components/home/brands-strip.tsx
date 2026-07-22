@@ -12,7 +12,7 @@ export function BrandsStrip() {
           {track.map((brand, index) => (
             <span
               key={`${brand}-${index}`}
-              className="text-muted-foreground font-heading shrink-0 text-lg tracking-widest whitespace-nowrap uppercase opacity-70"
+              className="font-heading shrink-0 text-lg tracking-widest whitespace-nowrap text-[oklch(0.42_0_0)] uppercase dark:text-[oklch(0.75_0_0)]"
             >
               {brand}
             </span>

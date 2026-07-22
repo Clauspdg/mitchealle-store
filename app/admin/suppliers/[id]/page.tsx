@@ -32,6 +32,15 @@ export default async function SupplierDetailPage({
     notFound()
   }
 
+  // Firestore `Timestamp` fields can't cross into a Client Component as raw
+  // props — SupplierFormDialog doesn't read them, so they're dropped here
+  // rather than passed down.
+  const {
+    createdAt: _createdAt,
+    updatedAt: _updatedAt,
+    ...clientSafeSupplier
+  } = supplier
+
   return (
     <div className="flex flex-1">
       <AdminSidebar />
@@ -48,7 +57,7 @@ export default async function SupplierDetailPage({
             )}
           </div>
           <SupplierFormDialog
-            supplier={supplier}
+            supplier={clientSafeSupplier}
             trigger={<Button variant="outline">Modifier</Button>}
           />
         </div>

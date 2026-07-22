@@ -38,7 +38,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import type { Collection } from "@/types/collection"
+import type { ClientSafeCollection } from "@/types/collection"
 
 export interface CollectionProductOption {
   id: string
@@ -48,7 +48,7 @@ export interface CollectionProductOption {
 
 interface CollectionFormDialogProps {
   trigger: ReactElement
-  collection?: Collection
+  collection?: ClientSafeCollection
   products?: CollectionProductOption[]
 }
 

@@ -10,9 +10,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import type { FaqItem, FaqPage } from "@/types/content-page"
+import type { FaqItem, ClientSafeFaqPage } from "@/types/content-page"
 
-export function FaqEditor({ page }: { page: FaqPage }) {
+export function FaqEditor({ page }: { page: ClientSafeFaqPage }) {
   const router = useRouter()
   const [title, setTitle] = useState(page.title)
   const [items, setItems] = useState<FaqItem[]>(page.items)

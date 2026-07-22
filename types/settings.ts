@@ -57,6 +57,11 @@ export interface ShippingSettings extends ShippingSettingsDocument {
   id: "shipping"
 }
 
+/** `ShippingSettings` without the Firestore `Timestamp` field — for passing
+ * into Client Components, which can't receive class instances like
+ * `Timestamp` across the Server/Client boundary. */
+export type ClientSafeShippingSettings = Omit<ShippingSettings, "updatedAt">
+
 export const PAYMENT_PROVIDERS = ["stripe", "paypal"] as const
 export type DefaultPaymentProvider = (typeof PAYMENT_PROVIDERS)[number]
 
@@ -75,6 +80,11 @@ export interface PaymentSettings extends PaymentSettingsDocument {
   id: "payment"
 }
 
+/** `PaymentSettings` without the Firestore `Timestamp` field — for passing
+ * into Client Components, which can't receive class instances like
+ * `Timestamp` across the Server/Client boundary. */
+export type ClientSafePaymentSettings = Omit<PaymentSettings, "updatedAt">
+
 export interface NotificationSettingsDocument {
   adminAlertEmails: string[]
   updatedAt: FirestoreTimestamp
@@ -83,3 +93,11 @@ export interface NotificationSettingsDocument {
 export interface NotificationSettings extends NotificationSettingsDocument {
   id: "notifications"
 }
+
+/** `NotificationSettings` without the Firestore `Timestamp` field — for
+ * passing into Client Components, which can't receive class instances like
+ * `Timestamp` across the Server/Client boundary. */
+export type ClientSafeNotificationSettings = Omit<
+  NotificationSettings,
+  "updatedAt"
+>

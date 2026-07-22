@@ -10,15 +10,25 @@ import {
 } from "@/services/storage/media-library"
 import type { ActionResult } from "@/types/action-result"
 import type { CursorPage } from "@/types/pagination"
-import type { MediaItem } from "@/types/media"
+import type { ClientSafeMediaItem, MediaItem } from "@/types/media"
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Une erreur est survenue."
 }
 
+// Firestore `Timestamp` fields (createdAt) are class instances and can't be
+// returned from a Server Action to a Client Component — no consumer of
+// MediaItem reads it, so it's dropped here rather than serialized.
+function toClientSafeMediaItem({
+  createdAt,
+  ...rest
+}: MediaItem): ClientSafeMediaItem {
+  return rest
+}
+
 export async function uploadMediaAction(
   formData: FormData
-): Promise<ActionResult<MediaItem>> {
+): Promise<ActionResult<ClientSafeMediaItem>> {
   const session = await requireSession("staff")
   const file = formData.get("file")
   if (!(file instanceof File)) {
@@ -37,7 +47,7 @@ export async function uploadMediaAction(
       width && height ? { width, height } : null
     )
     revalidatePath("/admin/media")
-    return { success: true, data: item }
+    return { success: true, data: toClientSafeMediaItem(item) }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }
@@ -46,11 +56,17 @@ export async function uploadMediaAction(
 export async function listMediaAction(
   folder: string | undefined,
   cursor: string | null
-): Promise<ActionResult<CursorPage<MediaItem>>> {
+): Promise<ActionResult<CursorPage<ClientSafeMediaItem>>> {
   await requireSession("staff")
   try {
     const page = await listMedia({ folder, cursor })
-    return { success: true, data: page }
+    return {
+      success: true,
+      data: {
+        ...page,
+        items: page.items.map(toClientSafeMediaItem),
+      },
+    }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }

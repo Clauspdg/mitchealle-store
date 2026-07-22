@@ -14,7 +14,7 @@ import { useDragHandle } from "@/hooks/use-drag-handle"
 import { SortableContainer } from "@/components/shared/sortable-container"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
-import type { Banner } from "@/types/banner"
+import type { ClientSafeBanner } from "@/types/banner"
 
 const PLACEMENT_LABELS: Record<string, string> = {
   homepageHero: "Hero (page d'accueil)",
@@ -23,7 +23,7 @@ const PLACEMENT_LABELS: Record<string, string> = {
   checkoutSidebar: "Panneau latéral (checkout)",
 }
 
-function BannerRow({ banner }: { banner: Banner }) {
+function BannerRow({ banner }: { banner: ClientSafeBanner }) {
   const router = useRouter()
   const { setNodeRef, attributes, listeners, style } = useDragHandle(banner.id)
 
@@ -104,7 +104,7 @@ function BannerRow({ banner }: { banner: Banner }) {
   )
 }
 
-export function BannersList({ banners }: { banners: Banner[] }) {
+export function BannersList({ banners }: { banners: ClientSafeBanner[] }) {
   const router = useRouter()
 
   async function handleReorder(orderedIds: string[]) {

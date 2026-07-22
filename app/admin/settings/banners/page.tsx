@@ -14,6 +14,17 @@ export const dynamic = "force-dynamic"
 export default async function BannersPage() {
   await requirePermission("banners")
   const banners = await listBanners()
+  // Firestore `Timestamp` fields can't cross into a Client Component as raw
+  // props. `startAt`/`endAt` are still needed by the edit form's date
+  // pickers, so they're converted to millis instead of dropped; `createdAt`/
+  // `updatedAt` are unused client-side and are dropped entirely.
+  const clientSafeBanners = banners.map(
+    ({ startAt, endAt, createdAt, updatedAt, ...rest }) => ({
+      ...rest,
+      startAt: startAt?.toMillis() ?? null,
+      endAt: endAt?.toMillis() ?? null,
+    })
+  )
 
   return (
     <div className="flex flex-1">
@@ -37,7 +48,7 @@ export default async function BannersPage() {
           />
         </div>
 
-        <BannersList banners={banners} />
+        <BannersList banners={clientSafeBanners} />
       </div>
     </div>
   )

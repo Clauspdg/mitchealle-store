@@ -16,7 +16,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import type { MediaItem } from "@/types/media"
+import type { ClientSafeMediaItem } from "@/types/media"
 
 /**
  * Reusable browse-existing-or-upload-new picker — wired into the new
@@ -33,7 +33,7 @@ export function MediaPickerDialog({
   onSelect: (url: string) => void
 }) {
   const [open, setOpen] = useState(false)
-  const [items, setItems] = useState<MediaItem[]>([])
+  const [items, setItems] = useState<ClientSafeMediaItem[]>([])
   const [loading, setLoading] = useState(false)
 
   function handleOpenChange(next: boolean) {
@@ -51,7 +51,7 @@ export function MediaPickerDialog({
       .finally(() => setLoading(false))
   }
 
-  function handlePick(item: MediaItem) {
+  function handlePick(item: ClientSafeMediaItem) {
     onSelect(item.url)
     setOpen(false)
   }

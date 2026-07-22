@@ -23,6 +23,17 @@ export default async function CollectionsPage() {
     name: product.name,
     imageUrl: product.images[0]?.url ?? null,
   }))
+  // Firestore `Timestamp` fields can't cross into a Client Component as raw
+  // props. `startAt`/`endAt` are still needed by the edit form's date
+  // pickers, so they're converted to millis instead of dropped; `createdAt`/
+  // `updatedAt` are unused client-side and are dropped entirely.
+  const clientSafeCollections = collections.map(
+    ({ startAt, endAt, createdAt, updatedAt, ...rest }) => ({
+      ...rest,
+      startAt: startAt?.toMillis() ?? null,
+      endAt: endAt?.toMillis() ?? null,
+    })
+  )
 
   return (
     <div className="flex flex-1">
@@ -41,7 +52,10 @@ export default async function CollectionsPage() {
           />
         </div>
 
-        <CollectionsTable collections={collections} products={productOptions} />
+        <CollectionsTable
+          collections={clientSafeCollections}
+          products={productOptions}
+        />
       </div>
     </div>
   )

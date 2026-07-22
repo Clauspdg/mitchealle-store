@@ -10,11 +10,15 @@ export function PreorderBadge({
   isPreorderable,
 }: PreorderBadgeProps) {
   if (isComingSoon) {
-    return <Badge variant="secondary">Bientôt disponible</Badge>
+    return (
+      <Badge variant="secondary" className="shadow-sm">
+        Bientôt disponible
+      </Badge>
+    )
   }
   if (isPreorderable) {
     return (
-      <Badge className="bg-accent-gold-muted text-accent-gold-foreground">
+      <Badge className="bg-accent-gold-muted text-accent-gold-foreground shadow-sm">
         Précommande
       </Badge>
     )

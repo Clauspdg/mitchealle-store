@@ -7,14 +7,14 @@ import { listMediaAction } from "@/features/media/actions/media-actions"
 import { MediaGrid } from "@/features/media/components/media-grid"
 import { MediaUploader } from "@/features/media/components/media-uploader"
 import { Button } from "@/components/ui/button"
-import type { MediaItem } from "@/types/media"
+import type { ClientSafeMediaItem } from "@/types/media"
 
 export function MediaLibraryBrowser({
   initialItems,
   initialCursor,
   initialHasMore,
 }: {
-  initialItems: MediaItem[]
+  initialItems: ClientSafeMediaItem[]
   initialCursor: string | null
   initialHasMore: boolean
 }) {

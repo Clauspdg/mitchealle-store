@@ -29,11 +29,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
-import type { Supplier } from "@/types/supplier"
+import type { ClientSafeSupplier } from "@/types/supplier"
 
 interface SupplierFormDialogProps {
   trigger: ReactElement
-  supplier?: Supplier
+  supplier?: ClientSafeSupplier
 }
 
 export function SupplierFormDialog({

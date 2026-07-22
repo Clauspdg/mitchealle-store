@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
-import { BANNER_PLACEMENTS, type Banner } from "@/types/banner"
+import { BANNER_PLACEMENTS, type ClientSafeBanner } from "@/types/banner"
 
 const PLACEMENT_LABELS: Record<string, string> = {
   homepageHero: "Hero (page d'accueil)",
@@ -46,7 +46,7 @@ const PLACEMENT_LABELS: Record<string, string> = {
 }
 
 function toFormDefaults(
-  banner: Banner | undefined,
+  banner: ClientSafeBanner | undefined,
   position: number
 ): BannerFormInput {
   return {
@@ -54,8 +54,8 @@ function toFormDefaults(
     imageUrl: banner?.imageUrl ?? "",
     linkUrl: banner?.linkUrl ?? null,
     placement: banner?.placement ?? "homepageHero",
-    startAt: banner?.startAt?.toDate() ?? null,
-    endAt: banner?.endAt?.toDate() ?? null,
+    startAt: banner?.startAt ? new Date(banner.startAt) : null,
+    endAt: banner?.endAt ? new Date(banner.endAt) : null,
     isActive: banner?.isActive ?? true,
     position: banner?.position ?? position,
     eyebrow: banner?.eyebrow ?? null,
@@ -69,7 +69,7 @@ function toFormDefaults(
 
 interface BannerFormDialogProps {
   trigger: ReactElement
-  banner?: Banner
+  banner?: ClientSafeBanner
   nextPosition: number
 }
 

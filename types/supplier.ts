@@ -22,3 +22,8 @@ export interface SupplierDocument {
 export interface Supplier extends SupplierDocument {
   id: string
 }
+
+/** `Supplier` without the Firestore `Timestamp` fields — for passing into
+ * Client Components, which can't receive class instances like `Timestamp`
+ * across the Server/Client boundary. */
+export type ClientSafeSupplier = Omit<Supplier, "createdAt" | "updatedAt">

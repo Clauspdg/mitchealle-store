@@ -23,3 +23,8 @@ export interface MenuDocument {
 export interface Menu extends MenuDocument {
   id: MenuId
 }
+
+/** `Menu` without the Firestore `Timestamp` field — for passing into Client
+ * Components, which can't receive class instances like `Timestamp` across
+ * the Server/Client boundary. */
+export type ClientSafeMenu = Omit<Menu, "updatedAt">

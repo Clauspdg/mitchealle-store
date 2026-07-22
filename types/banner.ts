@@ -36,3 +36,17 @@ export interface BannerDocument {
 export interface Banner extends BannerDocument {
   id: string
 }
+
+/** `Banner` without the Firestore `Timestamp` fields — for passing into
+ * Client Components, which can't receive class instances like `Timestamp`
+ * across the Server/Client boundary. `startAt`/`endAt` are still needed by
+ * the edit form's date pickers, so they're converted to plain millis
+ * instead of being dropped outright; `createdAt`/`updatedAt` are unused by
+ * any client component and are dropped entirely. */
+export type ClientSafeBanner = Omit<
+  Banner,
+  "startAt" | "endAt" | "createdAt" | "updatedAt"
+> & {
+  startAt: number | null
+  endAt: number | null
+}

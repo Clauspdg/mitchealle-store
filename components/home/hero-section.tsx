@@ -13,6 +13,7 @@ import {
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { ReadableOverlay } from "@/components/shared/readable-overlay"
 
 const AUTO_ADVANCE_MS = 6000
 
@@ -93,7 +94,7 @@ export function HeroSection({ slides }: { slides: HeroSlideView[] }) {
             />
           </motion.div>
         </AnimatePresence>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
+        <ReadableOverlay variant="hero" />
       </motion.div>
 
       <div className="relative mx-auto flex w-full max-w-6xl flex-col items-start gap-3 px-6">
@@ -106,13 +107,13 @@ export function HeroSection({ slides }: { slides: HeroSlideView[] }) {
             transition={{ duration: shouldReduceMotion ? 0 : 0.5 }}
             className="flex flex-col items-start gap-2"
           >
-            <p className="text-accent-gold text-[0.65rem] font-medium tracking-[0.2em] uppercase sm:text-xs">
+            <p className="text-accent-gold text-shadow-premium-sm text-[0.65rem] font-medium tracking-[0.2em] uppercase sm:text-xs">
               {slide.eyebrow}
             </p>
-            <h1 className="font-heading max-w-2xl text-3xl leading-tight font-medium sm:text-5xl">
+            <h1 className="font-heading text-shadow-premium max-w-2xl text-3xl leading-tight font-medium sm:text-5xl">
               {slide.title}
             </h1>
-            <p className="max-w-md text-sm text-white/70 sm:text-base">
+            <p className="text-shadow-premium-sm max-w-md text-sm text-white/85 sm:text-base">
               {slide.subtitle}
             </p>
           </motion.div>
@@ -122,7 +123,7 @@ export function HeroSection({ slides }: { slides: HeroSlideView[] }) {
           <Button
             render={<Link href={slide.primaryButtonHref} />}
             nativeButton={false}
-            className="bg-accent-gold text-accent-gold-foreground hover:bg-accent-gold/90 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+            className="bg-accent-gold text-accent-gold-foreground hover:bg-accent-gold/90 shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
           >
             {slide.primaryButtonLabel}
           </Button>
@@ -131,7 +132,7 @@ export function HeroSection({ slides }: { slides: HeroSlideView[] }) {
               render={<Link href={slide.secondaryButtonHref} />}
               nativeButton={false}
               variant="outline"
-              className="border-white/40 bg-transparent text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10 hover:shadow-lg"
+              className="border-white/70 bg-black/10 text-white shadow-md backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-white hover:bg-white/15 hover:shadow-lg"
             >
               {slide.secondaryButtonLabel}
             </Button>

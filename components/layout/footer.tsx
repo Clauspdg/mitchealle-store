@@ -59,7 +59,7 @@ export function Footer({
           <span className="font-heading text-lg font-medium">
             {storeSettings.storeName}
           </span>
-          <p className="text-sm text-white/60">{storeSettings.description}</p>
+          <p className="text-sm text-white/70">{storeSettings.description}</p>
         </div>
 
         {footerGroups.map(({ group, links }) => (
@@ -72,7 +72,7 @@ export function Footer({
                 <Link
                   key={link.id}
                   href={link.href}
-                  className="text-sm text-white/60 transition-colors hover:text-white"
+                  className="text-sm text-white/70 transition-colors hover:text-white"
                 >
                   {link.label}
                 </Link>
@@ -87,7 +87,7 @@ export function Footer({
           </span>
           <div className="flex flex-col gap-2">
             {socialEntries.length === 0 ? (
-              <span className="text-sm text-white/60">—</span>
+              <span className="text-sm text-white/70">—</span>
             ) : (
               socialEntries.map(([key, href]) => (
                 <a
@@ -95,7 +95,7 @@ export function Footer({
                   href={href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-white/60 transition-colors hover:text-white"
+                  className="text-sm text-white/70 transition-colors hover:text-white"
                 >
                   {SOCIAL_LABELS[key]}
                 </a>
@@ -108,7 +108,7 @@ export function Footer({
           <span className="text-sm font-medium tracking-wide uppercase">
             Newsletter
           </span>
-          <p className="text-sm text-white/60">
+          <p className="text-sm text-white/70">
             Recevez nos nouveautés et offres exclusives.
           </p>
           <form onSubmit={handleNewsletterSubmit} className="flex gap-2">
@@ -118,7 +118,7 @@ export function Footer({
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="Votre e-mail"
-              className="border-white/20 bg-white/5 text-white placeholder:text-white/40"
+              className="border-white/25 bg-white/5 text-white placeholder:text-white/50"
             />
             <Button
               type="submit"
@@ -133,7 +133,7 @@ export function Footer({
       </div>
 
       <div className="border-t border-white/10">
-        <div className="mx-auto flex w-full max-w-6xl flex-col-reverse items-center gap-3 px-6 py-6 text-xs text-white/50 sm:flex-row sm:justify-between">
+        <div className="mx-auto flex w-full max-w-6xl flex-col-reverse items-center gap-3 px-6 py-6 text-xs text-white/65 sm:flex-row sm:justify-between">
           <p>
             © {new Date().getFullYear()} {storeSettings.storeName}. Tous droits
             réservés.

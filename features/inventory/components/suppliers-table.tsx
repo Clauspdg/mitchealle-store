@@ -16,12 +16,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import type { Supplier } from "@/types/supplier"
+import type { ClientSafeSupplier } from "@/types/supplier"
 
-export function SuppliersTable({ suppliers }: { suppliers: Supplier[] }) {
+export function SuppliersTable({
+  suppliers,
+}: {
+  suppliers: ClientSafeSupplier[]
+}) {
   const router = useRouter()
 
-  async function toggleActive(supplier: Supplier, isActive: boolean) {
+  async function toggleActive(supplier: ClientSafeSupplier, isActive: boolean) {
     const result = await setSupplierActiveAction(supplier.id, isActive)
     if (!result.success) {
       toast.error(result.error)

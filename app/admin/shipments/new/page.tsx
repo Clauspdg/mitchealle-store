@@ -15,6 +15,15 @@ export default async function NewShipmentPage() {
     listAllSuppliers(),
     listAllProducts(),
   ])
+  // Firestore `Timestamp` fields can't cross into a Client Component as raw
+  // props — neither ShipmentForm nor ProductVariantPicker reads them, so
+  // they're dropped here rather than passed down.
+  const clientSafeSuppliers = suppliers.map(
+    ({ createdAt, updatedAt, ...rest }) => rest
+  )
+  const clientSafeProducts = products.map(
+    ({ preorderWindow, availableFrom, createdAt, updatedAt, ...rest }) => rest
+  )
 
   return (
     <div className="flex flex-1">
@@ -23,7 +32,10 @@ export default async function NewShipmentPage() {
         <h1 className="text-xl font-semibold tracking-tight">
           Ajouter un arrivage
         </h1>
-        <ShipmentForm suppliers={suppliers} products={products} />
+        <ShipmentForm
+          suppliers={clientSafeSuppliers}
+          products={clientSafeProducts}
+        />
       </div>
     </div>
   )

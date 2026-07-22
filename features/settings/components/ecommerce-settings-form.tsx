@@ -34,12 +34,16 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { PAYMENT_PROVIDERS } from "@/types/settings"
 import type {
-  NotificationSettings,
-  PaymentSettings,
-  ShippingSettings,
+  ClientSafeNotificationSettings,
+  ClientSafePaymentSettings,
+  ClientSafeShippingSettings,
 } from "@/types/settings"
 
-function ShippingSection({ settings }: { settings: ShippingSettings }) {
+function ShippingSection({
+  settings,
+}: {
+  settings: ClientSafeShippingSettings
+}) {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const { register, handleSubmit, watch, setValue } =
@@ -149,7 +153,7 @@ function ShippingSection({ settings }: { settings: ShippingSettings }) {
   )
 }
 
-function PaymentSection({ settings }: { settings: PaymentSettings }) {
+function PaymentSection({ settings }: { settings: ClientSafePaymentSettings }) {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const { handleSubmit, watch, setValue } = useForm<PaymentSettingsFormInput>({
@@ -218,7 +222,7 @@ function PaymentSection({ settings }: { settings: PaymentSettings }) {
 function NotificationsSection({
   settings,
 }: {
-  settings: NotificationSettings
+  settings: ClientSafeNotificationSettings
 }) {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
@@ -275,9 +279,9 @@ export function EcommerceSettingsForm({
   payment,
   notifications,
 }: {
-  shipping: ShippingSettings
-  payment: PaymentSettings
-  notifications: NotificationSettings
+  shipping: ClientSafeShippingSettings
+  payment: ClientSafePaymentSettings
+  notifications: ClientSafeNotificationSettings
 }) {
   return (
     <div className="flex flex-col gap-10">

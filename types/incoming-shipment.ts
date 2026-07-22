@@ -52,3 +52,17 @@ export interface IncomingShipmentDocument {
 export interface IncomingShipment extends IncomingShipmentDocument {
   id: string
 }
+
+/** `IncomingShipment` without the Firestore `Timestamp` fields — for
+ * passing into Client Components, which can't receive class instances like
+ * `Timestamp` across the Server/Client boundary. `expectedAt` is still
+ * needed by the table's ETA display, so it's converted to plain millis
+ * instead of being dropped outright; `orderedAt`/`receivedAt` are only ever
+ * read server-side directly in JSX (never crossed to a client component) and
+ * `createdAt`/`updatedAt` are unused entirely, so all three are dropped. */
+export type ClientSafeIncomingShipment = Omit<
+  IncomingShipment,
+  "orderedAt" | "expectedAt" | "receivedAt" | "createdAt" | "updatedAt"
+> & {
+  expectedAt: number | null
+}

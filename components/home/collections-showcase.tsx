@@ -3,6 +3,7 @@ import Link from "next/link"
 
 import type { Collection } from "@/types/collection"
 import { Reveal } from "@/components/shared/reveal"
+import { ReadableOverlay } from "@/components/shared/readable-overlay"
 
 interface CollectionsShowcaseProps {
   collections: Collection[]
@@ -34,12 +35,12 @@ export function CollectionsShowcase({ collections }: CollectionsShowcaseProps) {
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
                 />
               ) : null}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-black/0" />
+              <ReadableOverlay variant="bottom" />
               <div className="absolute inset-x-4 bottom-4 flex items-center justify-between gap-2">
-                <span className="font-heading text-lg font-medium text-white">
+                <span className="font-heading text-shadow-premium text-lg font-medium text-white">
                   {collection.name}
                 </span>
-                <span className="shrink-0 rounded-full bg-white/90 px-3 py-1.5 text-xs font-medium text-black opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                <span className="shrink-0 rounded-full bg-white/90 px-3 py-1.5 text-xs font-medium text-black opacity-0 shadow-md transition-opacity duration-300 group-hover:opacity-100">
                   Découvrir
                 </span>
               </div>

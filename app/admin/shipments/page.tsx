@@ -32,7 +32,19 @@ export default async function ShipmentsPage({
     listAllSuppliers(),
   ])
 
-  const suppliersById = Object.fromEntries(suppliers.map((s) => [s.id, s]))
+  // Firestore `Timestamp` fields can't cross into a Client Component as raw
+  // props. `expectedAt` is still needed by the table's ETA display, so it's
+  // converted to millis instead of dropped; the other shipment/supplier
+  // Timestamp fields are unused client-side and are dropped entirely.
+  const clientSafeShipments = shipments.map(
+    ({ orderedAt, expectedAt, receivedAt, createdAt, updatedAt, ...rest }) => ({
+      ...rest,
+      expectedAt: expectedAt?.toMillis() ?? null,
+    })
+  )
+  const suppliersById = Object.fromEntries(
+    suppliers.map(({ createdAt, updatedAt, ...s }) => [s.id, s])
+  )
 
   return (
     <div className="flex flex-1">
@@ -49,7 +61,10 @@ export default async function ShipmentsPage({
           </Button>
         </div>
 
-        <ShipmentsTable shipments={shipments} suppliersById={suppliersById} />
+        <ShipmentsTable
+          shipments={clientSafeShipments}
+          suppliersById={suppliersById}
+        />
       </div>
     </div>
   )

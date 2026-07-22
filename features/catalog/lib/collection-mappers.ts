@@ -1,8 +1,8 @@
 import type { CollectionFormInput } from "@/schemas/collection.schema"
-import type { Collection } from "@/types/collection"
+import type { ClientSafeCollection } from "@/types/collection"
 
 export function collectionToFormDefaults(
-  collection?: Collection
+  collection?: ClientSafeCollection
 ): CollectionFormInput {
   if (!collection) {
     return {
@@ -29,8 +29,8 @@ export function collectionToFormDefaults(
     primaryColor: collection.primaryColor,
     type: collection.type,
     productIds: collection.productIds ?? [],
-    startAt: collection.startAt ? collection.startAt.toDate() : null,
-    endAt: collection.endAt ? collection.endAt.toDate() : null,
+    startAt: collection.startAt ? new Date(collection.startAt) : null,
+    endAt: collection.endAt ? new Date(collection.endAt) : null,
     status: collection.status,
     position: collection.position,
     seo: collection.seo ?? { title: "", description: "" },

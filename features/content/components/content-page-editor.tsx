@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import type {
-  ContentPage,
+  ClientSafeContentPage,
   ContentPageKey,
   ContentSection,
 } from "@/types/content-page"
@@ -21,7 +21,7 @@ export function ContentPageEditor({
   page,
 }: {
   pageKey: ContentPageKey
-  page: ContentPage
+  page: ClientSafeContentPage
 }) {
   const router = useRouter()
   const [title, setTitle] = useState(page.title)

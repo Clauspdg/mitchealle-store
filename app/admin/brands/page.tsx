@@ -14,6 +14,12 @@ export const dynamic = "force-dynamic"
 export default async function BrandsPage() {
   await requirePermission("brands")
   const brands = await listBrands()
+  // Firestore `Timestamp` fields can't cross into a Client Component as raw
+  // props — neither BrandsTable nor BrandFormDialog reads them, so they're
+  // dropped here rather than passed down.
+  const clientSafeBrands = brands.map(
+    ({ createdAt, updatedAt, ...rest }) => rest
+  )
 
   return (
     <div className="flex flex-1">
@@ -32,7 +38,7 @@ export default async function BrandsPage() {
           />
         </div>
 
-        <BrandsTable brands={brands} />
+        <BrandsTable brands={clientSafeBrands} />
       </div>
     </div>
   )

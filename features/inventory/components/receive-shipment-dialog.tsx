@@ -17,13 +17,13 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import type { IncomingShipment } from "@/types/incoming-shipment"
+import type { ClientSafeIncomingShipment } from "@/types/incoming-shipment"
 import type { Product } from "@/types/product"
 
 interface ReceiveShipmentDialogProps {
   trigger: ReactElement
-  shipment: IncomingShipment
-  productsById: Record<string, Product>
+  shipment: ClientSafeIncomingShipment
+  productsById: Record<string, Pick<Product, "name">>
 }
 
 export function ReceiveShipmentDialog({
@@ -40,7 +40,7 @@ export function ReceiveShipmentDialog({
     return `${productId}_${variantId}`
   }
 
-  function remainingFor(item: IncomingShipment["items"][number]) {
+  function remainingFor(item: ClientSafeIncomingShipment["items"][number]) {
     return item.quantityOrdered - item.quantityReceived
   }
 

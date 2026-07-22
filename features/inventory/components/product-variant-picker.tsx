@@ -8,7 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { DEFAULT_VARIANT_ID } from "@/types/inventory"
-import type { Product } from "@/types/product"
+import type { ClientSafeProduct } from "@/types/product"
 
 export interface ProductVariantValue {
   productId: string
@@ -17,7 +17,7 @@ export interface ProductVariantValue {
 }
 
 interface ProductVariantPickerProps {
-  products: Product[]
+  products: ClientSafeProduct[]
   value: ProductVariantValue | null
   onChange: (value: ProductVariantValue) => void
 }

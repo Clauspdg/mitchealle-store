@@ -5,6 +5,7 @@ import type { Metadata } from "next"
 import { listCategories } from "@/services/firestore/categories"
 import { countPublishedProductsByCategory } from "@/services/firestore/products"
 import { Reveal } from "@/components/shared/reveal"
+import { ReadableOverlay } from "@/components/shared/readable-overlay"
 import { getCategoryIcon } from "@/features/catalog/lib/category-icon-map"
 
 export const metadata: Metadata = { title: "Catégories" }
@@ -40,12 +41,12 @@ export default async function CategoriesPage() {
                       sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
                       className="object-cover transition-transform duration-500 group-hover:scale-105"
                     />
-                    <div className="absolute inset-0 bg-black/40" />
-                    <span className="font-heading relative text-base font-medium text-white">
+                    <ReadableOverlay variant="center" />
+                    <span className="font-heading text-shadow-premium relative text-base font-medium text-white">
                       {category.name}
                     </span>
                     {count !== undefined ? (
-                      <span className="relative text-xs text-white/70">
+                      <span className="text-shadow-premium-sm relative text-xs text-white/85">
                         {count} produit{count > 1 ? "s" : ""}
                       </span>
                     ) : null}

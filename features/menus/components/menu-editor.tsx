@@ -10,7 +10,7 @@ import { useDragHandle } from "@/hooks/use-drag-handle"
 import { SortableContainer } from "@/components/shared/sortable-container"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import type { Menu, MenuItem } from "@/types/menu"
+import type { ClientSafeMenu, MenuItem } from "@/types/menu"
 
 function reindex(
   items: MenuItem[],
@@ -80,7 +80,7 @@ export function MenuEditor({
   menu,
   allowGroups = false,
 }: {
-  menu: Menu
+  menu: ClientSafeMenu
   allowGroups?: boolean
 }) {
   const router = useRouter()

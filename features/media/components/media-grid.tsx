@@ -6,12 +6,12 @@ import { toast } from "sonner"
 import { deleteMediaItemAction } from "@/features/media/actions/media-actions"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import type { MediaItem } from "@/types/media"
+import type { ClientSafeMediaItem } from "@/types/media"
 
 interface MediaGridProps {
-  items: MediaItem[]
+  items: ClientSafeMediaItem[]
   onDeleted?: (id: string) => void
-  onSelect?: (item: MediaItem) => void
+  onSelect?: (item: ClientSafeMediaItem) => void
   selectable?: boolean
 }
 

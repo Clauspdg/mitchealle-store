@@ -15,6 +15,11 @@ export default async function MenusPage() {
     getOrSeedMenu("header"),
     getOrSeedMenu("footer"),
   ])
+  // Firestore `Timestamp` fields can't cross into a Client Component as raw
+  // props — MenuEditor never reads `updatedAt`, so it's dropped here rather
+  // than passed down.
+  const { updatedAt: _headerUpdatedAt, ...clientSafeHeader } = header
+  const { updatedAt: _footerUpdatedAt, ...clientSafeFooter } = footer
 
   return (
     <div className="flex flex-1">
@@ -33,10 +38,10 @@ export default async function MenusPage() {
             <TabsTrigger value="footer">Footer</TabsTrigger>
           </TabsList>
           <TabsContent value="header">
-            <MenuEditor menu={header} />
+            <MenuEditor menu={clientSafeHeader} />
           </TabsContent>
           <TabsContent value="footer">
-            <MenuEditor menu={footer} allowGroups />
+            <MenuEditor menu={clientSafeFooter} allowGroups />
           </TabsContent>
         </Tabs>
       </div>

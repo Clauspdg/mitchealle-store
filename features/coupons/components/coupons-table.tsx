@@ -17,15 +17,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import type { Coupon } from "@/types/coupon"
+import type { ClientSafeCoupon } from "@/types/coupon"
 
-function formatValue(coupon: Coupon): string {
+function formatValue(coupon: ClientSafeCoupon): string {
   return coupon.type === "percentage"
     ? `-${coupon.value}%`
     : `-${formatPriceMinor(coupon.value, "HTG")}`
 }
 
-export function CouponsTable({ coupons }: { coupons: Coupon[] }) {
+export function CouponsTable({ coupons }: { coupons: ClientSafeCoupon[] }) {
   const router = useRouter()
 
   async function handleToggle(id: string, next: boolean) {
@@ -74,7 +74,7 @@ export function CouponsTable({ coupons }: { coupons: Coupon[] }) {
               </TableCell>
               <TableCell className="text-muted-foreground">
                 {coupon.expiresAt
-                  ? coupon.expiresAt.toDate().toLocaleDateString("fr-FR")
+                  ? new Date(coupon.expiresAt).toLocaleDateString("fr-FR")
                   : "—"}
               </TableCell>
               <TableCell>
