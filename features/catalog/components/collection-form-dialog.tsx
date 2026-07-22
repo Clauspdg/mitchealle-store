@@ -4,7 +4,7 @@ import { useRef, useState, type ReactElement } from "react"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
-import { UploadIcon } from "lucide-react"
+import { PlusIcon, Trash2Icon, UploadIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import {
@@ -14,6 +14,7 @@ import {
 } from "@/features/catalog/actions/collection-actions"
 import { collectionToFormDefaults } from "@/features/catalog/lib/collection-mappers"
 import {
+  COLLECTION_RULE_FIELDS,
   collectionFormSchema,
   type CollectionFormInput,
 } from "@/schemas/collection.schema"
@@ -46,16 +47,34 @@ export interface CollectionProductOption {
   imageUrl: string | null
 }
 
+export interface CollectionRuleOption {
+  id: string
+  name: string
+}
+
+const RULE_FIELD_LABELS: Record<
+  (typeof COLLECTION_RULE_FIELDS)[number],
+  string
+> = {
+  categoryId: "Catégorie",
+  brandId: "Marque",
+  tag: "Tag",
+}
+
 interface CollectionFormDialogProps {
   trigger: ReactElement
   collection?: ClientSafeCollection
   products?: CollectionProductOption[]
+  categories?: CollectionRuleOption[]
+  brands?: CollectionRuleOption[]
 }
 
 export function CollectionFormDialog({
   trigger,
   collection,
   products = [],
+  categories = [],
+  brands = [],
 }: CollectionFormDialogProps) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -145,6 +164,38 @@ export function CollectionFormDialog({
     setValue(
       "productIds",
       selectedIds.filter((existing) => existing !== id)
+    )
+  }
+
+  const type = watch("type")
+  const rules = watch("rules")
+  const ruleValueOptions: Record<
+    (typeof COLLECTION_RULE_FIELDS)[number],
+    CollectionRuleOption[]
+  > = {
+    categoryId: categories,
+    brandId: brands,
+    tag: [],
+  }
+
+  function addRule() {
+    setValue("rules", [
+      ...rules,
+      { field: "categoryId", operator: "equals", value: "" },
+    ])
+  }
+
+  function removeRule(index: number) {
+    setValue(
+      "rules",
+      rules.filter((_, i) => i !== index)
+    )
+  }
+
+  function updateRule(index: number, patch: Partial<(typeof rules)[number]>) {
+    setValue(
+      "rules",
+      rules.map((rule, i) => (i === index ? { ...rule, ...patch } : rule))
     )
   }
 
@@ -339,51 +390,134 @@ export function CollectionFormDialog({
             </div>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <Label>Produits associés ({selectedProducts.length})</Label>
-            {selectedProducts.length > 0 ? (
-              <div className="flex flex-wrap gap-1.5">
-                {selectedProducts.map((product) => (
-                  <span
-                    key={product.id}
-                    className="bg-muted flex items-center gap-1.5 rounded-full py-1 pr-1 pl-2.5 text-xs"
-                  >
-                    {product.name}
-                    <button
-                      type="button"
-                      onClick={() => removeProduct(product.id)}
-                      className="hover:bg-background rounded-full p-0.5"
-                      aria-label={`Retirer ${product.name}`}
+          {type === "manual" ? (
+            <div className="flex flex-col gap-2">
+              <Label>Produits associés ({selectedProducts.length})</Label>
+              {selectedProducts.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedProducts.map((product) => (
+                    <span
+                      key={product.id}
+                      className="bg-muted flex items-center gap-1.5 rounded-full py-1 pr-1 pl-2.5 text-xs"
                     >
-                      ×
+                      {product.name}
+                      <button
+                        type="button"
+                        onClick={() => removeProduct(product.id)}
+                        className="hover:bg-background rounded-full p-0.5"
+                        aria-label={`Retirer ${product.name}`}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+              <Input
+                value={productSearch}
+                onChange={(event) => setProductSearch(event.target.value)}
+                placeholder="Rechercher un produit à ajouter..."
+              />
+              {productSearch.trim() && filteredProducts.length > 0 ? (
+                <div className="max-h-40 overflow-y-auto rounded-md border">
+                  {filteredProducts.map((product) => (
+                    <button
+                      key={product.id}
+                      type="button"
+                      onClick={() => {
+                        addProduct(product.id)
+                        setProductSearch("")
+                      }}
+                      className="hover:bg-muted flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm"
+                    >
+                      {product.name}
                     </button>
-                  </span>
-                ))}
-              </div>
-            ) : null}
-            <Input
-              value={productSearch}
-              onChange={(event) => setProductSearch(event.target.value)}
-              placeholder="Rechercher un produit à ajouter..."
-            />
-            {productSearch.trim() && filteredProducts.length > 0 ? (
-              <div className="max-h-40 overflow-y-auto rounded-md border">
-                {filteredProducts.map((product) => (
-                  <button
-                    key={product.id}
-                    type="button"
-                    onClick={() => {
-                      addProduct(product.id)
-                      setProductSearch("")
-                    }}
-                    className="hover:bg-muted flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm"
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <Label>Règles de sélection automatique</Label>
+              <p className="text-muted-foreground text-xs">
+                Un produit rejoint cette collection dès qu&apos;il correspond à
+                toutes les règles ci-dessous. Recalculé à chaque enregistrement.
+              </p>
+              {rules.map((rule, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <Select
+                    value={rule.field}
+                    onValueChange={(value) =>
+                      updateRule(index, {
+                        field: value as (typeof COLLECTION_RULE_FIELDS)[number],
+                        value: "",
+                      })
+                    }
                   >
-                    {product.name}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-          </div>
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {COLLECTION_RULE_FIELDS.map((field) => (
+                        <SelectItem key={field} value={field}>
+                          {RULE_FIELD_LABELS[field]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {rule.field === "tag" ? (
+                    <Input
+                      value={rule.value}
+                      onChange={(event) =>
+                        updateRule(index, { value: event.target.value })
+                      }
+                      placeholder="Valeur du tag"
+                      className="flex-1"
+                    />
+                  ) : (
+                    <Select
+                      value={rule.value}
+                      onValueChange={(value) =>
+                        updateRule(index, { value: value ?? "" })
+                      }
+                    >
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Choisir une valeur" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ruleValueOptions[rule.field].map((option) => (
+                          <SelectItem key={option.id} value={option.id}>
+                            {option.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => removeRule(index)}
+                    aria-label="Supprimer la règle"
+                  >
+                    <Trash2Icon className="text-destructive" />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addRule}
+                className="self-start"
+              >
+                <PlusIcon />
+                Ajouter une règle
+              </Button>
+            </div>
+          )}
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="col-seo-title">SEO — Meta Title</Label>

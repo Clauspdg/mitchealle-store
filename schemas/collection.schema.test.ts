@@ -11,6 +11,7 @@ function validCollection(overrides: Partial<Record<string, unknown>> = {}) {
     primaryColor: null,
     type: "manual",
     productIds: [],
+    rules: [],
     startAt: null,
     endAt: null,
     status: "draft",
@@ -57,5 +58,35 @@ describe("collectionFormSchema", () => {
       })
     )
     expect(result.success).toBe(true)
+  })
+
+  it("accepts an automatic collection with valid rules", () => {
+    const result = collectionFormSchema.safeParse(
+      validCollection({
+        type: "automatic",
+        rules: [{ field: "categoryId", operator: "equals", value: "cat_1" }],
+      })
+    )
+    expect(result.success).toBe(true)
+  })
+
+  it("rejects a rule with an unknown field", () => {
+    const result = collectionFormSchema.safeParse(
+      validCollection({
+        type: "automatic",
+        rules: [{ field: "unknownField", operator: "equals", value: "x" }],
+      })
+    )
+    expect(result.success).toBe(false)
+  })
+
+  it("rejects a rule with an empty value", () => {
+    const result = collectionFormSchema.safeParse(
+      validCollection({
+        type: "automatic",
+        rules: [{ field: "tag", operator: "equals", value: "" }],
+      })
+    )
+    expect(result.success).toBe(false)
   })
 })

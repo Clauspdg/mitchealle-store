@@ -4,15 +4,47 @@ import { FieldValue, Timestamp } from "firebase-admin/firestore"
 import { adminDb } from "@/firebase/admin"
 import { generateUniqueSlug } from "@/validators/slug.validator"
 import { isMissingIndexError } from "@/utils/firestore-errors"
+import { listAllProducts } from "@/services/firestore/products"
 import type { CollectionFormInput } from "@/schemas/collection.schema"
 import type {
   Collection,
   CollectionDocument,
-  CollectionStatus,
+  CollectionRule,
 } from "@/types/collection"
+import type { CollectionStatus } from "@/types/collection"
 
 const COLLECTIONS_COLLECTION = "collections"
 const PRODUCTS_COLLECTION = "products"
+
+/**
+ * Evaluates an automatic collection's rules (AND logic) against the live
+ * catalog and returns the matching product ids. Rules are re-evaluated
+ * once, at save time — not continuously — so an automatic collection's
+ * membership reflects the catalog as of the last create/update, not a
+ * live filter that updates itself when unrelated products change later.
+ */
+async function resolveAutomaticProductIds(
+  rules: CollectionRule[]
+): Promise<string[]> {
+  if (rules.length === 0) return []
+  const products = await listAllProducts()
+  return products
+    .filter((product) =>
+      rules.every((rule) => {
+        switch (rule.field) {
+          case "categoryId":
+            return product.categoryId === rule.value
+          case "brandId":
+            return product.brandId === rule.value
+          case "tag":
+            return product.tags.includes(rule.value)
+          default:
+            return false
+        }
+      })
+    )
+    .map((product) => product.id)
+}
 
 function toCollection(
   id: string,
@@ -94,6 +126,10 @@ export async function createCollection(
 ): Promise<Collection> {
   const slug = await generateUniqueSlug(input.name, collectionSlugExists)
   const now = FieldValue.serverTimestamp()
+  const productIds =
+    input.type === "automatic"
+      ? await resolveAutomaticProductIds(input.rules)
+      : input.productIds
 
   const docData = {
     name: input.name,
@@ -104,8 +140,8 @@ export async function createCollection(
     bannerImageUrl: input.bannerImageUrl,
     primaryColor: input.primaryColor,
     type: input.type,
-    productIds: input.productIds,
-    rules: null,
+    productIds,
+    rules: input.type === "automatic" ? input.rules : null,
     startAt: toTimestampOrNull(input.startAt),
     endAt: toTimestampOrNull(input.endAt),
     status: input.status,
@@ -118,8 +154,8 @@ export async function createCollection(
 
   const ref = await adminDb.collection(COLLECTIONS_COLLECTION).add(docData)
 
-  if (input.productIds.length > 0) {
-    await syncProductMembership(ref.id, [], input.productIds)
+  if (productIds.length > 0) {
+    await syncProductMembership(ref.id, [], productIds)
   }
 
   const created = await ref.get()
@@ -139,6 +175,10 @@ export async function updateCollection(
     input.name === current.name
       ? current.slug
       : await generateUniqueSlug(input.name, collectionSlugExists, current.slug)
+  const productIds =
+    input.type === "automatic"
+      ? await resolveAutomaticProductIds(input.rules)
+      : input.productIds
 
   await adminDb
     .collection(COLLECTIONS_COLLECTION)
@@ -152,7 +192,8 @@ export async function updateCollection(
       bannerImageUrl: input.bannerImageUrl,
       primaryColor: input.primaryColor,
       type: input.type,
-      productIds: input.productIds,
+      productIds,
+      rules: input.type === "automatic" ? input.rules : null,
       startAt: toTimestampOrNull(input.startAt),
       endAt: toTimestampOrNull(input.endAt),
       status: input.status,
@@ -162,7 +203,7 @@ export async function updateCollection(
     })
 
   const previousIds = current.productIds ?? []
-  const nextIds = input.productIds
+  const nextIds = productIds
   if (
     previousIds.length !== nextIds.length ||
     !previousIds.every((productId) => nextIds.includes(productId))

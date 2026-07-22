@@ -4,6 +4,8 @@ import { PlusIcon } from "lucide-react"
 import { requireSession } from "@/lib/session.server"
 import { listCollections } from "@/services/firestore/collections"
 import { listAllProducts } from "@/services/firestore/products"
+import { listCategories } from "@/services/firestore/categories"
+import { listBrands } from "@/services/firestore/brands"
 import { AdminSidebar } from "@/components/layout/admin-sidebar"
 import { CollectionFormDialog } from "@/features/catalog/components/collection-form-dialog"
 import { CollectionsTable } from "@/features/catalog/components/collections-table"
@@ -14,14 +16,24 @@ export const dynamic = "force-dynamic"
 
 export default async function CollectionsPage() {
   await requireSession("staff")
-  const [collections, allProducts] = await Promise.all([
+  const [collections, allProducts, categories, brands] = await Promise.all([
     listCollections(),
     listAllProducts(),
+    listCategories(),
+    listBrands(),
   ])
   const productOptions = allProducts.map((product) => ({
     id: product.id,
     name: product.name,
     imageUrl: product.images[0]?.url ?? null,
+  }))
+  const categoryOptions = categories.map((category) => ({
+    id: category.id,
+    name: category.name,
+  }))
+  const brandOptions = brands.map((brand) => ({
+    id: brand.id,
+    name: brand.name,
   }))
   // Firestore `Timestamp` fields can't cross into a Client Component as raw
   // props. `startAt`/`endAt` are still needed by the edit form's date
@@ -43,6 +55,8 @@ export default async function CollectionsPage() {
           <h1 className="text-xl font-semibold tracking-tight">Collections</h1>
           <CollectionFormDialog
             products={productOptions}
+            categories={categoryOptions}
+            brands={brandOptions}
             trigger={
               <Button>
                 <PlusIcon />
@@ -55,6 +69,8 @@ export default async function CollectionsPage() {
         <CollectionsTable
           collections={clientSafeCollections}
           products={productOptions}
+          categories={categoryOptions}
+          brands={brandOptions}
         />
       </div>
     </div>

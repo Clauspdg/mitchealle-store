@@ -8,6 +8,7 @@ import { reorderCollectionsAction } from "@/features/catalog/actions/collection-
 import {
   CollectionFormDialog,
   type CollectionProductOption,
+  type CollectionRuleOption,
 } from "@/features/catalog/components/collection-form-dialog"
 import { useDragHandle } from "@/hooks/use-drag-handle"
 import { SortableContainer } from "@/components/shared/sortable-container"
@@ -41,9 +42,13 @@ const STATUS_VARIANTS: Record<
 function CollectionRow({
   collection,
   products,
+  categories,
+  brands,
 }: {
   collection: ClientSafeCollection
   products: CollectionProductOption[]
+  categories: CollectionRuleOption[]
+  brands: CollectionRuleOption[]
 }) {
   const { setNodeRef, attributes, listeners, style } = useDragHandle(
     collection.id
@@ -88,6 +93,8 @@ function CollectionRow({
         <CollectionFormDialog
           collection={collection}
           products={products}
+          categories={categories}
+          brands={brands}
           trigger={
             <Button variant="outline" size="sm">
               Modifier
@@ -102,9 +109,13 @@ function CollectionRow({
 export function CollectionsTable({
   collections,
   products = [],
+  categories = [],
+  brands = [],
 }: {
   collections: ClientSafeCollection[]
   products?: CollectionProductOption[]
+  categories?: CollectionRuleOption[]
+  brands?: CollectionRuleOption[]
 }) {
   const router = useRouter()
 
@@ -148,6 +159,8 @@ export function CollectionsTable({
                 key={collection.id}
                 collection={collection}
                 products={products}
+                categories={categories}
+                brands={brands}
               />
             ))}
           </SortableContainer>
