@@ -13,7 +13,6 @@ import {
 } from "@/services/firestore/banners"
 import { uploadImage } from "@/services/storage/images"
 import type { ActionResult } from "@/types/action-result"
-import type { Banner } from "@/types/banner"
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Une erreur est survenue."
@@ -21,7 +20,7 @@ function errorMessage(error: unknown): string {
 
 export async function createBannerAction(
   input: unknown
-): Promise<ActionResult<Banner>> {
+): Promise<ActionResult<{ id: string }>> {
   const session = await requireSession("staff")
   const parsed = bannerFormSchema.safeParse(input)
   if (!parsed.success) {
@@ -35,7 +34,7 @@ export async function createBannerAction(
     const banner = await createBanner(parsed.data, session.uid)
     revalidatePath("/admin/settings/banners")
     revalidatePath("/")
-    return { success: true, data: banner }
+    return { success: true, data: { id: banner.id } }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }
@@ -44,7 +43,7 @@ export async function createBannerAction(
 export async function updateBannerAction(
   id: string,
   input: unknown
-): Promise<ActionResult<Banner>> {
+): Promise<ActionResult<{ id: string }>> {
   await requireSession("staff")
   const parsed = bannerFormSchema.safeParse(input)
   if (!parsed.success) {
@@ -58,7 +57,7 @@ export async function updateBannerAction(
     const banner = await updateBanner(id, parsed.data)
     revalidatePath("/admin/settings/banners")
     revalidatePath("/")
-    return { success: true, data: banner }
+    return { success: true, data: { id: banner.id } }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }

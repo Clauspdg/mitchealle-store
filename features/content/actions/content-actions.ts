@@ -9,11 +9,9 @@ import {
 } from "@/services/firestore/content-pages"
 import type { ActionResult } from "@/types/action-result"
 import type {
-  ContentPage,
   ContentPageKey,
   ContentSection,
   FaqItem,
-  FaqPage,
 } from "@/types/content-page"
 
 function errorMessage(error: unknown): string {
@@ -30,13 +28,13 @@ const PATHS_BY_KEY: Record<ContentPageKey, string> = {
 export async function updateContentPageAction(
   key: ContentPageKey,
   input: { title: string; sections: ContentSection[] }
-): Promise<ActionResult<ContentPage>> {
+): Promise<ActionResult> {
   const session = await requireSession("staff")
   try {
-    const page = await updateContentPage(key, input, session.uid)
+    await updateContentPage(key, input, session.uid)
     revalidatePath("/admin/content")
     revalidatePath(PATHS_BY_KEY[key])
-    return { success: true, data: page }
+    return { success: true, data: undefined }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }
@@ -45,13 +43,13 @@ export async function updateContentPageAction(
 export async function updateFaqPageAction(input: {
   title: string
   items: FaqItem[]
-}): Promise<ActionResult<FaqPage>> {
+}): Promise<ActionResult> {
   const session = await requireSession("staff")
   try {
-    const page = await updateFaqPage(input, session.uid)
+    await updateFaqPage(input, session.uid)
     revalidatePath("/admin/content")
     revalidatePath("/faq")
-    return { success: true, data: page }
+    return { success: true, data: undefined }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }

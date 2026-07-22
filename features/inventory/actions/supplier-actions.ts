@@ -10,7 +10,6 @@ import {
   updateSupplier,
 } from "@/services/firestore/suppliers"
 import type { ActionResult } from "@/types/action-result"
-import type { Supplier } from "@/types/supplier"
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Une erreur est survenue."
@@ -18,7 +17,7 @@ function errorMessage(error: unknown): string {
 
 export async function createSupplierAction(
   input: unknown
-): Promise<ActionResult<Supplier>> {
+): Promise<ActionResult<{ id: string }>> {
   await requireSession("staff")
   const parsed = supplierFormSchema.safeParse(input)
   if (!parsed.success) {
@@ -31,7 +30,7 @@ export async function createSupplierAction(
   try {
     const supplier = await createSupplier(parsed.data)
     revalidatePath("/admin/suppliers")
-    return { success: true, data: supplier }
+    return { success: true, data: { id: supplier.id } }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }
@@ -40,7 +39,7 @@ export async function createSupplierAction(
 export async function updateSupplierAction(
   id: string,
   input: unknown
-): Promise<ActionResult<Supplier>> {
+): Promise<ActionResult<{ id: string }>> {
   await requireSession("staff")
   const parsed = supplierFormSchema.safeParse(input)
   if (!parsed.success) {
@@ -54,7 +53,7 @@ export async function updateSupplierAction(
     const supplier = await updateSupplier(id, parsed.data)
     revalidatePath("/admin/suppliers")
     revalidatePath(`/admin/suppliers/${id}`)
-    return { success: true, data: supplier }
+    return { success: true, data: { id: supplier.id } }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }

@@ -1,5 +1,7 @@
 import { z } from "zod"
 
+import { hexColorSchema } from "@/schemas/shared.schema"
+
 // No `.default(...)`: the form's defaultValues supplies every field
 // explicitly, and `.default()` makes Zod's input/output types diverge,
 // which breaks `useForm<CategoryFormInput>()`. See schemas/product.schema.ts.
@@ -10,6 +12,7 @@ export const categoryFormSchema = z.object({
     .max(80, "80 caractères maximum."),
   description: z.string(),
   icon: z.string().nullable(),
+  color: hexColorSchema,
   imageUrl: z.string().nullable(),
   bannerImageUrl: z.string().nullable(),
   parentId: z.string().nullable(),

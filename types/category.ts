@@ -12,6 +12,7 @@ export interface CategoryDocument {
   slug: string
   description: string
   icon: string | null
+  color: string | null
   parentId: string | null
   imageUrl: string | null
   bannerImageUrl: string | null

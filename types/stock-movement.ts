@@ -41,3 +41,10 @@ export interface StockMovementDocument {
 export interface StockMovement extends StockMovementDocument {
   id: string
 }
+
+/** `StockMovement` with `createdAt` as millis — for passing into Client
+ * Components, which can't receive the Firestore `Timestamp` class instance
+ * across the Server/Client boundary. */
+export type ClientSafeStockMovement = Omit<StockMovement, "createdAt"> & {
+  createdAt: number
+}

@@ -7,7 +7,6 @@ import { storeSettingsFormSchema } from "@/schemas/settings.schema"
 import { updateStoreSettings } from "@/services/firestore/settings"
 import { uploadImage } from "@/services/storage/images"
 import type { ActionResult } from "@/types/action-result"
-import type { StoreSettings } from "@/types/settings"
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Une erreur est survenue."
@@ -15,7 +14,7 @@ function errorMessage(error: unknown): string {
 
 export async function updateStoreSettingsAction(
   input: unknown
-): Promise<ActionResult<StoreSettings>> {
+): Promise<ActionResult> {
   await requireSession("admin")
   const parsed = storeSettingsFormSchema.safeParse(input)
   if (!parsed.success) {
@@ -26,10 +25,10 @@ export async function updateStoreSettingsAction(
   }
 
   try {
-    const settings = await updateStoreSettings(parsed.data)
+    await updateStoreSettings(parsed.data)
     revalidatePath("/admin/settings/store")
     revalidatePath("/", "layout")
-    return { success: true, data: settings }
+    return { success: true, data: undefined }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }

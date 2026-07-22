@@ -13,7 +13,6 @@ import {
 import { dispatchNotification } from "@/services/notifications/dispatch"
 import { logActivity } from "@/services/monitoring/log-activity"
 import type { ActionResult } from "@/types/action-result"
-import type { Coupon } from "@/types/coupon"
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Une erreur est survenue."
@@ -21,7 +20,7 @@ function errorMessage(error: unknown): string {
 
 export async function createCouponAction(
   input: unknown
-): Promise<ActionResult<Coupon>> {
+): Promise<ActionResult<{ id: string }>> {
   const session = await requireSession("staff")
   const parsed = couponFormSchema.safeParse(input)
   if (!parsed.success) {
@@ -48,7 +47,7 @@ export async function createCouponAction(
       actorUid: session.uid,
       couponId: coupon.id,
     })
-    return { success: true, data: coupon }
+    return { success: true, data: { id: coupon.id } }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }
@@ -57,7 +56,7 @@ export async function createCouponAction(
 export async function updateCouponAction(
   id: string,
   input: unknown
-): Promise<ActionResult<Coupon>> {
+): Promise<ActionResult<{ id: string }>> {
   await requireSession("staff")
   const parsed = couponFormSchema.safeParse(input)
   if (!parsed.success) {
@@ -74,7 +73,7 @@ export async function updateCouponAction(
   try {
     const coupon = await updateCoupon(id, parsed.data)
     revalidatePath("/admin/coupons")
-    return { success: true, data: coupon }
+    return { success: true, data: { id: coupon.id } }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }

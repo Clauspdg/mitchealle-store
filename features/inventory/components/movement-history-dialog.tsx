@@ -20,7 +20,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import type { StockMovement } from "@/types/stock-movement"
+import type {
+  ClientSafeStockMovement,
+  StockMovement,
+} from "@/types/stock-movement"
 
 const TYPE_LABELS: Record<StockMovement["type"], string> = {
   adjustment: "Ajustement",
@@ -40,7 +43,9 @@ export function MovementHistoryDialog({
   productId: string
   variantId: string
 }) {
-  const [movements, setMovements] = useState<StockMovement[] | null>(null)
+  const [movements, setMovements] = useState<ClientSafeStockMovement[] | null>(
+    null
+  )
   const [loading, setLoading] = useState(false)
 
   async function handleOpenChange(open: boolean) {
@@ -102,7 +107,7 @@ export function MovementHistoryDialog({
                     {movement.reason ?? "—"}
                   </TableCell>
                   <TableCell className="text-muted-foreground text-xs">
-                    {movement.createdAt.toDate().toLocaleString("fr-FR")}
+                    {new Date(movement.createdAt).toLocaleString("fr-FR")}
                   </TableCell>
                 </TableRow>
               ))}

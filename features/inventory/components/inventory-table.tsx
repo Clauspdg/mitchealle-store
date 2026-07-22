@@ -8,11 +8,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import type { Inventory } from "@/types/inventory"
+import type { ClientSafeInventory } from "@/types/inventory"
 import type { Product } from "@/types/product"
 
 interface InventoryTableProps {
-  items: Inventory[]
+  items: ClientSafeInventory[]
   productsById: Record<string, Product>
 }
 

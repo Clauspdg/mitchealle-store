@@ -19,7 +19,7 @@ import { AdjustInventoryDialog } from "@/features/inventory/components/adjust-in
 import { MovementHistoryDialog } from "@/features/inventory/components/movement-history-dialog"
 import { QuantityActionDialog } from "@/features/inventory/components/quantity-action-dialog"
 import { Button } from "@/components/ui/button"
-import type { Inventory } from "@/types/inventory"
+import type { ClientSafeInventory } from "@/types/inventory"
 
 /**
  * A single native-ish element, not a Tooltip-wrapped tree — `DialogTrigger`'s
@@ -41,7 +41,11 @@ function ActionButton({
   )
 }
 
-export function InventoryRowActions({ inventory }: { inventory: Inventory }) {
+export function InventoryRowActions({
+  inventory,
+}: {
+  inventory: ClientSafeInventory
+}) {
   return (
     <div className="flex items-center gap-0.5">
       <AdjustInventoryDialog

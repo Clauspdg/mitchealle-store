@@ -24,8 +24,10 @@ import {
   listMovementsForVariant,
 } from "@/services/firestore/stock-movements"
 import type { ActionResult } from "@/types/action-result"
-import type { Inventory } from "@/types/inventory"
-import type { MovementType, StockMovement } from "@/types/stock-movement"
+import type {
+  ClientSafeStockMovement,
+  MovementType,
+} from "@/types/stock-movement"
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Une erreur est survenue."
@@ -33,7 +35,7 @@ function errorMessage(error: unknown): string {
 
 export async function adjustInventoryAction(
   input: unknown
-): Promise<ActionResult<Inventory>> {
+): Promise<ActionResult<{ id: string }>> {
   const session = await requireSession("staff")
   const parsed = adjustInventorySchema.safeParse(input)
   if (!parsed.success) {
@@ -50,7 +52,7 @@ export async function adjustInventoryAction(
     )
     revalidatePath("/admin/inventory")
     revalidatePath("/admin/stock")
-    return { success: true, data: inventory }
+    return { success: true, data: { id: inventory.id } }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }
@@ -58,7 +60,7 @@ export async function adjustInventoryAction(
 
 export async function reserveInventoryAction(
   input: unknown
-): Promise<ActionResult<Inventory>> {
+): Promise<ActionResult<{ id: string }>> {
   const session = await requireSession("staff")
   const parsed = reserveInventorySchema.safeParse(input)
   if (!parsed.success) {
@@ -72,7 +74,7 @@ export async function reserveInventoryAction(
     const inventory = await reserveInventory(parsed.data, session.uid)
     revalidatePath("/admin/inventory")
     revalidatePath("/admin/stock")
-    return { success: true, data: inventory }
+    return { success: true, data: { id: inventory.id } }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }
@@ -80,7 +82,7 @@ export async function reserveInventoryAction(
 
 export async function releaseInventoryAction(
   input: unknown
-): Promise<ActionResult<Inventory>> {
+): Promise<ActionResult<{ id: string }>> {
   const session = await requireSession("staff")
   const parsed = releaseInventorySchema.safeParse(input)
   if (!parsed.success) {
@@ -94,7 +96,7 @@ export async function releaseInventoryAction(
     const inventory = await releaseInventory(parsed.data, session.uid)
     revalidatePath("/admin/inventory")
     revalidatePath("/admin/stock")
-    return { success: true, data: inventory }
+    return { success: true, data: { id: inventory.id } }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }
@@ -102,7 +104,7 @@ export async function releaseInventoryAction(
 
 export async function stockInAction(
   input: unknown
-): Promise<ActionResult<Inventory>> {
+): Promise<ActionResult<{ id: string }>> {
   const session = await requireSession("staff")
   const parsed = stockInSchema.safeParse(input)
   if (!parsed.success) {
@@ -116,7 +118,7 @@ export async function stockInAction(
     const inventory = await stockIn({ ...parsed.data, sku: "" }, session.uid)
     revalidatePath("/admin/inventory")
     revalidatePath("/admin/stock")
-    return { success: true, data: inventory }
+    return { success: true, data: { id: inventory.id } }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }
@@ -124,7 +126,7 @@ export async function stockInAction(
 
 export async function stockOutAction(
   input: unknown
-): Promise<ActionResult<Inventory>> {
+): Promise<ActionResult<{ id: string }>> {
   const session = await requireSession("staff")
   const parsed = stockOutSchema.safeParse(input)
   if (!parsed.success) {
@@ -138,7 +140,7 @@ export async function stockOutAction(
     const inventory = await stockOut(parsed.data, session.uid)
     revalidatePath("/admin/inventory")
     revalidatePath("/admin/stock")
-    return { success: true, data: inventory }
+    return { success: true, data: { id: inventory.id } }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }
@@ -169,11 +171,15 @@ export async function updateReorderThresholdAction(
 export async function getMovementHistoryAction(
   productId: string,
   variantId: string
-): Promise<ActionResult<StockMovement[]>> {
+): Promise<ActionResult<ClientSafeStockMovement[]>> {
   await requireSession("staff")
   try {
     const movements = await listMovementsForVariant(productId, variantId)
-    return { success: true, data: movements }
+    const clientSafeMovements = movements.map(({ createdAt, ...rest }) => ({
+      ...rest,
+      createdAt: createdAt.toMillis(),
+    }))
+    return { success: true, data: clientSafeMovements }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }

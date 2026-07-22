@@ -7,6 +7,7 @@ function validCategory(overrides: Partial<Record<string, unknown>> = {}) {
     name: "Vêtements",
     description: "",
     icon: null,
+    color: null,
     imageUrl: null,
     bannerImageUrl: null,
     parentId: null,

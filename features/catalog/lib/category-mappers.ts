@@ -9,6 +9,7 @@ export function categoryToFormDefaults(
       name: "",
       description: "",
       icon: null,
+      color: null,
       imageUrl: null,
       bannerImageUrl: null,
       parentId: null,
@@ -23,6 +24,11 @@ export function categoryToFormDefaults(
     name: category.name,
     description: category.description,
     icon: category.icon,
+    // `?? null`: `color` was added after this store's earliest categories,
+    // so it's `undefined` (not `null`) on those older documents even
+    // though the type says `string | null` — matters here since
+    // `CategoryFormInput`'s `color` must be exactly `string | null`.
+    color: category.color ?? null,
     imageUrl: category.imageUrl,
     bannerImageUrl: category.bannerImageUrl,
     parentId: category.parentId,

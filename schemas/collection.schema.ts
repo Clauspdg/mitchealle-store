@@ -1,11 +1,7 @@
 import { z } from "zod"
 
 import { COLLECTION_TYPES } from "@/types/collection"
-
-const hexColor = z
-  .string()
-  .regex(/^#[0-9a-fA-F]{6}$/, "Couleur hexadécimale invalide (ex. #0F172A).")
-  .nullable()
+import { hexColorSchema as hexColor } from "@/schemas/shared.schema"
 
 // No `.default(...)`: the form's defaultValues supplies every field
 // explicitly, and `.default()` makes Zod's input/output types diverge,

@@ -192,6 +192,31 @@ export function CategoryFormDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
+            <Label htmlFor="cat-color">Couleur</Label>
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                className="size-9 rounded-md border"
+                value={watch("color") ?? "#0f172a"}
+                onChange={(event) => setValue("color", event.target.value)}
+                aria-label="Couleur de la catégorie"
+              />
+              <Input
+                id="cat-color"
+                value={watch("color") ?? ""}
+                onChange={(event) =>
+                  setValue("color", event.target.value || null)
+                }
+                placeholder="#0F172A"
+                aria-invalid={!!errors.color}
+              />
+            </div>
+            {errors.color && (
+              <p className="text-destructive text-sm">{errors.color.message}</p>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-1.5">
             <Label>Image</Label>
             <div className="flex items-center gap-3">
               {watch("imageUrl") ? (

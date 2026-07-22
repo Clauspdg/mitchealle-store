@@ -11,7 +11,7 @@ import {
 import { uploadImage } from "@/services/storage/images"
 import { logActivity } from "@/services/monitoring/log-activity"
 import type { ActionResult } from "@/types/action-result"
-import type { Return, ReturnStatus } from "@/types/return"
+import type { ReturnStatus } from "@/types/return"
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Une erreur est survenue."
@@ -19,7 +19,7 @@ function errorMessage(error: unknown): string {
 
 export async function createReturnRequestAction(
   input: unknown
-): Promise<ActionResult<Return>> {
+): Promise<ActionResult<{ id: string }>> {
   const session = await requireSession("customer")
   const parsed = createReturnSchema.safeParse(input)
   if (!parsed.success) {
@@ -37,7 +37,7 @@ export async function createReturnRequestAction(
       photoUrls: parsed.data.photoUrls,
     })
     revalidatePath("/account/returns")
-    return { success: true, data: returnRequest }
+    return { success: true, data: { id: returnRequest.id } }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }

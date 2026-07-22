@@ -15,7 +15,6 @@ import {
   updateShipment,
 } from "@/services/firestore/incoming-shipments"
 import type { ActionResult } from "@/types/action-result"
-import type { IncomingShipment } from "@/types/incoming-shipment"
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Une erreur est survenue."
@@ -23,7 +22,7 @@ function errorMessage(error: unknown): string {
 
 export async function createShipmentAction(
   input: unknown
-): Promise<ActionResult<IncomingShipment>> {
+): Promise<ActionResult<{ id: string }>> {
   const session = await requireSession("staff")
   const parsed = incomingShipmentFormSchema.safeParse(input)
   if (!parsed.success) {
@@ -36,7 +35,7 @@ export async function createShipmentAction(
   try {
     const shipment = await createShipment(parsed.data, session.uid)
     revalidatePath("/admin/shipments")
-    return { success: true, data: shipment }
+    return { success: true, data: { id: shipment.id } }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }
@@ -45,7 +44,7 @@ export async function createShipmentAction(
 export async function updateShipmentAction(
   id: string,
   input: unknown
-): Promise<ActionResult<IncomingShipment>> {
+): Promise<ActionResult<{ id: string }>> {
   await requireSession("staff")
   const parsed = incomingShipmentFormSchema.safeParse(input)
   if (!parsed.success) {
@@ -59,7 +58,7 @@ export async function updateShipmentAction(
     const shipment = await updateShipment(id, parsed.data)
     revalidatePath("/admin/shipments")
     revalidatePath(`/admin/shipments/${id}`)
-    return { success: true, data: shipment }
+    return { success: true, data: { id: shipment.id } }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }
@@ -67,7 +66,7 @@ export async function updateShipmentAction(
 
 export async function setShipmentStatusAction(
   input: unknown
-): Promise<ActionResult<IncomingShipment>> {
+): Promise<ActionResult<{ id: string }>> {
   const session = await requireSession("staff")
   const parsed = setShipmentStatusSchema.safeParse(input)
   if (!parsed.success) {
@@ -79,7 +78,7 @@ export async function setShipmentStatusAction(
     revalidatePath("/admin/shipments")
     revalidatePath(`/admin/shipments/${parsed.data.shipmentId}`)
     revalidatePath("/admin/inventory")
-    return { success: true, data: shipment }
+    return { success: true, data: { id: shipment.id } }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }
@@ -87,7 +86,7 @@ export async function setShipmentStatusAction(
 
 export async function receiveShipmentAction(
   input: unknown
-): Promise<ActionResult<IncomingShipment>> {
+): Promise<ActionResult<{ id: string }>> {
   const session = await requireSession("staff")
   const parsed = receiveShipmentSchema.safeParse(input)
   if (!parsed.success) {
@@ -100,7 +99,7 @@ export async function receiveShipmentAction(
     revalidatePath(`/admin/shipments/${parsed.data.shipmentId}`)
     revalidatePath("/admin/inventory")
     revalidatePath("/admin/stock")
-    return { success: true, data: shipment }
+    return { success: true, data: { id: shipment.id } }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }

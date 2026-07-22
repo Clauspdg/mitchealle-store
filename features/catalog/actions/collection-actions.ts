@@ -12,7 +12,7 @@ import {
 } from "@/services/firestore/collections"
 import { uploadImage } from "@/services/storage/images"
 import type { ActionResult } from "@/types/action-result"
-import type { Collection, CollectionStatus } from "@/types/collection"
+import type { CollectionStatus } from "@/types/collection"
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Une erreur est survenue."
@@ -20,7 +20,7 @@ function errorMessage(error: unknown): string {
 
 export async function createCollectionAction(
   input: unknown
-): Promise<ActionResult<Collection>> {
+): Promise<ActionResult<{ id: string }>> {
   const session = await requireSession("staff")
   const parsed = collectionFormSchema.safeParse(input)
   if (!parsed.success) {
@@ -33,7 +33,7 @@ export async function createCollectionAction(
   try {
     const collection = await createCollection(parsed.data, session.uid)
     revalidatePath("/admin/collections")
-    return { success: true, data: collection }
+    return { success: true, data: { id: collection.id } }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }
@@ -42,7 +42,7 @@ export async function createCollectionAction(
 export async function updateCollectionAction(
   id: string,
   input: unknown
-): Promise<ActionResult<Collection>> {
+): Promise<ActionResult<{ id: string }>> {
   await requireSession("staff")
   const parsed = collectionFormSchema.safeParse(input)
   if (!parsed.success) {
@@ -55,7 +55,7 @@ export async function updateCollectionAction(
   try {
     const collection = await updateCollection(id, parsed.data)
     revalidatePath("/admin/collections")
-    return { success: true, data: collection }
+    return { success: true, data: { id: collection.id } }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }

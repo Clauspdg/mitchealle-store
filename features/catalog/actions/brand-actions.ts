@@ -12,7 +12,6 @@ import {
 } from "@/services/firestore/brands"
 import { uploadImage } from "@/services/storage/images"
 import type { ActionResult } from "@/types/action-result"
-import type { Brand } from "@/types/brand"
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Une erreur est survenue."
@@ -20,7 +19,7 @@ function errorMessage(error: unknown): string {
 
 export async function createBrandAction(
   input: unknown
-): Promise<ActionResult<Brand>> {
+): Promise<ActionResult<{ id: string }>> {
   await requireSession("staff")
   const parsed = brandFormSchema.safeParse(input)
   if (!parsed.success) {
@@ -33,7 +32,7 @@ export async function createBrandAction(
   try {
     const brand = await createBrand(parsed.data)
     revalidatePath("/admin/brands")
-    return { success: true, data: brand }
+    return { success: true, data: { id: brand.id } }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }
@@ -42,7 +41,7 @@ export async function createBrandAction(
 export async function updateBrandAction(
   id: string,
   input: unknown
-): Promise<ActionResult<Brand>> {
+): Promise<ActionResult<{ id: string }>> {
   await requireSession("staff")
   const parsed = brandFormSchema.safeParse(input)
   if (!parsed.success) {
@@ -55,7 +54,7 @@ export async function updateBrandAction(
   try {
     const brand = await updateBrand(id, parsed.data)
     revalidatePath("/admin/brands")
-    return { success: true, data: brand }
+    return { success: true, data: { id: brand.id } }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }

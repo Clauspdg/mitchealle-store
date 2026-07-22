@@ -10,7 +10,7 @@ import type { Return } from "@/types/return"
 export function ReturnStatusControl({
   returnRequest,
 }: {
-  returnRequest: Return
+  returnRequest: Pick<Return, "id" | "status">
 }) {
   const router = useRouter()
 

@@ -30,6 +30,12 @@ export default async function StockDashboardPage({
     getStockAlerts(),
     listStockMovements({ type: movementType }),
   ])
+  // `createdAt` is a Firestore `Timestamp` instance and cannot cross into
+  // a Client Component as a raw prop — converted to millis for display.
+  const clientSafeMovements = movements.map(({ createdAt, ...rest }) => ({
+    ...rest,
+    createdAt: createdAt.toMillis(),
+  }))
 
   const statCards = [
     {
@@ -90,7 +96,7 @@ export default async function StockDashboardPage({
           <h2 className="mb-3 text-lg font-semibold tracking-tight">
             Derniers mouvements
           </h2>
-          <RecentMovementsTable movements={movements} />
+          <RecentMovementsTable movements={clientSafeMovements} />
         </div>
       </div>
     </div>

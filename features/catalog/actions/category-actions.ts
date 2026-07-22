@@ -13,7 +13,6 @@ import {
 } from "@/services/firestore/categories"
 import { uploadImage } from "@/services/storage/images"
 import type { ActionResult } from "@/types/action-result"
-import type { Category } from "@/types/category"
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Une erreur est survenue."
@@ -21,7 +20,7 @@ function errorMessage(error: unknown): string {
 
 export async function createCategoryAction(
   input: unknown
-): Promise<ActionResult<Category>> {
+): Promise<ActionResult<{ id: string }>> {
   const session = await requireSession("staff")
   const parsed = categoryFormSchema.safeParse(input)
   if (!parsed.success) {
@@ -34,7 +33,7 @@ export async function createCategoryAction(
   try {
     const category = await createCategory(parsed.data, session.uid)
     revalidatePath("/admin/categories")
-    return { success: true, data: category }
+    return { success: true, data: { id: category.id } }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }
@@ -43,7 +42,7 @@ export async function createCategoryAction(
 export async function updateCategoryAction(
   id: string,
   input: unknown
-): Promise<ActionResult<Category>> {
+): Promise<ActionResult<{ id: string }>> {
   await requireSession("staff")
   const parsed = categoryFormSchema.safeParse(input)
   if (!parsed.success) {
@@ -56,7 +55,7 @@ export async function updateCategoryAction(
   try {
     const category = await updateCategory(id, parsed.data)
     revalidatePath("/admin/categories")
-    return { success: true, data: category }
+    return { success: true, data: { id: category.id } }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }

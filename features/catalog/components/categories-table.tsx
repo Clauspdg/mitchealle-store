@@ -82,7 +82,17 @@ function CategoryRow({
           <GripVerticalIcon className="size-4" />
         </button>
       </TableCell>
-      <TableCell className="font-medium">{category.name}</TableCell>
+      <TableCell className="font-medium">
+        <span className="flex items-center gap-2">
+          {category.color && (
+            <span
+              className="size-3 shrink-0 rounded-full border"
+              style={{ backgroundColor: category.color }}
+            />
+          )}
+          {category.name}
+        </span>
+      </TableCell>
       <TableCell className="text-muted-foreground">
         {category.parentId
           ? (categoriesById[category.parentId]?.name ?? "—")

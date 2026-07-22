@@ -24,14 +24,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import type { Inventory } from "@/types/inventory"
+import type { ClientSafeInventory } from "@/types/inventory"
 
 export function AdjustInventoryDialog({
   trigger,
   inventory,
 }: {
   trigger: ReactElement
-  inventory: Inventory
+  inventory: ClientSafeInventory
 }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)

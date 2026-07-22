@@ -98,7 +98,12 @@ export default async function AdminReturnDetailPage({
           </div>
 
           <div className="flex flex-col gap-4">
-            <ReturnStatusControl returnRequest={returnRequest} />
+            <ReturnStatusControl
+              returnRequest={{
+                id: returnRequest.id,
+                status: returnRequest.status,
+              }}
+            />
             <div className="flex flex-col gap-4 rounded-xl border p-4">
               <h2 className="font-heading text-base font-medium">Suivi</h2>
               <OrderTimeline history={returnRequest.statusHistory} />

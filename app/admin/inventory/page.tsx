@@ -34,6 +34,12 @@ export default async function InventoryPage({
     listAllProducts(),
   ])
   const productsById = Object.fromEntries(products.map((p) => [p.id, p]))
+  // `lastRestockedAt`/`updatedAt` are Firestore `Timestamp` instances and
+  // cannot cross into a Client Component as raw props — InventoryRowActions
+  // never reads them, so they're dropped here rather than passed down.
+  const clientSafeItems = items.map(
+    ({ lastRestockedAt, updatedAt, ...rest }) => rest
+  )
 
   return (
     <div className="flex flex-1">
@@ -41,7 +47,7 @@ export default async function InventoryPage({
       <div className="flex w-full flex-col gap-6 px-6 py-8">
         <h1 className="text-xl font-semibold tracking-tight">Inventaire</h1>
         <InventoryToolbar />
-        <InventoryTable items={items} productsById={productsById} />
+        <InventoryTable items={clientSafeItems} productsById={productsById} />
         <CursorPagination nextCursor={nextCursor} hasMore={hasMore} />
       </div>
     </div>

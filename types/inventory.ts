@@ -34,3 +34,11 @@ export interface Inventory extends InventoryDocument {
   /** `${productId}_${variantId}` */
   id: string
 }
+
+/** `Inventory` without the Firestore `Timestamp` fields — for passing into
+ * Client Components, which can't receive class instances like `Timestamp`
+ * across the Server/Client boundary. */
+export type ClientSafeInventory = Omit<
+  Inventory,
+  "lastRestockedAt" | "updatedAt"
+>

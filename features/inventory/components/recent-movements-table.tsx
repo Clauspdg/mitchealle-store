@@ -22,7 +22,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { MOVEMENT_TYPES, type StockMovement } from "@/types/stock-movement"
+import {
+  MOVEMENT_TYPES,
+  type ClientSafeStockMovement,
+  type StockMovement,
+} from "@/types/stock-movement"
 
 const TYPE_LABELS: Record<StockMovement["type"], string> = {
   adjustment: "Ajustement",
@@ -36,7 +40,7 @@ const TYPE_LABELS: Record<StockMovement["type"], string> = {
 export function RecentMovementsTable({
   movements,
 }: {
-  movements: StockMovement[]
+  movements: ClientSafeStockMovement[]
 }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -132,7 +136,7 @@ export function RecentMovementsTable({
                     {movement.reference ?? "—"}
                   </TableCell>
                   <TableCell className="text-muted-foreground text-xs">
-                    {movement.createdAt.toDate().toLocaleString("fr-FR")}
+                    {new Date(movement.createdAt).toLocaleString("fr-FR")}
                   </TableCell>
                 </TableRow>
               ))}

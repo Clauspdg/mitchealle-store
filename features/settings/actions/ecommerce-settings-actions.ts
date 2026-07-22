@@ -14,11 +14,6 @@ import {
   updateShippingSettings,
 } from "@/services/firestore/settings"
 import type { ActionResult } from "@/types/action-result"
-import type {
-  NotificationSettings,
-  PaymentSettings,
-  ShippingSettings,
-} from "@/types/settings"
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Une erreur est survenue."
@@ -26,7 +21,7 @@ function errorMessage(error: unknown): string {
 
 export async function updateShippingSettingsAction(
   input: unknown
-): Promise<ActionResult<ShippingSettings>> {
+): Promise<ActionResult> {
   await requireSession("admin")
   const parsed = shippingSettingsFormSchema.safeParse(input)
   if (!parsed.success) {
@@ -36,9 +31,9 @@ export async function updateShippingSettingsAction(
     }
   }
   try {
-    const settings = await updateShippingSettings(parsed.data)
+    await updateShippingSettings(parsed.data)
     revalidatePath("/admin/settings/ecommerce")
-    return { success: true, data: settings }
+    return { success: true, data: undefined }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }
@@ -46,7 +41,7 @@ export async function updateShippingSettingsAction(
 
 export async function updatePaymentSettingsAction(
   input: unknown
-): Promise<ActionResult<PaymentSettings>> {
+): Promise<ActionResult> {
   await requireSession("admin")
   const parsed = paymentSettingsFormSchema.safeParse(input)
   if (!parsed.success) {
@@ -56,9 +51,9 @@ export async function updatePaymentSettingsAction(
     }
   }
   try {
-    const settings = await updatePaymentSettings(parsed.data)
+    await updatePaymentSettings(parsed.data)
     revalidatePath("/admin/settings/ecommerce")
-    return { success: true, data: settings }
+    return { success: true, data: undefined }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }
@@ -66,7 +61,7 @@ export async function updatePaymentSettingsAction(
 
 export async function updateNotificationSettingsAction(
   input: unknown
-): Promise<ActionResult<NotificationSettings>> {
+): Promise<ActionResult> {
   await requireSession("admin")
   const parsed = notificationSettingsFormSchema.safeParse(input)
   if (!parsed.success) {
@@ -76,9 +71,9 @@ export async function updateNotificationSettingsAction(
     }
   }
   try {
-    const settings = await updateNotificationSettings(parsed.data)
+    await updateNotificationSettings(parsed.data)
     revalidatePath("/admin/settings/ecommerce")
-    return { success: true, data: settings }
+    return { success: true, data: undefined }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }

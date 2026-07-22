@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache"
 import { requireSession } from "@/lib/session.server"
 import { updateMenu } from "@/services/firestore/menus"
 import type { ActionResult } from "@/types/action-result"
-import type { Menu, MenuId, MenuItem } from "@/types/menu"
+import type { MenuId, MenuItem } from "@/types/menu"
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Une erreur est survenue."
@@ -14,13 +14,13 @@ function errorMessage(error: unknown): string {
 export async function updateMenuAction(
   id: MenuId,
   items: MenuItem[]
-): Promise<ActionResult<Menu>> {
+): Promise<ActionResult> {
   const session = await requireSession("staff")
   try {
-    const menu = await updateMenu(id, items, session.uid)
+    await updateMenu(id, items, session.uid)
     revalidatePath("/admin/menus")
     revalidatePath("/", "layout")
-    return { success: true, data: menu }
+    return { success: true, data: undefined }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }
