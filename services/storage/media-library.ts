@@ -102,6 +102,13 @@ export async function listMedia(params: {
   return { items, nextCursor, hasMore }
 }
 
+export async function updateMediaAltText(
+  id: string,
+  altText: string
+): Promise<void> {
+  await adminDb.collection(MEDIA_COLLECTION).doc(id).update({ altText })
+}
+
 export async function deleteMediaItem(id: string): Promise<void> {
   const doc = await adminDb.collection(MEDIA_COLLECTION).doc(id).get()
   if (!doc.exists) return

@@ -6,6 +6,7 @@ import { requireSession } from "@/lib/session.server"
 import {
   deleteMediaItem,
   listMedia,
+  updateMediaAltText,
   uploadToLibrary,
 } from "@/services/storage/media-library"
 import type { ActionResult } from "@/types/action-result"
@@ -67,6 +68,20 @@ export async function listMediaAction(
         items: page.items.map(toClientSafeMediaItem),
       },
     }
+  } catch (error) {
+    return { success: false, error: errorMessage(error) }
+  }
+}
+
+export async function updateMediaAltTextAction(
+  id: string,
+  altText: string
+): Promise<ActionResult> {
+  await requireSession("staff")
+  try {
+    await updateMediaAltText(id, altText)
+    revalidatePath("/admin/media")
+    return { success: true, data: undefined }
   } catch (error) {
     return { success: false, error: errorMessage(error) }
   }
