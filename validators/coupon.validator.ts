@@ -16,6 +16,7 @@ export interface CouponValidationContext {
 
 export type CouponRejectionCode =
   | "inactive"
+  | "not_started"
   | "expired"
   | "max_uses"
   | "not_allowed_user"
@@ -23,7 +24,7 @@ export type CouponRejectionCode =
   | "not_eligible"
 
 export type CouponValidationResult =
-  | { valid: true; discountMinor: number }
+  | { valid: true; discountMinor: number; freeShipping: boolean }
   | { valid: false; reason: string; code: CouponRejectionCode }
 
 /**
@@ -46,6 +47,13 @@ export function validateCoupon(
   }
 
   const now = context.now ?? new Date()
+  if (coupon.startsAt && coupon.startsAt.toDate() > now) {
+    return {
+      valid: false,
+      reason: "Ce coupon n'est pas encore actif.",
+      code: "not_started",
+    }
+  }
   if (coupon.expiresAt && coupon.expiresAt.toDate() < now) {
     return { valid: false, reason: "Ce coupon a expiré.", code: "expired" }
   }
@@ -112,10 +120,13 @@ export function validateCoupon(
     (sum, item) => sum + item.unitPriceMinor * item.quantity,
     0
   )
+  if (coupon.type === "freeShipping") {
+    return { valid: true, discountMinor: 0, freeShipping: true }
+  }
   const discountMinor =
     coupon.type === "percentage"
       ? Math.round(eligibleSubtotalMinor * (coupon.value / 100))
       : Math.min(coupon.value, eligibleSubtotalMinor)
 
-  return { valid: true, discountMinor }
+  return { valid: true, discountMinor, freeShipping: false }
 }

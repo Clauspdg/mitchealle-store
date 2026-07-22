@@ -18,7 +18,9 @@ import type { ActionResult } from "@/types/action-result"
  */
 export async function applyCouponAction(
   input: unknown
-): Promise<ActionResult<{ code: string; discountMinor: number }>> {
+): Promise<
+  ActionResult<{ code: string; discountMinor: number; freeShipping: boolean }>
+> {
   const session = await requireSession("customer")
 
   const parsed = applyCouponSchema.safeParse(input)
@@ -51,6 +53,10 @@ export async function applyCouponAction(
 
   return {
     success: true,
-    data: { code: coupon.code, discountMinor: result.discountMinor },
+    data: {
+      code: coupon.code,
+      discountMinor: result.discountMinor,
+      freeShipping: result.freeShipping,
+    },
   }
 }

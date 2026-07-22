@@ -43,6 +43,7 @@ function couponToFormDefaults(coupon?: ClientSafeCoupon): CouponFormInput {
     code: coupon?.code ?? "",
     type: coupon?.type ?? "percentage",
     value: coupon?.value ?? 10,
+    startsAt: coupon?.startsAt ? new Date(coupon.startsAt) : null,
     expiresAt: coupon?.expiresAt ? new Date(coupon.expiresAt) : null,
     maxUses: coupon?.maxUses ?? null,
     minPurchaseMinor: coupon?.minPurchaseMinor ?? null,
@@ -133,53 +134,69 @@ export function CouponFormDialog({ trigger, coupon }: CouponFormDialogProps) {
                 <SelectContent>
                   <SelectItem value="percentage">Pourcentage</SelectItem>
                   <SelectItem value="fixed">Montant fixe</SelectItem>
+                  <SelectItem value="freeShipping">
+                    Livraison gratuite
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="coupon-value">
-                Valeur {watch("type") === "percentage" ? "(%)" : "(HTG)"}
-              </Label>
-              <Input
-                id="coupon-value"
-                type="number"
-                step="0.01"
-                {...register("value", { valueAsNumber: true })}
-              />
-              {errors.value && (
-                <p className="text-destructive text-sm">
-                  {errors.value.message}
-                </p>
-              )}
-            </div>
+            {watch("type") !== "freeShipping" && (
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="coupon-value">
+                  Valeur {watch("type") === "percentage" ? "(%)" : "(HTG)"}
+                </Label>
+                <Input
+                  id="coupon-value"
+                  type="number"
+                  step="0.01"
+                  {...register("value", { valueAsNumber: true })}
+                />
+                {errors.value && (
+                  <p className="text-destructive text-sm">
+                    {errors.value.message}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label>Début (optionnel)</Label>
+              <DatePicker
+                date={watch("startsAt") ?? undefined}
+                onSelect={(date) => setValue("startsAt", date ?? null)}
+              />
+            </div>
             <div className="flex flex-col gap-1.5">
               <Label>Expiration (optionnel)</Label>
               <DatePicker
                 date={watch("expiresAt") ?? undefined}
                 onSelect={(date) => setValue("expiresAt", date ?? null)}
               />
+              {errors.expiresAt && (
+                <p className="text-destructive text-sm">
+                  {errors.expiresAt.message}
+                </p>
+              )}
             </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="coupon-max-uses">
-                Utilisations max (optionnel)
-              </Label>
-              <Input
-                id="coupon-max-uses"
-                type="number"
-                value={watch("maxUses") ?? ""}
-                onChange={(event) =>
-                  setValue(
-                    "maxUses",
-                    event.target.value === ""
-                      ? null
-                      : Number(event.target.value)
-                  )
-                }
-              />
-            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="coupon-max-uses">
+              Utilisations max (optionnel)
+            </Label>
+            <Input
+              id="coupon-max-uses"
+              type="number"
+              value={watch("maxUses") ?? ""}
+              onChange={(event) =>
+                setValue(
+                  "maxUses",
+                  event.target.value === "" ? null : Number(event.target.value)
+                )
+              }
+            />
           </div>
 
           <div className="flex flex-col gap-1.5">

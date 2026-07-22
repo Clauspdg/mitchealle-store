@@ -19,6 +19,7 @@ function baseCoupon(overrides: Partial<Coupon> = {}): Coupon {
     code: "TEST10",
     type: "percentage",
     value: 10,
+    startsAt: null,
     expiresAt: null,
     maxUses: null,
     usedCount: 0,
@@ -45,7 +46,11 @@ describe("validateCoupon", () => {
       uid: "u1",
       items: ITEMS,
     })
-    expect(result).toEqual({ valid: true, discountMinor: 250 })
+    expect(result).toEqual({
+      valid: true,
+      discountMinor: 250,
+      freeShipping: false,
+    })
   })
 
   it("caps a fixed discount at the eligible subtotal", () => {
@@ -53,7 +58,11 @@ describe("validateCoupon", () => {
       uid: "u1",
       items: ITEMS,
     })
-    expect(result).toEqual({ valid: true, discountMinor: 2500 })
+    expect(result).toEqual({
+      valid: true,
+      discountMinor: 2500,
+      freeShipping: false,
+    })
   })
 
   it("rejects an inactive coupon", () => {
@@ -119,7 +128,11 @@ describe("validateCoupon", () => {
       { uid: "u1", items: ITEMS }
     )
     // Only p1 (2 × 1000 = 2000) is eligible, 10% of that is 200.
-    expect(result).toEqual({ valid: true, discountMinor: 200 })
+    expect(result).toEqual({
+      valid: true,
+      discountMinor: 200,
+      freeShipping: false,
+    })
   })
 
   it("rejects when no cart item matches the product/category restriction", () => {
@@ -128,5 +141,34 @@ describe("validateCoupon", () => {
       items: ITEMS,
     })
     expect(result.valid).toBe(false)
+  })
+
+  it("rejects a coupon that hasn't started yet, with the not_started code", () => {
+    const result = validateCoupon(
+      baseCoupon({ startsAt: timestamp(new Date("2030-01-01")) }),
+      { uid: "u1", items: ITEMS, now: new Date("2026-01-01") }
+    )
+    expect(result.valid).toBe(false)
+    expect(result.valid === false && result.code).toBe("not_started")
+  })
+
+  it("accepts a coupon whose start date has already passed", () => {
+    const result = validateCoupon(
+      baseCoupon({ startsAt: timestamp(new Date("2020-01-01")) }),
+      { uid: "u1", items: ITEMS, now: new Date("2026-01-01") }
+    )
+    expect(result.valid).toBe(true)
+  })
+
+  it("a freeShipping coupon returns discountMinor 0 and freeShipping true", () => {
+    const result = validateCoupon(
+      baseCoupon({ type: "freeShipping", value: 0 }),
+      { uid: "u1", items: ITEMS }
+    )
+    expect(result).toEqual({
+      valid: true,
+      discountMinor: 0,
+      freeShipping: true,
+    })
   })
 })

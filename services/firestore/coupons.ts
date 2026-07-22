@@ -56,6 +56,7 @@ function buildDocData(input: CouponFormInput) {
     code: input.code,
     type: input.type,
     value: input.value,
+    startsAt: toTimestampOrNull(input.startsAt),
     expiresAt: toTimestampOrNull(input.expiresAt),
     maxUses: input.maxUses,
     minPurchaseMinor: input.minPurchaseMinor,

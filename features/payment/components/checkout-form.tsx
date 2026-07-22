@@ -56,6 +56,7 @@ export function CheckoutForm({
   const [appliedCoupon, setAppliedCoupon] = useState<{
     code: string
     discountMinor: number
+    freeShipping: boolean
   } | null>(null)
 
   async function handleApplyCoupon() {
@@ -241,9 +242,9 @@ export function CheckoutForm({
         </div>
         {appliedCoupon ? (
           <p className="text-sm text-green-600 dark:text-green-500">
-            Réduction de{" "}
-            {formatPriceMinor(appliedCoupon.discountMinor, currency)} appliquée
-            avec le code {appliedCoupon.code}.
+            {appliedCoupon.freeShipping
+              ? `Livraison gratuite appliquée avec le code ${appliedCoupon.code}.`
+              : `Réduction de ${formatPriceMinor(appliedCoupon.discountMinor, currency)} appliquée avec le code ${appliedCoupon.code}.`}
           </p>
         ) : null}
       </div>

@@ -76,6 +76,7 @@ function baseCoupon(overrides: Partial<Coupon> = {}): Coupon {
     code: "PROMO10",
     type: "percentage",
     value: 10,
+    startsAt: null,
     expiresAt: null,
     maxUses: null,
     usedCount: 0,

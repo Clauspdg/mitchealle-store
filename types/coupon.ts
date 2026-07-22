@@ -1,6 +1,6 @@
 import type { FirestoreTimestamp } from "./firestore"
 
-export const COUPON_TYPES = ["percentage", "fixed"] as const
+export const COUPON_TYPES = ["percentage", "fixed", "freeShipping"] as const
 export type CouponType = (typeof COUPON_TYPES)[number]
 
 /**
@@ -14,8 +14,11 @@ export type CouponType = (typeof COUPON_TYPES)[number]
 export interface CouponDocument {
   code: string
   type: CouponType
-  /** Percentage (0-100) or a fixed amount in minor units, per `type`. */
+  /** Percentage (0-100) or a fixed amount in minor units, per `type`.
+   * Unused (0) when `type` is `freeShipping`. */
   value: number
+  /** `null` means valid immediately — no scheduled start. */
+  startsAt: FirestoreTimestamp | null
   expiresAt: FirestoreTimestamp | null
   maxUses: number | null
   usedCount: number
@@ -41,7 +44,8 @@ export interface Coupon extends CouponDocument {
  * are unused by any client component and are dropped entirely. */
 export type ClientSafeCoupon = Omit<
   Coupon,
-  "expiresAt" | "createdAt" | "updatedAt"
+  "startsAt" | "expiresAt" | "createdAt" | "updatedAt"
 > & {
+  startsAt: number | null
   expiresAt: number | null
 }

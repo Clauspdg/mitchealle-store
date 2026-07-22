@@ -14,12 +14,14 @@ export default async function CouponsPage() {
   await requireSession("staff")
   const coupons = await listCoupons()
   // Firestore `Timestamp` fields can't cross into a Client Component as raw
-  // props. `expiresAt` is still needed by the table's display and the edit
-  // form's date picker, so it's converted to millis instead of dropped;
-  // `createdAt`/`updatedAt` are unused client-side and are dropped entirely.
+  // props. `startsAt`/`expiresAt` are still needed by the table's display
+  // and the edit form's date pickers, so they're converted to millis
+  // instead of dropped; `createdAt`/`updatedAt` are unused client-side and
+  // are dropped entirely.
   const clientSafeCoupons = coupons.map(
-    ({ expiresAt, createdAt, updatedAt, ...rest }) => ({
+    ({ startsAt, expiresAt, createdAt, updatedAt, ...rest }) => ({
       ...rest,
+      startsAt: startsAt?.toMillis() ?? null,
       expiresAt: expiresAt?.toMillis() ?? null,
     })
   )

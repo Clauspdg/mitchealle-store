@@ -20,6 +20,7 @@ import {
 import type { ClientSafeCoupon } from "@/types/coupon"
 
 function formatValue(coupon: ClientSafeCoupon): string {
+  if (coupon.type === "freeShipping") return "Livraison gratuite"
   return coupon.type === "percentage"
     ? `-${coupon.value}%`
     : `-${formatPriceMinor(coupon.value, "HTG")}`

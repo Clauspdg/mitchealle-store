@@ -7,6 +7,7 @@ function baseInput(overrides: Partial<Record<string, unknown>> = {}) {
     code: "ete2026",
     type: "percentage",
     value: 10,
+    startsAt: null,
     expiresAt: null,
     maxUses: null,
     minPurchaseMinor: null,
@@ -50,6 +51,35 @@ describe("couponFormSchema", () => {
     expect(couponFormSchema.safeParse(baseInput({ value: 0 })).success).toBe(
       false
     )
+  })
+
+  it("accepts a freeShipping coupon with value 0", () => {
+    expect(
+      couponFormSchema.safeParse(baseInput({ type: "freeShipping", value: 0 }))
+        .success
+    ).toBe(true)
+  })
+
+  it("rejects an end date before the start date", () => {
+    expect(
+      couponFormSchema.safeParse(
+        baseInput({
+          startsAt: new Date("2026-12-01"),
+          expiresAt: new Date("2026-11-01"),
+        })
+      ).success
+    ).toBe(false)
+  })
+
+  it("accepts an end date after the start date", () => {
+    expect(
+      couponFormSchema.safeParse(
+        baseInput({
+          startsAt: new Date("2026-11-01"),
+          expiresAt: new Date("2026-12-01"),
+        })
+      ).success
+    ).toBe(true)
   })
 })
 

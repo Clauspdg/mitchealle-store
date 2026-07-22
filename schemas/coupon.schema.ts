@@ -17,7 +17,8 @@ export const couponFormSchema = z
       )
       .transform((value) => value.toUpperCase()),
     type: z.enum(COUPON_TYPES),
-    value: z.number().positive("La valeur doit être supérieure à 0."),
+    value: z.number().nonnegative("La valeur ne peut pas être négative."),
+    startsAt: z.date().nullable(),
     expiresAt: z.date().nullable(),
     maxUses: z.number().int().positive().nullable(),
     minPurchaseMinor: z.number().int().nonnegative().nullable(),
@@ -30,6 +31,18 @@ export const couponFormSchema = z
     error: "Un pourcentage ne peut pas dépasser 100.",
     path: ["value"],
   })
+  .refine((data) => data.type === "freeShipping" || data.value > 0, {
+    error: "La valeur doit être supérieure à 0.",
+    path: ["value"],
+  })
+  .refine(
+    (data) =>
+      !data.startsAt || !data.expiresAt || data.startsAt < data.expiresAt,
+    {
+      error: "La date de fin doit être après la date de début.",
+      path: ["expiresAt"],
+    }
+  )
 
 export type CouponFormInput = z.infer<typeof couponFormSchema>
 

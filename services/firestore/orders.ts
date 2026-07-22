@@ -271,6 +271,7 @@ export async function createOrderFromCart(
   let discountMinor = 0
   let appliedCouponCode: string | null = null
   let appliedCouponId: string | null = null
+  let effectiveShippingFeeMinor = shippingFeeMinor
   if (input.couponCode) {
     const coupon = await getCouponByCode(input.couponCode)
     if (!coupon) {
@@ -289,6 +290,9 @@ export async function createOrderFromCart(
       throw new Error(result.reason)
     }
     discountMinor = result.discountMinor
+    if (result.freeShipping) {
+      effectiveShippingFeeMinor = 0
+    }
     appliedCouponCode = coupon.code
     appliedCouponId = coupon.id
   }
@@ -303,7 +307,7 @@ export async function createOrderFromCart(
   )
   const totals = computeOrderTotals(
     items,
-    shippingFeeMinor,
+    effectiveShippingFeeMinor,
     discountMinor,
     taxMinor
   )
