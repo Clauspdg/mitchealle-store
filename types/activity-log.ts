@@ -19,10 +19,17 @@ export type ActivityLogCategory = (typeof ACTIVITY_LOG_CATEGORIES)[number]
 export interface ActivityLogDocument {
   category: ActivityLogCategory
   message: string
-  /** Free-form context (order id, coupon code, actor uid, etc.) — kept as a
-   * plain record rather than a typed union per category, since the admin
-   * log viewer only ever needs to display it, not branch on its shape. */
+  /** Free-form context (order id, coupon code, etc.) — kept as a plain
+   * record rather than a typed union per category, since the admin log
+   * viewer only ever needs to display it, not branch on its shape. */
   context: Record<string, string | number | boolean | null>
+  /** Captured automatically by `logActivity` itself (from the current
+   * session/request), not by each call site — `null` for
+   * system-initiated events with no signed-in actor (e.g. a webhook). */
+  actorUid: string | null
+  actorEmail: string | null
+  ip: string | null
+  userAgent: string | null
   createdAt: FirestoreTimestamp
 }
 

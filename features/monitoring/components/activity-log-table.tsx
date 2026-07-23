@@ -50,6 +50,8 @@ export function ActivityLogTable({ entries }: { entries: ActivityLogEntry[] }) {
             <TableHead>Catégorie</TableHead>
             <TableHead>Message</TableHead>
             <TableHead>Contexte</TableHead>
+            <TableHead>Utilisateur</TableHead>
+            <TableHead>IP / Appareil</TableHead>
             <TableHead>Date</TableHead>
           </TableRow>
         </TableHeader>
@@ -66,6 +68,16 @@ export function ActivityLogTable({ entries }: { entries: ActivityLogEntry[] }) {
                 {Object.entries(entry.context)
                   .map(([key, value]) => `${key}=${String(value)}`)
                   .join(" · ")}
+              </TableCell>
+              <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
+                {entry.actorEmail ?? "Système"}
+              </TableCell>
+              <TableCell
+                className="text-muted-foreground max-w-40 truncate text-xs"
+                title={entry.userAgent ?? undefined}
+              >
+                {entry.ip ?? "—"}
+                {entry.userAgent ? ` · ${entry.userAgent}` : ""}
               </TableCell>
               <TableCell className="text-muted-foreground whitespace-nowrap">
                 {entry.createdAt.toDate().toLocaleString("fr-FR")}

@@ -1,7 +1,10 @@
 import "server-only"
+import { headers } from "next/headers"
 import { FieldValue } from "firebase-admin/firestore"
 
 import { adminDb } from "@/firebase/admin"
+import { getSession } from "@/lib/session.server"
+import { toCsv } from "@/lib/csv"
 import { decodeCursor, encodeCursor } from "@/utils/pagination"
 import type { CursorPage } from "@/types/pagination"
 import type {
@@ -19,7 +22,9 @@ const MAX_LOG_SCANNED = 500
  * Single write path for every "journal" the brief asks for (error/payment/
  * refund/coupon/notification/admin_action) — see `types/activity-log.ts`.
  * Deliberately swallows its own errors: logging must never break the flow
- * that triggered it, same discipline as `dispatchNotification`.
+ * that triggered it, same discipline as `dispatchNotification`. Actor/IP/
+ * device are captured here, once, from the current request/session —
+ * callers never need to remember to pass them.
  */
 export async function logActivity(
   category: ActivityLogCategory,
@@ -27,10 +32,20 @@ export async function logActivity(
   context: ActivityLogDocument["context"] = {}
 ): Promise<void> {
   try {
+    const [session, headerList] = await Promise.all([
+      getSession().catch(() => null),
+      headers().catch(() => null),
+    ])
+    const forwardedFor = headerList?.get("x-forwarded-for")
+
     await adminDb.collection(ACTIVITY_LOG_COLLECTION).add({
       category,
       message,
       context,
+      actorUid: session?.uid ?? null,
+      actorEmail: session?.email ?? null,
+      ip: forwardedFor ? forwardedFor.split(",")[0].trim() : null,
+      userAgent: headerList?.get("user-agent") ?? null,
       createdAt: FieldValue.serverTimestamp(),
     })
   } catch (error) {
@@ -148,16 +163,26 @@ export async function exportActivityLogToCsv(
     CSV_EXPORT_LIMIT
   )
 
-  const header = ["category", "message", "context", "createdAt"]
+  const header = [
+    "category",
+    "message",
+    "context",
+    "actorUid",
+    "actorEmail",
+    "ip",
+    "userAgent",
+    "createdAt",
+  ]
   const rows = items.map((entry) => [
     entry.category,
     entry.message,
     JSON.stringify(entry.context),
+    entry.actorUid ?? "",
+    entry.actorEmail ?? "",
+    entry.ip ?? "",
+    entry.userAgent ?? "",
     entry.createdAt.toDate().toISOString(),
   ])
 
-  const escape = (value: string) =>
-    /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value
-
-  return [header, ...rows].map((row) => row.map(escape).join(",")).join("\n")
+  return toCsv([header, ...rows])
 }
