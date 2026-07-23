@@ -29,6 +29,7 @@ function toFormDefaults(
     storeName: settings.storeName,
     logoUrl: settings.logoUrl,
     faviconUrl: settings.faviconUrl,
+    defaultOgImageUrl: settings.defaultOgImageUrl,
     slogan: settings.slogan,
     description: settings.description,
     currency: settings.currency,
@@ -204,6 +205,21 @@ export function StoreSettingsForm({
             onChange={(url) => setValue("faviconUrl", url)}
           />
         </div>
+      </section>
+
+      <section className="flex flex-col gap-4">
+        <h2 className="font-heading text-lg font-medium">SEO</h2>
+        <p className="text-muted-foreground text-sm">
+          Le nom et la description ci-dessus servent de titre/description par
+          défaut sur les moteurs de recherche et les réseaux sociaux. Image
+          affichée lors du partage d&apos;un lien vers le site (Facebook,
+          Twitter/X...).
+        </p>
+        <AssetUploadField
+          label="Image de partage par défaut"
+          value={watch("defaultOgImageUrl")}
+          onChange={(url) => setValue("defaultOgImageUrl", url)}
+        />
       </section>
 
       <section className="flex flex-col gap-4">

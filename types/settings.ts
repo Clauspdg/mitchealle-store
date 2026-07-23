@@ -21,6 +21,9 @@ export interface StoreSettingsDocument {
   storeName: string
   logoUrl: string | null
   faviconUrl: string | null
+  /** Default social-share (Open Graph/Twitter) image — falls back to a
+   * static site icon when unset. */
+  defaultOgImageUrl: string | null
   slogan: string | null
   description: string
   currency: string

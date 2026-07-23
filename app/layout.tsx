@@ -42,7 +42,9 @@ const cormorantGaramond = Cormorant_Garamond({
 const DEFAULT_OG_IMAGE = "/icons/icon-512.png"
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { storeName, description, faviconUrl } = await getStoreSettings()
+  const { storeName, description, faviconUrl, defaultOgImageUrl } =
+    await getStoreSettings()
+  const ogImage = defaultOgImageUrl ?? DEFAULT_OG_IMAGE
 
   return {
     metadataBase: new URL(clientEnv.NEXT_PUBLIC_APP_URL),
@@ -57,13 +59,13 @@ export async function generateMetadata(): Promise<Metadata> {
       title: storeName,
       description,
       locale: "fr_FR",
-      images: [{ url: DEFAULT_OG_IMAGE, width: 512, height: 512 }],
+      images: [{ url: ogImage, width: 512, height: 512 }],
     },
     twitter: {
       card: "summary_large_image",
       title: storeName,
       description,
-      images: [DEFAULT_OG_IMAGE],
+      images: [ogImage],
     },
     manifest: "/manifest.webmanifest",
     icons: {

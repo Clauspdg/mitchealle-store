@@ -9,6 +9,7 @@ export const storeSettingsFormSchema = z.object({
     .max(80, "80 caractères maximum."),
   logoUrl: z.string().nullable(),
   faviconUrl: z.string().nullable(),
+  defaultOgImageUrl: z.string().nullable(),
   slogan: z.string().nullable(),
   description: z.string(),
   currency: z.string().min(1, "Devise requise."),

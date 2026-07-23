@@ -32,6 +32,7 @@ const DEFAULT_STORE_SETTINGS: Omit<StoreSettingsDocument, "updatedAt"> = {
   storeName: siteConfig.name,
   logoUrl: null,
   faviconUrl: null,
+  defaultOgImageUrl: null,
   slogan: null,
   description: siteConfig.description,
   currency: "HTG",
