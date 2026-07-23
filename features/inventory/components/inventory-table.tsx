@@ -1,4 +1,5 @@
 import { InventoryRowActions } from "@/features/inventory/components/inventory-row-actions"
+import { ReorderThresholdCell } from "@/features/inventory/components/reorder-threshold-cell"
 import { Badge } from "@/components/ui/badge"
 import {
   Table,
@@ -69,8 +70,12 @@ export function InventoryTable({ items, productsById }: InventoryTableProps) {
               <TableCell className="tabular-nums">
                 {item.quantityDamaged}
               </TableCell>
-              <TableCell className="text-muted-foreground tabular-nums">
-                {item.reorderThreshold}
+              <TableCell>
+                <ReorderThresholdCell
+                  productId={item.productId}
+                  variantId={item.variantId}
+                  reorderThreshold={item.reorderThreshold}
+                />
               </TableCell>
               <TableCell>
                 {item.isLowStock ? (
