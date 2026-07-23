@@ -4,6 +4,7 @@ import { serverEnv } from "@/lib/env.server"
 import { getNotificationSettings } from "@/services/firestore/settings"
 import { logActivity } from "@/services/monitoring/log-activity"
 import { emailProvider } from "@/features/notifications/lib/email-provider"
+import { smsProvider } from "@/features/notifications/lib/sms-provider"
 import {
   renderOrderConfirmationEmail,
   renderOrderDeliveredEmail,
@@ -63,6 +64,22 @@ export async function dispatchNotification(
         subject: template.subject,
         html: template.html,
       })
+
+      // SMS "prep" made concrete for the two events a customer most wants a
+      // text for — smsProvider safely no-ops until a real vendor is wired
+      // in (see features/notifications/lib/sms-provider.ts), so this is
+      // dormant until then, not a behavior change today.
+      const phone = order.delivery.addressSnapshot?.phone
+      if (
+        phone &&
+        (event.type === "order_shipped" || event.type === "order_delivered")
+      ) {
+        const text =
+          event.type === "order_shipped"
+            ? `Votre commande ${order.orderNumber} a été expédiée.`
+            : `Votre commande ${order.orderNumber} a été livrée.`
+        await smsProvider.send({ to: phone, text })
+      }
       return
     }
 
