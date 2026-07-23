@@ -4,6 +4,7 @@ import { requirePermission } from "@/lib/session.server"
 import { listUsers } from "@/services/firestore/users"
 import { AdminSidebar } from "@/components/layout/admin-sidebar"
 import { UserRoleSelect } from "@/features/users/components/user-role-select"
+import { InviteUserDialog } from "@/features/users/components/invite-user-dialog"
 import {
   Table,
   TableBody,
@@ -24,12 +25,17 @@ export default async function AdminUsersPage() {
     <div className="flex flex-1">
       <AdminSidebar />
       <div className="flex w-full flex-col gap-6 px-6 py-8">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">Utilisateurs</h1>
-          <p className="text-muted-foreground text-sm">
-            Attribuez un rôle à chaque utilisateur — Support, Staff, Manager,
-            Admin ou Super Admin.
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight">
+              Utilisateurs
+            </h1>
+            <p className="text-muted-foreground text-sm">
+              Attribuez un rôle à chaque utilisateur — Support, Staff, Manager,
+              Admin ou Super Admin.
+            </p>
+          </div>
+          <InviteUserDialog />
         </div>
 
         <div className="overflow-x-auto rounded-lg border">
