@@ -16,5 +16,4 @@ export { healthCheck } from "./http/health-check"
 export { setUserRole } from "./http/set-user-role"
 
 export { beforeCreate } from "./auth/before-create"
-export { onUserCreated } from "./auth/on-user-created"
 export { onUserDeleted } from "./auth/on-user-deleted"
