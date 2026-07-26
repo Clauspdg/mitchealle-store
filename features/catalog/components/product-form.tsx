@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { FormProvider, useForm } from "react-hook-form"
@@ -41,6 +41,17 @@ import type { ClientSafeCategory } from "@/types/category"
 import type { ClientSafeCollection } from "@/types/collection"
 import type { ClientSafeProduct } from "@/types/product"
 
+// Base UI's `Select.Value` only resolves a value to its label from an
+// explicit `items` map (it doesn't scan the rendered `<SelectItem>`
+// children for this) — without it, editing an existing product shows the
+// raw stored value (e.g. "published", a brand/category id) instead of its
+// label until the user re-selects something.
+const STATUS_ITEMS = {
+  draft: "Brouillon",
+  published: "Publié",
+  archived: "Archivé",
+}
+
 interface ProductFormProps {
   product?: ClientSafeProduct
   categories: ClientSafeCategory[]
@@ -72,6 +83,18 @@ export function ProductForm({
 
   const name = watch("name")
   const slugPreview = slugify(name || "")
+
+  const brandItems = useMemo(
+    () => ({
+      none: "Aucune / texte libre",
+      ...Object.fromEntries(brands.map((b) => [b.id, b.name])),
+    }),
+    [brands]
+  )
+  const categoryItems = useMemo(
+    () => Object.fromEntries(categories.map((c) => [c.id, c.name])),
+    [categories]
+  )
 
   async function onSubmit(data: ProductFormInput) {
     setSubmitting(true)
@@ -174,6 +197,7 @@ export function ProductForm({
                 <Label htmlFor="brand">Marque</Label>
                 {brands.length > 0 ? (
                   <Select
+                    items={brandItems}
                     value={watch("brandId") ?? "none"}
                     onValueChange={(value) => {
                       if (value === "none") {
@@ -283,6 +307,7 @@ export function ProductForm({
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="categoryId">Catégorie</Label>
                 <Select
+                  items={categoryItems}
                   value={watch("categoryId")}
                   onValueChange={(value) => setValue("categoryId", value ?? "")}
                 >
@@ -423,6 +448,7 @@ export function ProductForm({
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="status">Statut</Label>
               <Select
+                items={STATUS_ITEMS}
                 value={watch("status")}
                 onValueChange={(value) =>
                   setValue("status", value as ProductFormInput["status"])

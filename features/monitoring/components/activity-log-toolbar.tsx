@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { DownloadIcon, SearchIcon } from "lucide-react"
 import { toast } from "sonner"
@@ -30,6 +31,13 @@ export function ActivityLogToolbar() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  // See products-toolbar.tsx: Base UI's `Input` FieldControl warns/resyncs
+  // when `defaultValue` changes after mount, which happens on every
+  // debounced keystroke if bound directly to `searchParams`. Local state is
+  // the source of truth for what's typed.
+  const [searchValue, setSearchValue] = useState(
+    searchParams.get("search") ?? ""
+  )
 
   function setParam(key: string, value: string | null) {
     const params = new URLSearchParams(searchParams.toString())
@@ -42,6 +50,22 @@ export function ActivityLogToolbar() {
   const debouncedSetSearch = useDebouncedCallback(
     (value: string) => setParam("search", value),
     300
+  )
+
+  // Base UI's `Select.Value` only resolves a value to its label from an
+  // explicit `items` map — without it the trigger shows the raw value
+  // (e.g. "admin_action") instead of its French label.
+  const categoryItems = useMemo(
+    () => ({
+      all: "Toutes les catégories",
+      ...Object.fromEntries(
+        ACTIVITY_LOG_CATEGORIES.map((category) => [
+          category,
+          CATEGORY_LABELS[category] ?? category,
+        ])
+      ),
+    }),
+    []
   )
 
   async function handleExport() {
@@ -71,13 +95,17 @@ export function ActivityLogToolbar() {
         <SearchIcon className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
         <Input
           placeholder="Rechercher dans le journal..."
-          defaultValue={searchParams.get("search") ?? ""}
-          onChange={(event) => debouncedSetSearch(event.target.value)}
+          value={searchValue}
+          onChange={(event) => {
+            setSearchValue(event.target.value)
+            debouncedSetSearch(event.target.value)
+          }}
           className="w-64 pl-8"
         />
       </div>
 
       <Select
+        items={categoryItems}
         value={searchParams.get("category") ?? "all"}
         onValueChange={(value) =>
           setParam("category", value === "all" ? null : value)

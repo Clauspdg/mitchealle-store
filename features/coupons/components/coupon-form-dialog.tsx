@@ -33,6 +33,15 @@ import {
 import { Switch } from "@/components/ui/switch"
 import type { ClientSafeCoupon } from "@/types/coupon"
 
+// Base UI's `Select.Value` only resolves a value to its label from an
+// explicit `items` map — without it the trigger shows the raw value (e.g.
+// "freeShipping") instead of its French label.
+const COUPON_TYPE_ITEMS = {
+  percentage: "Pourcentage",
+  fixed: "Montant fixe",
+  freeShipping: "Livraison gratuite",
+}
+
 interface CouponFormDialogProps {
   trigger: ReactElement
   coupon?: ClientSafeCoupon
@@ -123,6 +132,7 @@ export function CouponFormDialog({ trigger, coupon }: CouponFormDialogProps) {
             <div className="flex flex-col gap-1.5">
               <Label>Type</Label>
               <Select
+                items={COUPON_TYPE_ITEMS}
                 value={watch("type")}
                 onValueChange={(value) =>
                   setValue("type", value as CouponFormInput["type"])

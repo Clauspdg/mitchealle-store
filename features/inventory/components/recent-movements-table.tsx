@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { DownloadIcon } from "lucide-react"
 import { toast } from "sonner"
@@ -46,6 +47,19 @@ export function RecentMovementsTable({
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
+  // Base UI's `Select.Value` only resolves a value to its label from an
+  // explicit `items` map — without it the trigger shows the raw value
+  // (e.g. "shipmentReceived") instead of its French label.
+  const typeItems = useMemo(
+    () => ({
+      all: "Tous les types",
+      ...Object.fromEntries(
+        MOVEMENT_TYPES.map((type) => [type, TYPE_LABELS[type]])
+      ),
+    }),
+    []
+  )
+
   function setType(value: string | null) {
     const params = new URLSearchParams(searchParams.toString())
     if (value && value !== "all") params.set("movementType", value)
@@ -76,7 +90,8 @@ export function RecentMovementsTable({
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <Select
-          defaultValue={searchParams.get("movementType") ?? "all"}
+          items={typeItems}
+          value={searchParams.get("movementType") ?? "all"}
           onValueChange={setType}
         >
           <SelectTrigger className="w-56">

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useFieldArray, useForm } from "react-hook-form"
@@ -65,6 +65,14 @@ export function ShipmentForm({
     name: "items",
   })
 
+  // Base UI's `Select.Value` only resolves a value to its label from an
+  // explicit `items` map — without it the trigger shows the raw supplier id
+  // instead of its name when editing an existing shipment.
+  const supplierItems = useMemo(
+    () => Object.fromEntries(suppliers.map((s) => [s.id, s.name])),
+    [suppliers]
+  )
+
   async function onSubmit(data: IncomingShipmentFormInput) {
     setSubmitting(true)
     try {
@@ -95,6 +103,7 @@ export function ShipmentForm({
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="supplierId">Fournisseur</Label>
           <Select
+            items={supplierItems}
             value={watch("supplierId")}
             onValueChange={(value) => setValue("supplierId", value ?? "")}
           >

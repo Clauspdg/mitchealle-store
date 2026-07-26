@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
@@ -102,10 +102,22 @@ export function OrderStatusControl({
 
   const canRefund = !["pending", "cancelled", "refunded"].includes(order.status)
 
+  // Base UI's `Select.Value` only resolves a value to its label from an
+  // explicit `items` map — without it the trigger shows the raw value
+  // (e.g. "shipped") instead of its French label.
+  const statusItems = useMemo(
+    () =>
+      Object.fromEntries(
+        PLAIN_STATUS_OPTIONS.map((option) => [option, STATUS_LABELS[option]])
+      ),
+    []
+  )
+
   return (
     <div className="flex flex-col gap-3 rounded-xl border p-4">
       <h2 className="font-heading text-base font-medium">Statut</h2>
       <Select
+        items={statusItems}
         value={status}
         onValueChange={(value) => handleStatusChange(value as OrderStatus)}
         disabled={submitting}

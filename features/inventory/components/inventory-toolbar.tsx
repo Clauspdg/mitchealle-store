@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { SearchIcon } from "lucide-react"
 
@@ -15,10 +16,24 @@ import {
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 
+// Base UI's `Select.Value` only resolves a value to its label from an
+// explicit `items` map — without it the trigger shows the raw value (e.g.
+// "updatedAt_desc") instead of its French label.
+const SORT_ITEMS = {
+  updatedAt_desc: "Dernière mise à jour",
+  quantityAvailable_asc: "Disponible (croissant)",
+  quantityAvailable_desc: "Disponible (décroissant)",
+}
+
 export function InventoryToolbar() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  // See products-toolbar.tsx: Base UI's `Input` FieldControl warns/resyncs
+  // when `defaultValue` changes after mount, which happens on every
+  // debounced keystroke if bound directly to `searchParams`. Local state is
+  // the source of truth for what's typed.
+  const [skuValue, setSkuValue] = useState(searchParams.get("sku") ?? "")
 
   function setParam(key: string, value: string | null) {
     const params = new URLSearchParams(searchParams.toString())
@@ -39,14 +54,18 @@ export function InventoryToolbar() {
         <SearchIcon className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
         <Input
           placeholder="Rechercher par SKU..."
-          defaultValue={searchParams.get("sku") ?? ""}
-          onChange={(event) => debouncedSetSku(event.target.value)}
+          value={skuValue}
+          onChange={(event) => {
+            setSkuValue(event.target.value)
+            debouncedSetSku(event.target.value)
+          }}
           className="w-56 pl-8"
         />
       </div>
 
       <Select
-        defaultValue={searchParams.get("sort") ?? "updatedAt_desc"}
+        items={SORT_ITEMS}
+        value={searchParams.get("sort") ?? "updatedAt_desc"}
         onValueChange={(value) => setParam("sort", value)}
       >
         <SelectTrigger className="w-56">

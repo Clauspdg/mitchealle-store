@@ -39,6 +39,16 @@ import type {
   ClientSafeShippingSettings,
 } from "@/types/settings"
 
+// Base UI's `Select.Value` only resolves a value to its label from an
+// explicit `items` map — without it the trigger shows the raw value (e.g.
+// "paypal") instead of its display label.
+const PAYMENT_PROVIDER_ITEMS = Object.fromEntries(
+  PAYMENT_PROVIDERS.map((provider) => [
+    provider,
+    provider === "stripe" ? "Stripe" : "PayPal",
+  ])
+)
+
 function ShippingSection({
   settings,
 }: {
@@ -190,6 +200,7 @@ function PaymentSection({ settings }: { settings: ClientSafePaymentSettings }) {
       <div className="flex flex-col gap-1.5 sm:max-w-xs">
         <Label htmlFor="defaultProvider">Fournisseur par défaut</Label>
         <Select
+          items={PAYMENT_PROVIDER_ITEMS}
           value={watch("defaultProvider")}
           onValueChange={(value) =>
             setValue(

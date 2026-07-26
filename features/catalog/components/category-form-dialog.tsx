@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState, type ReactElement } from "react"
+import { useMemo, useRef, useState, type ReactElement } from "react"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
@@ -133,6 +133,16 @@ export function CategoryFormDialog({
   }
 
   const otherCategories = categories.filter((c) => c.id !== category?.id)
+  // Base UI's `Select.Value` only resolves a value to its label from an
+  // explicit `items` map — without it the trigger shows the raw category id
+  // instead of its name.
+  const parentItems = useMemo(
+    () => ({
+      none: "Aucune (catégorie racine)",
+      ...Object.fromEntries(otherCategories.map((c) => [c.id, c.name])),
+    }),
+    [otherCategories]
+  )
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -303,6 +313,7 @@ export function CategoryFormDialog({
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="cat-parent">Catégorie parente</Label>
             <Select
+              items={parentItems}
               value={watch("parentId") ?? "none"}
               onValueChange={(value) =>
                 setValue("parentId", value === "none" ? null : value)

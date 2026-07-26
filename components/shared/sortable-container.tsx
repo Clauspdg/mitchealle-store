@@ -1,5 +1,6 @@
 "use client"
 
+import { useId } from "react"
 import {
   closestCenter,
   DndContext,
@@ -32,6 +33,12 @@ export function SortableContainer<T extends { id: string }>({
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } })
   )
+  // dnd-kit's default id generator is a module-level counter, which can
+  // diverge between the server render and the client's first render pass
+  // (each has its own module instance/order) and trip a hydration
+  // mismatch — React's `useId()` is specifically built to stay identical
+  // across both.
+  const dndId = useId()
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
@@ -44,6 +51,7 @@ export function SortableContainer<T extends { id: string }>({
 
   return (
     <DndContext
+      id={dndId}
       sensors={sensors}
       collisionDetection={closestCenter}
       onDragEnd={handleDragEnd}

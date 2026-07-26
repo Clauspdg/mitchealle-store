@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState, type ReactElement } from "react"
+import { useMemo, useRef, useState, type ReactElement } from "react"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
@@ -59,6 +59,19 @@ const RULE_FIELD_LABELS: Record<
   categoryId: "Catégorie",
   brandId: "Marque",
   tag: "Tag",
+}
+
+// Base UI's `Select.Value` only resolves a value to its label from an
+// explicit `items` map — without it these triggers show the raw value
+// (e.g. "automatic", "archived") instead of its French label.
+const COLLECTION_TYPE_ITEMS = {
+  manual: "Manuelle",
+  automatic: "Automatique",
+}
+const COLLECTION_STATUS_ITEMS = {
+  draft: "Brouillon",
+  active: "Active",
+  archived: "Archivée",
 }
 
 interface CollectionFormDialogProps {
@@ -177,6 +190,31 @@ export function CollectionFormDialog({
     brandId: brands,
     tag: [],
   }
+  // Base UI's `Select.Value` only resolves a value to its label from an
+  // explicit `items` map — without it these triggers show the raw stored
+  // value (a field key or option id) instead of its label.
+  const ruleFieldItems = useMemo(
+    () =>
+      Object.fromEntries(
+        COLLECTION_RULE_FIELDS.map((field) => [field, RULE_FIELD_LABELS[field]])
+      ),
+    []
+  )
+  const ruleValueItemsByField = useMemo(
+    () =>
+      Object.fromEntries(
+        COLLECTION_RULE_FIELDS.map((field) => [
+          field,
+          Object.fromEntries(
+            ruleValueOptions[field].map((option) => [option.id, option.name])
+          ),
+        ])
+      ) as Record<
+        (typeof COLLECTION_RULE_FIELDS)[number],
+        Record<string, string>
+      >,
+    [categories, brands]
+  )
 
   function addRule() {
     setValue("rules", [
@@ -322,6 +360,7 @@ export function CollectionFormDialog({
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="col-type">Type</Label>
               <Select
+                items={COLLECTION_TYPE_ITEMS}
                 value={watch("type")}
                 onValueChange={(value) =>
                   setValue("type", value as CollectionFormInput["type"])
@@ -364,6 +403,7 @@ export function CollectionFormDialog({
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="col-status">Statut</Label>
               <Select
+                items={COLLECTION_STATUS_ITEMS}
                 value={watch("status")}
                 onValueChange={(value) =>
                   setValue("status", value as CollectionFormInput["status"])
@@ -446,6 +486,7 @@ export function CollectionFormDialog({
               {rules.map((rule, index) => (
                 <div key={index} className="flex items-center gap-2">
                   <Select
+                    items={ruleFieldItems}
                     value={rule.field}
                     onValueChange={(value) =>
                       updateRule(index, {
@@ -477,6 +518,7 @@ export function CollectionFormDialog({
                     />
                   ) : (
                     <Select
+                      items={ruleValueItemsByField[rule.field]}
                       value={rule.value}
                       onValueChange={(value) =>
                         updateRule(index, { value: value ?? "" })

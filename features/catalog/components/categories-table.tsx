@@ -175,18 +175,18 @@ export function CategoriesTable({
 
   return (
     <div className="overflow-x-auto rounded-lg border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-10">Ordre</TableHead>
-            <TableHead>Nom</TableHead>
-            <TableHead>Parent</TableHead>
-            <TableHead>Active</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          <SortableContainer items={categories} onReorder={handleReorder}>
+      <SortableContainer items={categories} onReorder={handleReorder}>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-10">Ordre</TableHead>
+              <TableHead>Nom</TableHead>
+              <TableHead>Parent</TableHead>
+              <TableHead>Active</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {categories.map((category) => (
               <CategoryRow
                 key={category.id}
@@ -195,9 +195,9 @@ export function CategoriesTable({
                 categoriesById={categoriesById}
               />
             ))}
-          </SortableContainer>
-        </TableBody>
-      </Table>
+          </TableBody>
+        </Table>
+      </SortableContainer>
     </div>
   )
 }

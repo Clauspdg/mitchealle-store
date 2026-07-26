@@ -45,6 +45,13 @@ const PLACEMENT_LABELS: Record<string, string> = {
   checkoutSidebar: "Panneau latéral (checkout)",
 }
 
+// Base UI's `Select.Value` only resolves a value to its label from an
+// explicit `items` map — without it the trigger shows the raw value (e.g.
+// "homepageHero") instead of its French label.
+const PLACEMENT_ITEMS = Object.fromEntries(
+  BANNER_PLACEMENTS.map((placement) => [placement, PLACEMENT_LABELS[placement]])
+)
+
 function toFormDefaults(
   banner: ClientSafeBanner | undefined,
   position: number
@@ -174,6 +181,7 @@ export function BannerFormDialog({
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="banner-placement">Emplacement</Label>
             <Select
+              items={PLACEMENT_ITEMS}
               value={watch("placement")}
               onValueChange={(value) =>
                 setValue("placement", value as BannerFormInput["placement"])

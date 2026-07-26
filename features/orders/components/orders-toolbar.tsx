@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { DownloadIcon, SearchIcon } from "lucide-react"
 import { toast } from "sonner"
@@ -34,6 +35,15 @@ export function OrdersToolbar() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  // Base UI's `Input` is a controlled-aware "FieldControl" that doesn't
+  // silently ignore `defaultValue` changing after mount the way a plain
+  // HTML input does — binding it to `searchParams` (which changes on every
+  // debounced keystroke's URL update) trips its uncontrolled/controlled
+  // resync warning. Local state is the source of truth for what's typed;
+  // the URL update is just a debounced side effect.
+  const [searchValue, setSearchValue] = useState(
+    searchParams.get("search") ?? ""
+  )
 
   function setParam(key: string, value: string | null) {
     const params = new URLSearchParams(searchParams.toString())
@@ -46,6 +56,29 @@ export function OrdersToolbar() {
   const debouncedSetSearch = useDebouncedCallback(
     (value: string) => setParam("search", value),
     300
+  )
+
+  // Base UI's `Select.Value` only resolves a value to its label from an
+  // explicit `items` map — without it the trigger shows the raw value
+  // (e.g. "refund_requested") instead of its French label.
+  const statusItems = useMemo(
+    () => ({
+      all: "Tous les statuts",
+      ...Object.fromEntries(
+        ORDER_STATUSES.map((status) => [
+          status,
+          STATUS_LABELS[status] ?? status,
+        ])
+      ),
+    }),
+    []
+  )
+  const sortItems = useMemo(
+    () => ({
+      createdAt_desc: "Plus récentes",
+      totalMinor_desc: "Montant décroissant",
+    }),
+    []
   )
 
   async function handleExport() {
@@ -76,13 +109,17 @@ export function OrdersToolbar() {
         <SearchIcon className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
         <Input
           placeholder="N° de commande ou email..."
-          defaultValue={searchParams.get("search") ?? ""}
-          onChange={(event) => debouncedSetSearch(event.target.value)}
+          value={searchValue}
+          onChange={(event) => {
+            setSearchValue(event.target.value)
+            debouncedSetSearch(event.target.value)
+          }}
           className="w-64 pl-8"
         />
       </div>
 
       <Select
+        items={statusItems}
         value={searchParams.get("status") ?? "all"}
         onValueChange={(value) =>
           setParam("status", value === "all" ? null : value)
@@ -102,6 +139,7 @@ export function OrdersToolbar() {
       </Select>
 
       <Select
+        items={sortItems}
         value={searchParams.get("sort") ?? "createdAt_desc"}
         onValueChange={(value) => setParam("sort", value)}
       >

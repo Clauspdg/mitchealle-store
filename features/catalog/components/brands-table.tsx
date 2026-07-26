@@ -113,24 +113,24 @@ export function BrandsTable({ brands }: { brands: ClientSafeBrand[] }) {
 
   return (
     <div className="overflow-x-auto rounded-lg border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-10">Ordre</TableHead>
-            <TableHead>Nom</TableHead>
-            <TableHead>Pays</TableHead>
-            <TableHead>Active</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          <SortableContainer items={brands} onReorder={handleReorder}>
+      <SortableContainer items={brands} onReorder={handleReorder}>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-10">Ordre</TableHead>
+              <TableHead>Nom</TableHead>
+              <TableHead>Pays</TableHead>
+              <TableHead>Active</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {brands.map((brand) => (
               <BrandRow key={brand.id} brand={brand} />
             ))}
-          </SortableContainer>
-        </TableBody>
-      </Table>
+          </TableBody>
+        </Table>
+      </SortableContainer>
     </div>
   )
 }

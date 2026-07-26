@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo } from "react"
 import {
   Select,
   SelectContent,
@@ -30,6 +31,25 @@ export function ProductVariantPicker({
   const selectedProduct =
     products.find((p) => p.id === value?.productId) ?? null
 
+  // Base UI's `Select.Value` only resolves a value to its label from an
+  // explicit `items` map — without it these triggers show the raw
+  // product/variant id instead of its name when editing an existing line.
+  const productItems = useMemo(
+    () => Object.fromEntries(products.map((p) => [p.id, p.name])),
+    [products]
+  )
+  const variantItems = useMemo(
+    () =>
+      Object.fromEntries(
+        (selectedProduct?.variants ?? []).map((variant) => [
+          variant.id,
+          [variant.size, variant.color].filter(Boolean).join(" / ") ||
+            variant.sku,
+        ])
+      ),
+    [selectedProduct]
+  )
+
   function handleProductChange(productId: string | null) {
     if (!productId) return
     const product = products.find((p) => p.id === productId)
@@ -56,6 +76,7 @@ export function ProductVariantPicker({
   return (
     <div className="flex gap-2">
       <Select
+        items={productItems}
         value={value?.productId ?? ""}
         onValueChange={handleProductChange}
       >
@@ -73,6 +94,7 @@ export function ProductVariantPicker({
 
       {selectedProduct && selectedProduct.variants.length > 0 && (
         <Select
+          items={variantItems}
           value={value?.variantId ?? ""}
           onValueChange={handleVariantChange}
         >

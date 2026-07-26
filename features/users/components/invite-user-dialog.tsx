@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { httpsCallable } from "firebase/functions"
 import { PlusIcon } from "lucide-react"
@@ -51,6 +51,14 @@ export function InviteUserDialog() {
   const [email, setEmail] = useState("")
   const [displayName, setDisplayName] = useState("")
   const [role, setRole] = useState<Role>("staff")
+
+  // Base UI's `Select.Value` only resolves a value to its label from an
+  // explicit `items` map — without it the trigger shows the raw value
+  // (e.g. "superAdmin") instead of its French label.
+  const roleItems = useMemo(
+    () => Object.fromEntries(INVITABLE_ROLES.map((r) => [r, ROLE_LABELS[r]])),
+    []
+  )
 
   function handleOpenChange(next: boolean) {
     setOpen(next)
@@ -140,6 +148,7 @@ export function InviteUserDialog() {
           <div className="flex flex-col gap-1.5">
             <Label>Rôle</Label>
             <Select
+              items={roleItems}
               value={role}
               onValueChange={(value) => value && setRole(value as Role)}
             >

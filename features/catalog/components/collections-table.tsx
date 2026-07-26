@@ -141,19 +141,19 @@ export function CollectionsTable({
 
   return (
     <div className="overflow-x-auto rounded-lg border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-10">Ordre</TableHead>
-            <TableHead>Nom</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Produits</TableHead>
-            <TableHead>Statut</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          <SortableContainer items={collections} onReorder={handleReorder}>
+      <SortableContainer items={collections} onReorder={handleReorder}>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-10">Ordre</TableHead>
+              <TableHead>Nom</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Produits</TableHead>
+              <TableHead>Statut</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {collections.map((collection) => (
               <CollectionRow
                 key={collection.id}
@@ -163,9 +163,9 @@ export function CollectionsTable({
                 brands={brands}
               />
             ))}
-          </SortableContainer>
-        </TableBody>
-      </Table>
+          </TableBody>
+        </Table>
+      </SortableContainer>
     </div>
   )
 }

@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { DownloadIcon, SearchIcon } from "lucide-react"
 import { toast } from "sonner"
@@ -24,6 +25,26 @@ interface ProductsToolbarProps {
   collections: ClientSafeCollection[]
 }
 
+// Base UI's `Select.Value` only resolves a value to its label from an
+// explicit `items` map — it does not scan the rendered `<SelectItem>`
+// children for this — so without it the trigger displays the raw value
+// (e.g. "all", "createdAt_desc") instead of its French label.
+const STATUS_ITEMS = {
+  all: "Tous les statuts",
+  draft: "Brouillon",
+  published: "Publié",
+  archived: "Archivé",
+}
+
+const SORT_ITEMS = {
+  createdAt_desc: "Plus récents",
+  createdAt_asc: "Plus anciens",
+  name_asc: "Nom (A→Z)",
+  name_desc: "Nom (Z→A)",
+  price_asc: "Prix croissant",
+  price_desc: "Prix décroissant",
+}
+
 export function ProductsToolbar({
   categories,
   collections,
@@ -31,6 +52,28 @@ export function ProductsToolbar({
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+
+  const categoryItems = useMemo(
+    () => ({
+      all: "Toutes les catégories",
+      ...Object.fromEntries(categories.map((c) => [c.id, c.name])),
+    }),
+    [categories]
+  )
+  const collectionItems = useMemo(
+    () => ({
+      all: "Toutes les collections",
+      ...Object.fromEntries(collections.map((c) => [c.id, c.name])),
+    }),
+    [collections]
+  )
+  // Base UI's `Input` is a controlled-aware "FieldControl" — unlike a plain
+  // HTML input, it doesn't silently ignore `defaultValue` changing after
+  // mount, so binding it directly to `searchParams` (which changes on every
+  // debounced keystroke's URL update) trips its uncontrolled/controlled
+  // resync warning. Local state is the single source of truth for what's
+  // typed; the URL update is just a debounced side effect.
+  const [searchValue, setSearchValue] = useState(searchParams.get("q") ?? "")
 
   function setParam(key: string, value: string | null) {
     const params = new URLSearchParams(searchParams.toString())
@@ -75,14 +118,18 @@ export function ProductsToolbar({
         <SearchIcon className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
         <Input
           placeholder="Rechercher un produit..."
-          defaultValue={searchParams.get("q") ?? ""}
-          onChange={(event) => debouncedSetSearch(event.target.value)}
+          value={searchValue}
+          onChange={(event) => {
+            setSearchValue(event.target.value)
+            debouncedSetSearch(event.target.value)
+          }}
           className="w-56 pl-8"
         />
       </div>
 
       <Select
-        defaultValue={searchParams.get("status") ?? "all"}
+        items={STATUS_ITEMS}
+        value={searchParams.get("status") ?? "all"}
         onValueChange={(value) => setParam("status", value)}
       >
         <SelectTrigger className="w-40">
@@ -97,7 +144,8 @@ export function ProductsToolbar({
       </Select>
 
       <Select
-        defaultValue={searchParams.get("categoryId") ?? ""}
+        items={categoryItems}
+        value={searchParams.get("categoryId") || "all"}
         onValueChange={(value) =>
           setParam("categoryId", value === "all" ? "" : value)
         }
@@ -116,7 +164,8 @@ export function ProductsToolbar({
       </Select>
 
       <Select
-        defaultValue={searchParams.get("collectionId") ?? ""}
+        items={collectionItems}
+        value={searchParams.get("collectionId") || "all"}
         onValueChange={(value) =>
           setParam("collectionId", value === "all" ? "" : value)
         }
@@ -135,7 +184,8 @@ export function ProductsToolbar({
       </Select>
 
       <Select
-        defaultValue={searchParams.get("sort") ?? "createdAt_desc"}
+        items={SORT_ITEMS}
+        value={searchParams.get("sort") ?? "createdAt_desc"}
         onValueChange={(value) => setParam("sort", value)}
       >
         <SelectTrigger className="w-48">
