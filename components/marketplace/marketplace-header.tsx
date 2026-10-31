@@ -138,12 +138,7 @@ export function MarketplaceHeader({
           </Sheet>
 
           <Link href="/" aria-label={storeSettings.storeName}>
-            <BrandLogo
-              alt=""
-              customSrc={storeSettings.logoUrl}
-              preload
-              className="h-7 md:h-9"
-            />
+            <BrandLogo alt="" preload className="h-7 md:h-9" />
           </Link>
         </div>
 

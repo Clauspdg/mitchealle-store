@@ -66,7 +66,6 @@ export function Footer({
           <BrandLogo
             alt={storeSettings.storeName}
             variant="full"
-            customSrc={storeSettings.logoUrl}
             onDarkSurface
             className="h-16"
           />

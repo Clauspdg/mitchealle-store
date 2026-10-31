@@ -40,10 +40,8 @@ const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
 })
 
-const DEFAULT_ICON = "/icons/icon-512.png"
-
 export async function generateMetadata(): Promise<Metadata> {
-  const { storeName, slogan, description, faviconUrl, defaultOgImageUrl } =
+  const { storeName, slogan, description, defaultOgImageUrl } =
     await getStoreSettings()
   const ogImage = defaultOgImageUrl ?? brandAssets.ogImage.src
   const ogImageSize = defaultOgImageUrl
@@ -74,13 +72,11 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     manifest: "/manifest.webmanifest",
     icons: {
-      icon: faviconUrl
-        ? [{ url: faviconUrl }]
-        : [
-            { url: "/icon.svg", type: "image/svg+xml" },
-            { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
-            { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
-          ],
+      icon: [
+        { url: "/icon.svg", type: "image/svg+xml" },
+        { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+        { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+      ],
       apple: [
         { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
       ],
@@ -137,9 +133,7 @@ export default async function RootLayout({
             "@type": "Organization",
             name: storeSettings.storeName,
             url: clientEnv.NEXT_PUBLIC_APP_URL,
-            logo:
-              storeSettings.logoUrl ??
-              `${clientEnv.NEXT_PUBLIC_APP_URL}${DEFAULT_ICON}`,
+            logo: `${clientEnv.NEXT_PUBLIC_APP_URL}${brandAssets.logo.src}`,
           }}
         />
         <AppProviders>

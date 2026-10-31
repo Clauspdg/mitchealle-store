@@ -1,10 +1,13 @@
 import { siteConfig } from "@/config/site"
 import type { StoreSettingsDocument } from "@/types/settings"
 
-/** Crops of the validated C.L.A.G logo — never redrawn. */
+/**
+ * Exact crops of the validated logo (`docs/brand/clag-logo-officiel.png`).
+ * Never redraw, recolor or stretch them, and never replace them from data.
+ */
 export const brandAssets = {
-  logo: { src: "/brand/clag-logo.png", width: 1000, height: 313 },
-  wordmark: { src: "/brand/clag-wordmark.png", width: 640, height: 155 },
+  logo: { src: "/brand/clag-logo.png", width: 1260, height: 394 },
+  wordmark: { src: "/brand/clag-wordmark.png", width: 1260, height: 306 },
   ogImage: { src: "/brand/og-default.png", width: 1200, height: 630 },
 } as const
 

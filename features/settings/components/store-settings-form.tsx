@@ -205,6 +205,10 @@ export function StoreSettingsForm({
             onChange={(url) => setValue("faviconUrl", url)}
           />
         </div>
+        <p className="text-muted-foreground text-sm">
+          Le site affiche toujours le logo officiel C.L.A.G et son favicon : les
+          fichiers ci-dessus ne les remplacent pas.
+        </p>
       </section>
 
       <section className="flex flex-col gap-4">
