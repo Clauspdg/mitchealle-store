@@ -82,3 +82,30 @@ Sources : [coûts App Hosting](https://firebase.google.com/docs/app-hosting/cost
 `npm run seed:demo` charge 3 comptes fictifs (`@demo.clag.test`), 8 catégories et
 24 produits. Le script exige `SEED_PROJECT_ID` et `SEED_DEMO_PASSWORD`, et il refuse
 le projet de production hors émulateurs.
+
+## État après le Sprint 13.3
+
+Le projet `clag-marketplace-dev` existe, avec Firestore, ses règles, ses index et une
+application web. Il n'est **pas opérationnel** : le compte de facturation
+`0126D3-586FA9-FD6FA2` a atteint son quota de 5 projets facturables.
+
+| Élément                         | État                                                  |
+| ------------------------------- | ----------------------------------------------------- |
+| Firestore, règles, index        | Créés sur `clag-marketplace-dev`, sans données        |
+| Application web                 | Créée                                                 |
+| Facturation et budget de 5 $    | Bloqués par le quota                                  |
+| Authentication                  | Bloquée : son activation par API exige la facturation |
+| App Hosting, Functions, Storage | Bloqués : ces services exigent le forfait Blaze       |
+| Local                           | Émulateurs par défaut, projet fictif `demo-clag`      |
+
+Le backend `clag-dev` de `mictchealla-store` reste connecté aux données réelles.
+
+### Reprise après levée du quota
+
+1. Rattacher le projet au compte, puis poser le budget de 5 $.
+2. Activer les API, initialiser Auth et créer le bucket.
+3. Déployer les règles Storage et les Functions avec `--project clag-marketplace-dev`.
+4. Créer la clé Admin et les secrets DEV, puis le backend par envoi du code source.
+5. Remplacer les valeurs Firebase dans `apphosting.dev.yaml`.
+6. Charger `npm run seed:demo`, autoriser le domaine, puis tester en ligne.
+7. Comparer l'empreinte de PROD avant et après les tests.

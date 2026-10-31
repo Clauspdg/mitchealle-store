@@ -37,15 +37,20 @@ Voir [`.env.example`](.env.example) — chaque variable y est documentée
 L'app échoue au démarrage avec un message explicite si une variable requise
 manque (`lib/env.client.ts`, `lib/env.server.ts`).
 
-### Émulateurs Firebase (développement local sans toucher au projet réel)
+### Émulateurs Firebase (mode local par défaut)
+
+Le développement local n'utilise que les émulateurs, sur le projet fictif
+`demo-clag` : Firebase ne contacte alors aucun projet réel.
+`.env.local` ne doit contenir aucun identifiant de production.
+`npm run build` exige aussi les émulateurs démarrés : le prérendu lit Firestore.
 
 ```bash
-firebase emulators:start
+npm run emulators
+# Dans un second terminal, une fois les émulateurs prêts :
+FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 \
+SEED_PROJECT_ID=demo-clag SEED_DEMO_PASSWORD=<mot-de-passe> npm run seed:demo
+npm run dev
 ```
-
-Puis mettre `NEXT_PUBLIC_USE_FIREBASE_EMULATORS=true` dans `.env.local` pour
-que le SDK client se connecte aux émulateurs plutôt qu'au projet Firebase
-réel.
 
 ### Cloud Functions
 
