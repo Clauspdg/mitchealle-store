@@ -1,0 +1,8 @@
+# Overrides for the `clag-dev` App Hosting backend (environment: dev).
+# Everything else comes from apphosting.yaml.
+env:
+  - variable: NEXT_PUBLIC_APP_URL
+    value: "https://clag-dev--mictchealla-store.us-east4.hosted.app"
+    availability:
+      - BUILD
+      - RUNTIME
