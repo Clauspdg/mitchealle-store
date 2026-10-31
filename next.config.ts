@@ -6,6 +6,16 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/*": ["./public/**/*"],
   },
+  // DEV must never reach search engines, whatever the page or file type.
+  async headers() {
+    if (process.env.NEXT_PUBLIC_APP_ENV !== "dev") return []
+    return [
+      {
+        source: "/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+    ]
+  },
   images: {
     remotePatterns: [
       // Real product/category/collection photos uploaded via the admin panel

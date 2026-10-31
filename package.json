@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "seed:demo": "node scripts/seed-demo.mjs",
     "emulators": "npx firebase-tools emulators:start --only auth,firestore,storage,functions",
     "build": "next build",
     "start": "next start",

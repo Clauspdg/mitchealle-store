@@ -56,6 +56,9 @@ export async function generateMetadata(): Promise<Metadata> {
       template: `%s | ${storeName}`,
     },
     description,
+    ...(clientEnv.NEXT_PUBLIC_APP_ENV === "dev"
+      ? { robots: { index: false, follow: false } }
+      : {}),
     openGraph: {
       type: "website",
       siteName: storeName,

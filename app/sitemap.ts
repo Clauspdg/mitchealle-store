@@ -17,6 +17,8 @@ const STATIC_ROUTES = [
 ]
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  if (clientEnv.NEXT_PUBLIC_APP_ENV === "dev") return []
+
   const baseUrl = clientEnv.NEXT_PUBLIC_APP_URL
 
   const [categories, collections, products] = await Promise.all([

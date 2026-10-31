@@ -16,6 +16,8 @@ const clientEnvSchema = z.object({
   NEXT_PUBLIC_FIREBASE_APP_ID: z.string().min(1),
   NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: z.string().optional(),
   NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
+  // Set to "dev" by apphosting.dev.yaml only. Anything else behaves as production.
+  NEXT_PUBLIC_APP_ENV: z.string().optional(),
   NEXT_PUBLIC_USE_FIREBASE_EMULATORS: z
     .enum(["true", "false"])
     .default("false")
@@ -45,6 +47,7 @@ function loadClientEnv() {
     NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID:
       process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    NEXT_PUBLIC_APP_ENV: process.env.NEXT_PUBLIC_APP_ENV,
     NEXT_PUBLIC_USE_FIREBASE_EMULATORS:
       process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS,
     NEXT_PUBLIC_ENABLE_APP_CHECK: process.env.NEXT_PUBLIC_ENABLE_APP_CHECK,
