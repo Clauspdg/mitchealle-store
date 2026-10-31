@@ -4,3 +4,7 @@
  * time, so historical data never needs rewriting.
  */
 export const HOUSE_SELLER_ID = "clag-house"
+export const HOUSE_SELLER_NAME = "C.L.A.G"
+
+/** Commission given to a store at approval: 10%. */
+export const DEFAULT_COMMISSION_BPS = 1000

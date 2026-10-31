@@ -19,6 +19,10 @@ export interface SellerDocument {
   status: SellerStatus
   /** Platform commission in basis points: 1000 = 10%. */
   commissionBps: number
+  /** Main category chosen in the application. */
+  categoryId?: string | null
+  /** The approved application this store came from. */
+  applicationId?: string | null
   createdBy: string
   createdAt: FirestoreTimestamp
   updatedAt: FirestoreTimestamp
@@ -34,6 +38,7 @@ export interface SellerPrivateProfile {
   legalName: string
   contactEmail: string
   contactPhone: string
+  city?: string
   updatedAt: FirestoreTimestamp
 }
 
@@ -70,3 +75,68 @@ export const PRODUCT_MODERATION_STATUSES = [
 ] as const
 export type ProductModerationStatus =
   (typeof PRODUCT_MODERATION_STATUSES)[number]
+
+export const SELLER_APPLICATION_STATUSES = [
+  "pending",
+  "approved",
+  "rejected",
+] as const
+export type SellerApplicationStatus =
+  (typeof SELLER_APPLICATION_STATUSES)[number]
+
+export interface SellerApplicationContact {
+  legalName: string
+  contactEmail: string
+  contactPhone: string
+  city: string
+}
+
+/** Exact shape of a `sellerApplications/{applicationId}` document. Only the
+ * server writes it: an applicant never sets `status` or `sellerId`. */
+export interface SellerApplicationDocument {
+  applicantUid: string
+  applicantEmail: string
+  storeName: string
+  slug: string
+  description: string
+  categoryId: string
+  logoUrl: string | null
+  contact: SellerApplicationContact
+  status: SellerApplicationStatus
+  rejectionReason: string | null
+  /** Set on approval. */
+  sellerId: string | null
+  decidedBy: string | null
+  decidedAt: FirestoreTimestamp | null
+  createdAt: FirestoreTimestamp
+  updatedAt: FirestoreTimestamp
+}
+
+export interface SellerApplication extends SellerApplicationDocument {
+  id: string
+}
+
+export const SELLER_DECISION_TYPES = [
+  "application_submitted",
+  "application_approved",
+  "application_rejected",
+  "seller_suspended",
+  "seller_activated",
+] as const
+export type SellerDecisionType = (typeof SELLER_DECISION_TYPES)[number]
+
+/** Exact shape of an append-only `sellerDecisions/{id}` document. */
+export interface SellerDecisionDocument {
+  type: SellerDecisionType
+  applicationId: string | null
+  sellerId: string | null
+  storeName: string
+  reason: string | null
+  actorUid: string
+  actorEmail: string | null
+  createdAt: FirestoreTimestamp
+}
+
+export interface SellerDecision extends SellerDecisionDocument {
+  id: string
+}

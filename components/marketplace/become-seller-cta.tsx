@@ -34,15 +34,15 @@ export function BecomeSellerCTA() {
           </h2>
           <p className="max-w-md text-sm text-white/90 sm:text-base">
             Vous êtes petit commerçant, vendeur indépendant ou boutique locale ?
-            L&apos;ouverture aux vendeurs arrive bientôt : parlons de votre
-            projet dès maintenant.
+            Déposez votre candidature : notre équipe l&apos;étudie avant
+            l&apos;ouverture de votre boutique.
           </p>
           <Button
-            render={<Link href="/contact" />}
+            render={<Link href="/account/seller-application" />}
             nativeButton={false}
             className="bg-accent-gold text-accent-gold-foreground hover:bg-accent-gold/90 mt-1 h-11 px-5 font-semibold"
           >
-            Nous contacter
+            Déposer ma candidature
           </Button>
         </div>
         <ul className="flex flex-col gap-3">

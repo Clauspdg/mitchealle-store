@@ -194,6 +194,12 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Phase 2: `sellerApplications`, `sellerApplicants` (one pending
+    // application per user), `sellerSlugs` (unique store names) and
+    // `sellerDecisions` (audit trail) are server-only on purpose: no rule
+    // matches them, so the deny-all below applies. An applicant can never
+    // write a status, a store or a membership from the client.
+
     match /{document=**} {
       allow read, write: if false;
     }

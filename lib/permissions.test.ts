@@ -38,6 +38,7 @@ describe("hasPermission", () => {
     expect(hasPermission("manager", "logs")).toBe(true)
     expect(hasPermission("manager", "settingsStore")).toBe(false)
     expect(hasPermission("manager", "users")).toBe(false)
+    expect(hasPermission("manager", "sellers")).toBe(false)
   })
 
   it("grants admin and superAdmin every permission, including settings and users", () => {

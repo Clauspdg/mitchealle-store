@@ -29,6 +29,7 @@ export const PERMISSION_KEYS = [
   "settingsStore",
   "settingsEcommerce",
   "users",
+  "sellers",
 ] as const
 
 export type PermissionKey = (typeof PERMISSION_KEYS)[number]
@@ -61,6 +62,7 @@ const ADMIN_PERMISSIONS: PermissionKey[] = [
   "settingsStore",
   "settingsEcommerce",
   "users",
+  "sellers",
 ]
 
 /** `customer` gets none — the admin dashboard is never reachable at all. */

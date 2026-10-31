@@ -245,12 +245,66 @@ async function seedSellers() {
       updatedAt: now,
     })
   }
+  // Store names are unique: the approval flow reserves them here.
+  for (const seller of SELLERS) {
+    batch.set(db.collection("sellerSlugs").doc(seller.slug), {
+      sellerId: seller.id,
+      createdAt: now,
+    })
+  }
+  await batch.commit()
+}
+
+// One pending application for the admin "Vendeurs" module.
+async function seedApplication() {
+  const id = "demo-candidature-staff"
+  const existing = await db.collection("sellerApplications").doc(id).get()
+  if (existing.exists) return
+
+  const batch = db.batch()
+  batch.set(db.collection("sellerApplications").doc(id), {
+    applicantUid: "demo-staff",
+    applicantEmail: "staff@demo.clag.test",
+    storeName: "Atelier démo",
+    slug: "atelier-demo",
+    description: "Candidature fictive : créations artisanales faites main.",
+    categoryId: "demo-4",
+    logoUrl: null,
+    contact: {
+      legalName: "Atelier démo",
+      contactEmail: "atelier@demo.clag.test",
+      contactPhone: "+509 3700 0000",
+      city: "Jacmel",
+    },
+    status: "pending",
+    rejectionReason: null,
+    sellerId: null,
+    decidedBy: null,
+    decidedAt: null,
+    createdAt: now,
+    updatedAt: now,
+  })
+  batch.set(db.collection("sellerApplicants").doc("demo-staff"), {
+    pendingApplicationId: id,
+    updatedAt: now,
+  })
+  batch.set(db.collection("sellerDecisions").doc(`${id}-submitted`), {
+    type: "application_submitted",
+    applicationId: id,
+    sellerId: null,
+    storeName: "Atelier démo",
+    reason: null,
+    actorUid: "demo-staff",
+    actorEmail: "staff@demo.clag.test",
+    createdAt: now,
+  })
   await batch.commit()
 }
 
 await seedUsers()
 await seedCategories()
 await seedSellers()
+await seedApplication()
 await seedProducts()
 console.log(
   `Jeu de démonstration chargé sur ${projectId}${usesEmulators ? " (émulateurs)" : ""}.`

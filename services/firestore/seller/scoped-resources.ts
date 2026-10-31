@@ -1,14 +1,14 @@
 import "server-only"
 
-import { adminDb } from "@/firebase/admin"
 import { belongsToSeller } from "@/lib/seller-access"
 import type { SellerContext } from "@/lib/seller-session.server"
 import { getInventory } from "@/services/firestore/inventory"
 import { getOrder } from "@/services/firestore/orders"
 import { getProduct } from "@/services/firestore/products"
+import { listProductsBySeller } from "@/services/firestore/seller/products"
 import type { Inventory } from "@/types/inventory"
 import type { OrderItem, OrderStatus } from "@/types/order"
-import type { Product, ProductDocument } from "@/types/product"
+import type { Product } from "@/types/product"
 
 /** What a store may see of an order: no customer email, address or totals. */
 export interface SellerOrderView {
@@ -33,14 +33,7 @@ export async function getSellerProduct(
 export async function listSellerProducts(
   context: SellerContext
 ): Promise<Product[]> {
-  const snapshot = await adminDb
-    .collection("products")
-    .where("sellerId", "==", context.sellerId)
-    .get()
-  return snapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...(doc.data() as ProductDocument),
-  }))
+  return listProductsBySeller(context.sellerId)
 }
 
 /** Ownership follows the product, which also covers inventory documents

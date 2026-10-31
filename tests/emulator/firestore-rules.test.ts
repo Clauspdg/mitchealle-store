@@ -97,6 +97,39 @@ describe("sellerMembers", () => {
   })
 })
 
+describe("seller onboarding collections", () => {
+  it("never let an applicant write an application, even an active one", async () => {
+    await assertFails(
+      setDoc(doc(owner(), "sellerApplications/self"), {
+        applicantUid: "owner-a",
+        status: "active",
+      })
+    )
+    await assertFails(
+      setDoc(doc(owner(), "sellerApplicants/owner-a"), {
+        pendingApplicationId: null,
+      })
+    )
+    await assertFails(
+      setDoc(doc(owner(), "sellerSlugs/free-name"), { sellerId: "x" })
+    )
+    await assertFails(
+      setDoc(doc(admin(), "sellerDecisions/forged"), { type: "x" })
+    )
+  })
+
+  it("are not readable by a client", async () => {
+    for (const path of [
+      "sellerApplications/any",
+      "sellerApplicants/owner-a",
+      "sellerSlugs/any",
+      "sellerDecisions/any",
+    ]) {
+      await assertFails(getDoc(doc(owner(), path)))
+    }
+  })
+})
+
 describe("existing rules", () => {
   it("still serve published products to anyone", async () => {
     await assertSucceeds(getDoc(doc(anonymous(), "products/legacy")))

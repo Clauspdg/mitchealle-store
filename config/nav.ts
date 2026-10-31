@@ -112,6 +112,12 @@ export const adminNav: Array<
     permission: "logs",
   },
   {
+    title: "Vendeurs",
+    href: "/admin/sellers",
+    minimumRole: "admin",
+    permission: "sellers",
+  },
+  {
     title: "Utilisateurs",
     href: "/admin/users",
     minimumRole: "admin",
