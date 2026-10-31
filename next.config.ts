@@ -1,6 +1,11 @@
 import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
+  // App Hosting builds were serving 404 for every `public/` file (logo, icons,
+  // manifest, service worker). Tracing them keeps them in the standalone output.
+  outputFileTracingIncludes: {
+    "/*": ["./public/**/*"],
+  },
   images: {
     remotePatterns: [
       // Real product/category/collection photos uploaded via the admin panel
