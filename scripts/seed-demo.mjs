@@ -43,6 +43,30 @@ const DEMO_USERS = [
   { uid: "demo-admin", email: "admin@demo.clag.test", role: "admin" },
   { uid: "demo-staff", email: "staff@demo.clag.test", role: "staff" },
   { uid: "demo-client", email: "client@demo.clag.test", role: "customer" },
+  { uid: "demo-vendeur", email: "vendeur@demo.clag.test", role: "customer" },
+]
+
+// Store roles are memberships, not platform roles: `demo-client` stays a
+// customer while belonging to two stores with a different role in each.
+const HOUSE_SELLER_ID = "clag-house"
+const SELLERS = [
+  { id: HOUSE_SELLER_ID, name: "C.L.A.G", slug: "clag" },
+  {
+    id: "demo-boutique-mode",
+    name: "Boutique démo Mode",
+    slug: "boutique-demo-mode",
+  },
+  {
+    id: "demo-boutique-maison",
+    name: "Boutique démo Maison",
+    slug: "boutique-demo-maison",
+  },
+]
+const MEMBERS = [
+  ["demo-boutique-mode", "demo-client", "owner"],
+  ["demo-boutique-maison", "demo-client", "staff"],
+  ["demo-boutique-maison", "demo-vendeur", "owner"],
+  ["demo-boutique-mode", "demo-vendeur", "manager"],
 ]
 
 const CATEGORIES = [
@@ -115,6 +139,8 @@ async function seedProducts() {
     const name = `${categoryName} démo ${index}`
     const basePriceMinor = 150000 + index * 12500
     const variantId = `${id}-standard`
+    // Products without `sellerId` stand for the historical house catalog.
+    const seller = index % 3 === 0 ? null : SELLERS[index % 3]
     batch.set(db.collection("products").doc(id), {
       name,
       nameLower: name.toLowerCase(),
@@ -167,6 +193,56 @@ async function seedProducts() {
       createdAt: now,
       updatedAt: now,
       createdBy: "demo-admin",
+      ...(seller
+        ? {
+            sellerId: seller.id,
+            sellerName: seller.name,
+            moderation: "approved",
+          }
+        : {}),
+    })
+  }
+  await batch.commit()
+}
+
+async function seedSellers() {
+  const batch = db.batch()
+  for (const seller of SELLERS) {
+    batch.set(db.collection("sellers").doc(seller.id), {
+      name: seller.name,
+      slug: seller.slug,
+      description: `Boutique de démonstration : ${seller.name}.`,
+      logoUrl: null,
+      bannerUrl: null,
+      status: "active",
+      commissionBps: seller.id === HOUSE_SELLER_ID ? 0 : 1000,
+      createdBy: "demo-admin",
+      createdAt: now,
+      updatedAt: now,
+    })
+    batch.set(
+      db
+        .collection("sellers")
+        .doc(seller.id)
+        .collection("private")
+        .doc("profile"),
+      {
+        legalName: seller.name,
+        contactEmail: `contact@${seller.slug}.demo.clag.test`,
+        contactPhone: "",
+        updatedAt: now,
+      }
+    )
+  }
+  for (const [sellerId, uid, role] of MEMBERS) {
+    batch.set(db.collection("sellerMembers").doc(`${sellerId}_${uid}`), {
+      sellerId,
+      uid,
+      role,
+      status: "active",
+      invitedBy: "demo-admin",
+      createdAt: now,
+      updatedAt: now,
     })
   }
   await batch.commit()
@@ -174,6 +250,7 @@ async function seedProducts() {
 
 await seedUsers()
 await seedCategories()
+await seedSellers()
 await seedProducts()
 console.log(
   `Jeu de démonstration chargé sur ${projectId}${usesEmulators ? " (émulateurs)" : ""}.`

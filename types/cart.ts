@@ -8,6 +8,8 @@ export interface CartItem {
   /** Price at add-time; reconciled against the live product price at checkout. */
   unitPriceMinorSnapshot: number
   addedAt: FirestoreTimestamp
+  /** Absent on carts from before multi-vendor: see `resolveSellerId`. */
+  sellerId?: string
 }
 
 /**

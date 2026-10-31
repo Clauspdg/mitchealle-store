@@ -13,6 +13,8 @@ export function variantIdsOrDefault(variantIds: string[]): string[] {
 
 /** Mirrors `inventory/{productId}_{variantId}` — see docs/firestore-architecture.md §2.9. */
 export interface InventoryDocument {
+  /** Absent on documents from before multi-vendor: see `resolveSellerId`. */
+  sellerId?: string
   productId: string
   variantId: string
   sku: string

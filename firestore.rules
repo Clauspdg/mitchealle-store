@@ -185,6 +185,15 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Multi-vendor foundation. Public store fields only: contact, legal and
+    // payout details live in the `private` subcollection and memberships in
+    // `sellerMembers`, neither of which matches any rule here, so both fall
+    // through to the deny-all below for every client.
+    match /sellers/{sellerId} {
+      allow read: if resource.data.status == 'active';
+      allow write: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

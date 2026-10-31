@@ -1,4 +1,5 @@
 import type { FirestoreTimestamp } from "./firestore"
+import type { ProductModerationStatus } from "./seller"
 
 export const PRODUCT_STATUSES = ["draft", "published", "archived"] as const
 export type ProductStatus = (typeof PRODUCT_STATUSES)[number]
@@ -76,6 +77,12 @@ export interface ProductDocument {
   createdAt: FirestoreTimestamp
   updatedAt: FirestoreTimestamp
   createdBy: string
+  /** Absent on products from before multi-vendor: see `resolveSellerId`. */
+  sellerId?: string
+  /** Denormalized for the storefront card. */
+  sellerName?: string
+  moderation?: ProductModerationStatus
+  moderationNote?: string | null
 }
 
 /** `ProductDocument` plus the Firestore document ID — used everywhere in app code. */

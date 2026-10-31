@@ -9,6 +9,12 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./vitest.setup.ts"],
     include: ["**/*.test.{ts,tsx}"],
-    exclude: ["node_modules", ".next", "functions/**", "tests/e2e/**"],
+    exclude: [
+      "node_modules",
+      ".next",
+      "functions/**",
+      "tests/e2e/**",
+      "tests/emulator/**",
+    ],
   },
 })

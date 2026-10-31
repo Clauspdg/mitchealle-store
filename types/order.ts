@@ -34,6 +34,11 @@ export interface OrderItem {
   unitPriceMinor: number
   quantity: number
   lineTotalMinor: number
+  /** Absent on orders from before multi-vendor: see `resolveSellerId`. */
+  sellerId?: string
+  sellerName?: string
+  /** Commission rate frozen at order time, in basis points. */
+  commissionBpsSnapshot?: number
 }
 
 export interface OrderStatusHistoryEntry {

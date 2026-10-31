@@ -12,6 +12,8 @@ export type CouponType = (typeof COUPON_TYPES)[number]
  * rather than an empty allowlist meaning "matches nothing".
  */
 export interface CouponDocument {
+  /** Reserved: every coupon is platform-wide for now. */
+  sellerId?: string | null
   code: string
   type: CouponType
   /** Percentage (0-100) or a fixed amount in minor units, per `type`.
