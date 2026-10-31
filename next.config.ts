@@ -24,7 +24,15 @@ const nextConfig: NextConfig = {
       // Decorative demo imagery only (hero, promo banner, testimonials) —
       // never used for real catalog data.
       { protocol: "https", hostname: "picsum.photos" },
+      // Local Storage emulator only (see `publicObjectUrl`).
+      ...(process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === "true"
+        ? [{ protocol: "http" as const, hostname: "127.0.0.1", port: "9199" }]
+        : []),
     ],
+    // Next refuses to optimize images from a private address such as the
+    // emulator's; this is only ever on locally.
+    dangerouslyAllowLocalIP:
+      process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === "true",
   },
 }
 

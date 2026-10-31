@@ -10,7 +10,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import type { ProductFormInput } from "@/schemas/product.schema"
 
-export function ProductVariants() {
+export function ProductVariants({
+  lockedStockVariantIds = [],
+}: {
+  /** Seller Center: existing variants' stock is changed on the stock page,
+   * so editing the listing never touches quantities. */
+  lockedStockVariantIds?: string[]
+}) {
   const { control, register, watch, setValue } =
     useFormContext<ProductFormInput>()
   const { fields, append, remove } = useFieldArray({
@@ -79,6 +85,16 @@ export function ProductVariants() {
                 <Input
                   type="number"
                   min="0"
+                  readOnly={lockedStockVariantIds.includes(
+                    watch(`variants.${index}.id`)
+                  )}
+                  title={
+                    lockedStockVariantIds.includes(
+                      watch(`variants.${index}.id`)
+                    )
+                      ? "Modifiable depuis la page Stock"
+                      : undefined
+                  }
                   {...register(`variants.${index}.stock`, {
                     valueAsNumber: true,
                   })}

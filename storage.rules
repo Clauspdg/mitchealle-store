@@ -1,16 +1,31 @@
 rules_version = '2';
 
-// ---------------------------------------------------------------------------
-// PLACEHOLDER — INFRASTRUCTURE PHASE ONLY.
-// Denies all direct client access to Storage. Definitive rules (per-path
-// read/write policy for product images, avatars, proof-of-payment uploads,
-// etc.) are pending Product Owner validation. Until then, uploads go through
-// the Admin SDK in a trusted server context.
-// ---------------------------------------------------------------------------
+// Every upload goes through the Admin SDK in a trusted server context, after
+// the server has checked the session, the store membership and the file:
+// no client ever writes to Storage directly.
+//
+// Reads through the Firebase SDK or endpoint follow the same split as the
+// objects' own public flag (services/storage):
+// - catalog and store product images, and store logos, are public, since
+//   the storefront shows them;
+// - seller application files stay private until approval: only the
+//   admin-only route /admin/sellers/applications/[id]/logo serves them.
 service firebase.storage {
   match /b/{bucket}/o {
     match /{allPaths=**} {
       allow read, write: if false;
+    }
+
+    match /catalog/{allPaths=**} {
+      allow read: if true;
+    }
+
+    match /sellers/{sellerId}/products/{fileName} {
+      allow read: if true;
+    }
+
+    match /sellers/{sellerId}/logo/{fileName} {
+      allow read: if true;
     }
   }
 }

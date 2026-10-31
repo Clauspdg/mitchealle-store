@@ -2,6 +2,7 @@ import "server-only"
 import { FieldValue, Timestamp } from "firebase-admin/firestore"
 
 import { adminDb } from "@/firebase/admin"
+import { HOUSE_SELLER_ID } from "@/config/seller"
 import { generateUniqueSlug } from "@/validators/slug.validator"
 import { getBrand } from "@/services/firestore/brands"
 import { listCategories } from "@/services/firestore/categories"
@@ -264,6 +265,7 @@ export async function updateProduct(
   if (!current) {
     throw new Error(`Product ${id} not found`)
   }
+  assertPublishable(current, input.status)
 
   const slug =
     input.name === current.name
@@ -330,9 +332,32 @@ async function syncCollectionMembership(
   await batch.commit()
 }
 
+/**
+ * A store product reaches the storefront only through moderation
+ * (`services/firestore/seller/moderation.ts`): the regular catalog screens
+ * can't publish one that hasn't been approved.
+ */
+export function assertPublishable(
+  product: Pick<ProductDocument, "sellerId" | "moderation">,
+  nextStatus: ProductStatus
+): void {
+  if (
+    nextStatus === "published" &&
+    product.sellerId &&
+    product.sellerId !== HOUSE_SELLER_ID &&
+    product.moderation !== "approved"
+  ) {
+    throw new Error(
+      "Ce produit vendeur doit être approuvé depuis la modération avant d'être publié."
+    )
+  }
+}
+
 // --- Status transitions (no physical delete — see docs/firestore-architecture.md §5.1) ---
 
 async function setStatus(id: string, status: ProductStatus): Promise<void> {
+  const current = await getProduct(id)
+  if (current) assertPublishable(current, status)
   await adminDb.collection(PRODUCTS_COLLECTION).doc(id).update({
     status,
     updatedAt: FieldValue.serverTimestamp(),

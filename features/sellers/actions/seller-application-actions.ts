@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache"
 
 import { requireSession } from "@/lib/session.server"
 import { logActivity } from "@/services/monitoring/log-activity"
-import { uploadImage } from "@/services/storage/images"
+import { uploadApplicationLogo } from "@/services/storage/seller-files"
 import {
   hasPendingApplication,
   submitSellerApplication,
@@ -40,16 +40,18 @@ export async function submitSellerApplicationAction(
   }
 
   try {
+    // Private until approval: only admins can open it, through
+    // /admin/sellers/applications/[id]/logo.
     const logo = formData.get(SELLER_APPLICATION_LOGO_FIELD)
-    const logoUrl =
+    const logoPath =
       logo instanceof File && logo.size > 0
-        ? (await uploadImage("seller-applications", logo)).url
+        ? await uploadApplicationLogo(session.uid, logo)
         : null
 
     const applicationId = await submitSellerApplication(
       { uid: session.uid, email: session.email },
       parsed.data,
-      logoUrl
+      logoPath
     )
     await logActivity("admin_action", "Candidature vendeur déposée", {
       applicationId,

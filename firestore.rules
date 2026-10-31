@@ -199,6 +199,11 @@ service cloud.firestore {
     // `sellerDecisions` (audit trail) are server-only on purpose: no rule
     // matches them, so the deny-all below applies. An applicant can never
     // write a status, a store or a membership from the client.
+    //
+    // Phase 3: `sellerStockMovements` (stock changes made in the Seller
+    // Center) is server-only as well. Store products stay in `products`
+    // above: a product waiting for moderation is a draft, so the public read
+    // rule never exposes it.
 
     match /{document=**} {
       allow read, write: if false;

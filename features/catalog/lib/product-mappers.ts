@@ -1,5 +1,22 @@
 import type { ProductFormInput } from "@/schemas/product.schema"
-import type { ClientSafeProduct } from "@/types/product"
+import type { ClientSafeProduct, Product } from "@/types/product"
+
+/** Same conversion as app/admin/products/[id]/page.tsx: `Timestamp` fields
+ * can't cross into a Client Component. */
+export function toClientSafeProduct(product: Product): ClientSafeProduct {
+  const {
+    preorderWindow: _preorderWindow,
+    availableFrom,
+    createdAt: _createdAt,
+    updatedAt,
+    ...rest
+  } = product
+  return {
+    ...rest,
+    availableFrom: availableFrom?.toMillis() ?? null,
+    updatedAt: updatedAt.toMillis(),
+  }
+}
 
 export function productToFormDefaults(
   product?: ClientSafeProduct

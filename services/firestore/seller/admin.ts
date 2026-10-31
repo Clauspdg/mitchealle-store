@@ -207,10 +207,14 @@ export async function setSellerStatus(
 export async function listSellerDecisions(filter: {
   sellerId?: string
   applicationId?: string
+  productId?: string
 }): Promise<SellerDecision[]> {
   let query: FirebaseFirestore.Query = adminDb.collection("sellerDecisions")
-  if (filter.sellerId) query = query.where("sellerId", "==", filter.sellerId)
-  else if (filter.applicationId) {
+  if (filter.productId) {
+    query = query.where("productId", "==", filter.productId)
+  } else if (filter.sellerId) {
+    query = query.where("sellerId", "==", filter.sellerId)
+  } else if (filter.applicationId) {
     query = query.where("applicationId", "==", filter.applicationId)
   } else {
     query = query.orderBy("createdAt", "desc").limit(MAX_DECISIONS)

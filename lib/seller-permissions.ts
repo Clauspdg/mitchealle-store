@@ -20,10 +20,11 @@ export const SELLER_PERMISSION_KEYS = [
 
 export type SellerPermissionKey = (typeof SELLER_PERMISSION_KEYS)[number]
 
+// Staff run the stock and the shipping; what customers read and pay
+// (catalog content, prices) is a manager decision.
 const STAFF_PERMISSIONS: SellerPermissionKey[] = [
   "store.view",
   "products.view",
-  "products.edit",
   "inventory.edit",
   "orders.view",
   "orders.fulfill",
@@ -31,6 +32,7 @@ const STAFF_PERMISSIONS: SellerPermissionKey[] = [
 
 const MANAGER_PERMISSIONS: SellerPermissionKey[] = [
   ...STAFF_PERMISSIONS,
+  "products.edit",
   "store.edit",
   "returns.manage",
 ]

@@ -100,7 +100,10 @@ export interface SellerApplicationDocument {
   slug: string
   description: string
   categoryId: string
+  /** Phase 2 applications only: a public URL. */
   logoUrl: string | null
+  /** Private Storage path, served to admins only, made public at approval. */
+  logoPath?: string | null
   contact: SellerApplicationContact
   status: SellerApplicationStatus
   rejectionReason: string | null
@@ -122,6 +125,9 @@ export const SELLER_DECISION_TYPES = [
   "application_rejected",
   "seller_suspended",
   "seller_activated",
+  "product_submitted",
+  "product_approved",
+  "product_rejected",
 ] as const
 export type SellerDecisionType = (typeof SELLER_DECISION_TYPES)[number]
 
@@ -131,6 +137,9 @@ export interface SellerDecisionDocument {
   applicationId: string | null
   sellerId: string | null
   storeName: string
+  /** Product decisions only. */
+  productId?: string | null
+  productName?: string | null
   reason: string | null
   actorUid: string
   actorEmail: string | null
@@ -139,4 +148,19 @@ export interface SellerDecisionDocument {
 
 export interface SellerDecision extends SellerDecisionDocument {
   id: string
+}
+
+/** Exact shape of an append-only `sellerStockMovements/{id}` document: every
+ * stock change a store makes on `products.variants[].stock`. Kept apart from
+ * `stockMovements`, which logs the warehouse `inventory` documents. */
+export interface SellerStockMovementDocument {
+  sellerId: string
+  productId: string
+  variantId: string
+  quantityBefore: number
+  quantityAfter: number
+  delta: number
+  reason: string | null
+  actorUid: string
+  createdAt: FirestoreTimestamp
 }

@@ -8,6 +8,7 @@ import { listCollections } from "@/services/firestore/collections"
 import { listBrands } from "@/services/firestore/brands"
 import { AdminSidebar } from "@/components/layout/admin-sidebar"
 import { ProductForm } from "@/features/catalog/components/product-form"
+import { toClientSafeProduct } from "@/features/catalog/lib/product-mappers"
 
 export const metadata: Metadata = { title: "Modifier le produit" }
 
@@ -37,18 +38,7 @@ export default async function EditProductPage({
   // `updatedAt` ("last modified" display), so those are converted to millis
   // instead of dropped; `preorderWindow`/`createdAt` are unused and dropped
   // entirely — same treatment for categories/collections/brands.
-  const {
-    preorderWindow: _preorderWindow,
-    availableFrom,
-    createdAt: _productCreatedAt,
-    updatedAt,
-    ...restProduct
-  } = product
-  const clientSafeProduct = {
-    ...restProduct,
-    availableFrom: availableFrom?.toMillis() ?? null,
-    updatedAt: updatedAt.toMillis(),
-  }
+  const clientSafeProduct = toClientSafeProduct(product)
   const clientSafeCategories = categories.map(
     ({ createdAt, updatedAt, ...rest }) => rest
   )

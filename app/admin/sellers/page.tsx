@@ -24,12 +24,17 @@ import { SellerApplicationsToolbar } from "@/features/sellers/components/seller-
 import {
   APPLICATION_STATUS_BADGE,
   APPLICATION_STATUS_LABELS,
+  MODERATION_LABELS,
   SELLER_STATUS_BADGE,
   SELLER_STATUS_LABELS,
   formatDateTime,
 } from "@/features/sellers/lib/seller-labels"
+import { listModerationQueue } from "@/services/firestore/seller/moderation"
+import { formatPriceMinor } from "@/utils/currency"
 import {
+  PRODUCT_MODERATION_STATUSES,
   SELLER_APPLICATION_STATUSES,
+  type ProductModerationStatus,
   type SellerApplicationStatus,
 } from "@/types/seller"
 
@@ -38,9 +43,15 @@ export const dynamic = "force-dynamic"
 
 const TABS = [
   { key: "applications", label: "Candidatures" },
+  { key: "products", label: "Modération produits" },
   { key: "stores", label: "Boutiques" },
   { key: "history", label: "Historique" },
 ] as const
+
+const MODERATION_FILTERS = PRODUCT_MODERATION_STATUSES.map((key) => ({
+  key,
+  label: MODERATION_LABELS[key],
+}))
 type TabKey = (typeof TABS)[number]["key"]
 
 function EmptyRow({ label }: { label: string }) {
@@ -98,6 +109,16 @@ export default async function AdminSellersPage({
 
         {tab === "applications" ? (
           <ApplicationsTab status={status} search={search} />
+        ) : tab === "products" ? (
+          <ProductsTab
+            status={
+              (PRODUCT_MODERATION_STATUSES as readonly string[]).includes(
+                String(params.moderation)
+              )
+                ? (params.moderation as ProductModerationStatus)
+                : "pending"
+            }
+          />
         ) : tab === "stores" ? (
           <StoresTab />
         ) : (
@@ -167,6 +188,73 @@ async function ApplicationsTab({
                   <TableCell className="text-right">
                     <Link
                       href={`/admin/sellers/applications/${application.id}`}
+                      className="text-sm underline underline-offset-4"
+                    >
+                      Examiner
+                    </Link>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </div>
+  )
+}
+
+async function ProductsTab({ status }: { status: ProductModerationStatus }) {
+  const products = await listModerationQueue(status)
+
+  return (
+    <div className="flex flex-col gap-4">
+      <nav className="flex flex-wrap gap-2" aria-label="Statut de modération">
+        {MODERATION_FILTERS.map((filter) => (
+          <Link
+            key={filter.key}
+            href={`/admin/sellers?tab=products&moderation=${filter.key}`}
+            aria-current={status === filter.key ? "page" : undefined}
+            className={cn(
+              "rounded-full border px-3 py-1 text-sm",
+              status === filter.key
+                ? "bg-primary text-primary-foreground border-primary"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            {filter.label}
+          </Link>
+        ))}
+      </nav>
+      {products.length === 0 ? (
+        <EmptyRow label="Aucun produit" />
+      ) : (
+        <div className="overflow-x-auto rounded-lg border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Produit</TableHead>
+                <TableHead>Boutique</TableHead>
+                <TableHead>Mis à jour le</TableHead>
+                <TableHead className="text-right">Prix</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {products.map((product) => (
+                <TableRow key={product.id}>
+                  <TableCell className="font-medium">{product.name}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {product.sellerName}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {formatDateTime(product.updatedAt.toMillis())}
+                  </TableCell>
+                  <TableCell className="text-right whitespace-nowrap">
+                    {formatPriceMinor(product.basePriceMinor, product.currency)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Link
+                      href={`/admin/sellers/products/${product.id}`}
                       className="text-sm underline underline-offset-4"
                     >
                       Examiner

@@ -14,6 +14,7 @@ import { hasRoleAtLeast, isRole, type Role } from "@/types/roles"
 const PROTECTED_ROUTES: Array<{ prefix: string; minimumRole: Role }> = [
   { prefix: "/admin", minimumRole: "staff" },
   { prefix: "/account", minimumRole: "customer" },
+  { prefix: "/seller", minimumRole: "customer" },
   { prefix: "/cart", minimumRole: "customer" },
   { prefix: "/checkout", minimumRole: "customer" },
 ]
@@ -58,6 +59,8 @@ export const config = {
   matcher: [
     "/account/:path*",
     "/admin/:path*",
+    "/seller",
+    "/seller/:path*",
     "/cart/:path*",
     "/checkout/:path*",
   ],

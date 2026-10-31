@@ -83,6 +83,11 @@ export interface ProductDocument {
   sellerName?: string
   moderation?: ProductModerationStatus
   moderationNote?: string | null
+  /** Bumped on every store edit: a decision applies to the version reviewed. */
+  moderationRevision?: number
+  /** When it was decided lives in `sellerDecisions`: no extra `Timestamp`
+   * here for every page that hands products to Client Components. */
+  moderatedBy?: string | null
 }
 
 /** `ProductDocument` plus the Firestore document ID — used everywhere in app code. */

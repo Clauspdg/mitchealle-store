@@ -15,8 +15,16 @@ import { uploadProductImageAction } from "@/features/catalog/actions/product-act
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import type { ProductFormInput } from "@/schemas/product.schema"
+import type { ActionResult } from "@/types/action-result"
 
-export function ProductImageGallery() {
+export function ProductImageGallery({
+  upload = uploadProductImageAction,
+}: {
+  /** The Seller Center uploads into the store's own Storage folder. */
+  upload?: (
+    formData: FormData
+  ) => Promise<ActionResult<{ url: string; path: string }>>
+}) {
   const { control, formState } = useFormContext<ProductFormInput>()
   const { fields, append, remove, move, update } = useFieldArray({
     control,
@@ -32,7 +40,7 @@ export function ProductImageGallery() {
       for (const file of Array.from(files)) {
         const formData = new FormData()
         formData.set("file", file)
-        const result = await uploadProductImageAction(formData)
+        const result = await upload(formData)
         if (!result.success) {
           toast.error(result.error)
           continue

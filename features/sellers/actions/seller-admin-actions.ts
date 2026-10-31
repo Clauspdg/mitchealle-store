@@ -10,6 +10,10 @@ import {
   SellerWorkflowError,
 } from "@/services/firestore/seller/applications"
 import { setSellerStatus } from "@/services/firestore/seller/admin"
+import {
+  approveProduct,
+  rejectProduct,
+} from "@/services/firestore/seller/moderation"
 import { sellerDecisionReasonSchema } from "@/schemas/seller-application.schema"
 import type { ActionResult } from "@/types/action-result"
 
@@ -61,6 +65,39 @@ export async function rejectSellerApplicationAction(
     await logActivity("admin_action", "Candidature vendeur refusée", {
       applicationId,
     })
+    return undefined
+  })
+}
+
+export async function approveProductAction(
+  productId: string,
+  revision: number
+): Promise<ActionResult> {
+  const session = await requirePermission("sellers")
+  if (!Number.isInteger(revision)) {
+    return { success: false, error: "Version invalide." }
+  }
+  return run("Échec d'approbation d'un produit vendeur", async () => {
+    await approveProduct(productId, revision, session)
+    await logActivity("admin_action", "Produit vendeur approuvé", { productId })
+    return undefined
+  })
+}
+
+export async function rejectProductAction(
+  productId: string,
+  revision: number,
+  reason: string
+): Promise<ActionResult> {
+  const session = await requirePermission("sellers")
+  const parsed = sellerDecisionReasonSchema.safeParse(reason)
+  if (!parsed.success) return { success: false, error: REASON_ERROR }
+  if (!Number.isInteger(revision)) {
+    return { success: false, error: "Version invalide." }
+  }
+  return run("Échec de refus d'un produit vendeur", async () => {
+    await rejectProduct(productId, revision, session, parsed.data)
+    await logActivity("admin_action", "Produit vendeur refusé", { productId })
     return undefined
   })
 }

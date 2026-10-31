@@ -1,3 +1,4 @@
+import Link from "next/link"
 import type { Metadata } from "next"
 
 import { requireSession } from "@/lib/session.server"
@@ -18,7 +19,7 @@ const STATUS_MESSAGES = {
   pending:
     "Notre équipe étudie votre candidature. Vous pourrez en déposer une nouvelle une fois celle-ci traitée.",
   approved:
-    "Votre boutique est ouverte. L'espace vendeur arrive prochainement.",
+    "Votre boutique est ouverte : gérez votre catalogue et votre stock depuis l'espace vendeur.",
   rejected: "Votre candidature n'a pas été retenue.",
 } as const
 
@@ -60,6 +61,14 @@ export default async function SellerApplicationPage() {
                 Déposée le {formatDateTime(application.createdAt.toMillis())}
               </p>
               <p className="text-sm">{STATUS_MESSAGES[application.status]}</p>
+              {application.status === "approved" && application.sellerId ? (
+                <Link
+                  href={`/seller/${application.sellerId}`}
+                  className="text-sm font-medium underline underline-offset-4"
+                >
+                  Ouvrir l&apos;espace vendeur
+                </Link>
+              ) : null}
               {application.status === "rejected" &&
               application.rejectionReason ? (
                 <p className="bg-muted rounded-md p-3 text-sm">

@@ -15,7 +15,13 @@ import { productToFormDefaults } from "@/features/catalog/lib/product-mappers"
 import { ProductImageGallery } from "@/features/catalog/components/product-image-gallery"
 import { ProductVariants } from "@/features/catalog/components/product-variants"
 import {
+  createSellerProductAction,
+  updateSellerProductAction,
+  uploadSellerProductImageAction,
+} from "@/features/sellers/actions/seller-catalog-actions"
+import {
   productFormSchema,
+  toSellerProductInput,
   type ProductFormInput,
 } from "@/schemas/product.schema"
 import { MoneyInput } from "@/components/shared/money-input"
@@ -57,6 +63,10 @@ interface ProductFormProps {
   categories: ClientSafeCategory[]
   collections: ClientSafeCollection[]
   brands: ClientSafeBrand[]
+  /** Seller Center: only the fields a store sets itself, sent through the
+   * store actions. Cost, managed brands, collections and publication stay
+   * admin-only. */
+  sellerId?: string
 }
 
 export function ProductForm({
@@ -64,9 +74,11 @@ export function ProductForm({
   categories,
   collections,
   brands,
+  sellerId,
 }: ProductFormProps) {
   const router = useRouter()
   const [submitting, setSubmitting] = useState(false)
+  const isSeller = sellerId !== undefined
 
   const form = useForm<ProductFormInput>({
     resolver: zodResolver(productFormSchema),
@@ -107,6 +119,21 @@ export function ProductForm({
         })),
       }
 
+      if (isSeller) {
+        const input = toSellerProductInput(normalized)
+        const result = product
+          ? await updateSellerProductAction(sellerId, product.id, input)
+          : await createSellerProductAction(sellerId, input)
+        if (!result.success) {
+          toast.error(result.error)
+          return
+        }
+        toast.success("Produit soumis à la modération.")
+        router.push(`/seller/${sellerId}/products/${result.data.id}`)
+        router.refresh()
+        return
+      }
+
       const result = product
         ? await updateProductAction(product.id, normalized)
         : await createProductAction(normalized)
@@ -134,12 +161,16 @@ export function ProductForm({
         noValidate
       >
         <Tabs defaultValue="general">
-          <TabsList>
+          <TabsList className="max-w-full justify-start overflow-x-auto">
             <TabsTrigger value="general">Général</TabsTrigger>
             <TabsTrigger value="pricing">Prix</TabsTrigger>
             <TabsTrigger value="images">Images</TabsTrigger>
-            <TabsTrigger value="variants">Variantes</TabsTrigger>
-            <TabsTrigger value="publication">Publication</TabsTrigger>
+            <TabsTrigger value="variants">
+              {isSeller ? "Variantes et stock" : "Variantes"}
+            </TabsTrigger>
+            {isSeller ? null : (
+              <TabsTrigger value="publication">Publication</TabsTrigger>
+            )}
             <TabsTrigger value="seo">SEO</TabsTrigger>
           </TabsList>
 
@@ -195,7 +226,7 @@ export function ProductForm({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="brand">Marque</Label>
-                {brands.length > 0 ? (
+                {brands.length > 0 && !isSeller ? (
                   <Select
                     items={brandItems}
                     value={watch("brandId") ?? "none"}
@@ -332,7 +363,7 @@ export function ProductForm({
                 )}
               </div>
 
-              <div className="flex flex-col gap-1.5">
+              <div className={isSeller ? "hidden" : "flex flex-col gap-1.5"}>
                 <Label>Collections</Label>
                 <div className="flex max-h-40 flex-col gap-1.5 overflow-y-auto rounded-md border p-2">
                   {collections.length === 0 && (
@@ -381,7 +412,7 @@ export function ProductForm({
 
           <TabsContent value="pricing" className="flex flex-col gap-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div className="flex flex-col gap-1.5">
+              <div className={isSeller ? "hidden" : "flex flex-col gap-1.5"}>
                 <Label htmlFor="costMinor">Coût</Label>
                 <MoneyInput
                   id="costMinor"
@@ -437,11 +468,22 @@ export function ProductForm({
           </TabsContent>
 
           <TabsContent value="images">
-            <ProductImageGallery />
+            <ProductImageGallery
+              upload={
+                isSeller
+                  ? (formData) =>
+                      uploadSellerProductImageAction(sellerId, formData)
+                  : undefined
+              }
+            />
           </TabsContent>
 
           <TabsContent value="variants">
-            <ProductVariants />
+            <ProductVariants
+              lockedStockVariantIds={
+                isSeller ? product?.variants.map((variant) => variant.id) : []
+              }
+            />
           </TabsContent>
 
           <TabsContent value="publication" className="flex flex-col gap-4">
@@ -561,9 +603,13 @@ export function ProductForm({
           <Button type="submit" disabled={submitting}>
             {submitting
               ? "Enregistrement..."
-              : product
-                ? "Enregistrer"
-                : "Créer le produit"}
+              : isSeller
+                ? product
+                  ? "Enregistrer et resoumettre"
+                  : "Soumettre à la modération"
+                : product
+                  ? "Enregistrer"
+                  : "Créer le produit"}
           </Button>
           {product && (
             <Badge variant="secondary" className="ml-2">

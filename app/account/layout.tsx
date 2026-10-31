@@ -6,6 +6,7 @@ const ACCOUNT_NAV = [
   { title: "Adresses", href: "/account/addresses" },
   { title: "Liste de souhaits", href: "/account/wishlist" },
   { title: "Vendre sur C.L.A.G", href: "/account/seller-application" },
+  { title: "Espace vendeur", href: "/seller" },
 ]
 
 export default function AccountLayout({

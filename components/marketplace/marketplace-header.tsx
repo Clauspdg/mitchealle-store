@@ -62,7 +62,11 @@ export function MarketplaceHeader({
   }, [])
 
   const initialsSource = user?.displayName || user?.email || "?"
-  const isAdmin = pathname.startsWith("/admin")
+  // The admin panel and the Seller Center carry their own navigation.
+  const isAdmin =
+    pathname.startsWith("/admin") ||
+    pathname === "/seller" ||
+    pathname.startsWith("/seller/")
 
   // The admin-managed header menu stays live: its entries follow the fixed
   // marketplace rail, minus the home link (the logo already does that job).
@@ -190,6 +194,9 @@ export function MarketplaceHeader({
                 </DropdownMenuItem>
                 <DropdownMenuItem render={<Link href="/account/wishlist" />}>
                   Ma liste de souhaits
+                </DropdownMenuItem>
+                <DropdownMenuItem render={<Link href="/seller" />}>
+                  Espace vendeur
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <div className="px-1.5 py-1">

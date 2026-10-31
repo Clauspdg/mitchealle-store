@@ -20,6 +20,8 @@ export class SellerAccessError extends Error {
 export interface SellerContext {
   readonly sellerId: string
   readonly uid: string
+  /** For audit entries only, never for an access decision. */
+  readonly email: string | null
   readonly role: SellerMemberRole
 }
 
@@ -43,5 +45,10 @@ export async function requireSellerAccess(
   const decision = decideSellerAccess(seller, member, permission)
   if (!decision.allowed) throw new SellerAccessError()
 
-  return { sellerId, uid: session.uid, role: decision.role }
+  return {
+    sellerId,
+    uid: session.uid,
+    email: session.email,
+    role: decision.role,
+  }
 }

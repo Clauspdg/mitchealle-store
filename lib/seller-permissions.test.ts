@@ -21,16 +21,20 @@ describe("store roles", () => {
     }
   })
 
-  it("lets a manager edit the store and handle returns, not staff", () => {
-    for (const key of ["store.edit", "returns.manage"] as const) {
+  it("lets a manager edit the store, the catalog and returns, not staff", () => {
+    for (const key of [
+      "store.edit",
+      "products.edit",
+      "returns.manage",
+    ] as const) {
       expect(hasSellerPermission("manager", key)).toBe(true)
       expect(hasSellerPermission("staff", key)).toBe(false)
     }
   })
 
-  it("lets staff run daily catalog and fulfilment work", () => {
+  it("lets staff run stock and fulfilment work", () => {
     for (const key of [
-      "products.edit",
+      "products.view",
       "inventory.edit",
       "orders.fulfill",
     ] as const) {

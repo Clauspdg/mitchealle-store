@@ -18,8 +18,9 @@ import { useCartItemCount } from "@/features/cart/hooks/use-cart-item-count"
 const ITEM_CLASSNAME =
   "relative flex min-h-14 flex-col items-center justify-center gap-0.5 text-[0.68rem] font-medium transition-colors"
 
-/** Admin has its own navigation; checkout keeps the screen on the payment. */
-const HIDDEN_PATH_PREFIXES = ["/admin", "/checkout"]
+/** Admin and the Seller Center have their own navigation; checkout keeps
+ * the screen on the payment. */
+const HIDDEN_PATH_PREFIXES = ["/admin", "/seller", "/checkout"]
 
 function NavLink({
   href,

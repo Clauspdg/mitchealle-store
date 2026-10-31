@@ -5,6 +5,8 @@ import { adminDb } from "@/firebase/admin"
 import { DEFAULT_COMMISSION_BPS } from "@/config/seller"
 import { slugify } from "@/utils/slug"
 import { sellerMemberDocId } from "@/services/firestore/seller/sellers"
+import { deleteImage } from "@/services/storage/images"
+import { publishApplicationLogo } from "@/services/storage/seller-files"
 import type { SellerApplicationInput } from "@/schemas/seller-application.schema"
 import type {
   SellerApplication,
@@ -73,7 +75,7 @@ async function assertSlugAvailable(
 export async function submitSellerApplication(
   applicant: Actor,
   input: SellerApplicationInput,
-  logoUrl: string | null
+  logoPath: string | null
 ): Promise<string> {
   const slug = slugify(input.storeName)
   if (!slug) {
@@ -106,7 +108,8 @@ export async function submitSellerApplication(
         slug,
         description: input.description,
         categoryId: input.categoryId,
-        logoUrl,
+        logoUrl: null,
+        logoPath,
         contact: {
           legalName: input.legalName,
           contactEmail: input.contactEmail,
@@ -214,6 +217,31 @@ export async function approveSellerApplication(
   // produce a second store for the same application.
   const sellerId = applicationId
 
+  // Storage can't join a Firestore transaction: the public copy of the logo
+  // is made first and removed again if the approval doesn't go through.
+  const pending = await getSellerApplication(applicationId)
+  const publishedLogo =
+    pending?.status === "pending" && pending.logoPath
+      ? await publishApplicationLogo(pending.logoPath, sellerId)
+      : null
+
+  try {
+    await approveInTransaction(applicationRef, sellerId, actor, publishedLogo)
+  } catch (error) {
+    if (publishedLogo) await deleteImage(publishedLogo.path)
+    throw error
+  }
+
+  return sellerId
+}
+
+async function approveInTransaction(
+  applicationRef: FirebaseFirestore.DocumentReference,
+  sellerId: string,
+  actor: Actor,
+  publishedLogo: { url: string } | null
+): Promise<void> {
+  const applicationId = applicationRef.id
   await adminDb.runTransaction(async (tx) => {
     const snapshot = await tx.get(applicationRef)
     if (!snapshot.exists) {
@@ -231,7 +259,7 @@ export async function approveSellerApplication(
       name: application.storeName,
       slug: application.slug,
       description: application.description,
-      logoUrl: application.logoUrl,
+      logoUrl: publishedLogo?.url ?? application.logoUrl ?? null,
       bannerUrl: null,
       status: "active",
       commissionBps: DEFAULT_COMMISSION_BPS,
@@ -285,8 +313,6 @@ export async function approveSellerApplication(
       actorEmail: actor.email,
     })
   })
-
-  return sellerId
 }
 
 export async function rejectSellerApplication(

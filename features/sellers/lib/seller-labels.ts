@@ -1,4 +1,5 @@
 import type {
+  ProductModerationStatus,
   SellerApplicationStatus,
   SellerDecisionType,
   SellerMemberRole,
@@ -47,6 +48,27 @@ export const DECISION_LABELS: Record<SellerDecisionType, string> = {
   application_rejected: "Candidature refusée",
   seller_suspended: "Boutique suspendue",
   seller_activated: "Boutique réactivée",
+  product_submitted: "Produit soumis",
+  product_approved: "Produit approuvé",
+  product_rejected: "Produit refusé",
+}
+
+export const MODERATION_LABELS: Record<ProductModerationStatus, string> = {
+  pending: "En modération",
+  approved: "Approuvé",
+  rejected: "Refusé",
+}
+
+export const MODERATION_BADGE: Record<ProductModerationStatus, string> = {
+  pending: "bg-accent-gold-muted text-accent-gold-foreground",
+  approved: "bg-brand-blue text-white",
+  rejected: "bg-destructive/10 text-destructive",
+}
+
+export const PRODUCT_STATUS_LABELS: Record<string, string> = {
+  draft: "Hors ligne",
+  published: "En ligne",
+  archived: "Archivé",
 }
 
 export function formatDateTime(millis: number | null): string {

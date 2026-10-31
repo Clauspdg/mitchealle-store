@@ -301,11 +301,123 @@ async function seedApplication() {
   await batch.commit()
 }
 
+// Two store products past the approved catalog: one waiting for moderation
+// (offline) and one refused with its reason, for the Seller Center and the
+// admin moderation queue.
+async function seedModeration() {
+  const cases = [
+    {
+      id: "demo-moderation-attente",
+      sellerId: "demo-boutique-mode",
+      name: "Chemise lin démo",
+      moderation: "pending",
+      moderationNote: null,
+    },
+    {
+      id: "demo-moderation-refuse",
+      sellerId: "demo-boutique-maison",
+      name: "Lampe démo",
+      moderation: "rejected",
+      moderationNote: "Photos floues : ajoutez une vue nette du produit.",
+    },
+  ]
+  const batch = db.batch()
+  for (const item of cases) {
+    const seller = SELLERS.find((s) => s.id === item.sellerId)
+    batch.set(db.collection("products").doc(item.id), {
+      name: item.name,
+      nameLower: item.name.toLowerCase(),
+      slug: item.id,
+      shortDescription: "Produit fictif en cours de modération.",
+      description: "Produit fictif créé pour tester la modération.",
+      sku: item.id.toUpperCase(),
+      brand: null,
+      brandId: null,
+      upc: null,
+      costMinor: null,
+      categoryId: item.sellerId === "demo-boutique-mode" ? "demo-1" : "demo-3",
+      collectionIds: [],
+      images: [
+        {
+          url: `https://picsum.photos/seed/${item.id}/900/1125`,
+          alt: item.name,
+          position: 0,
+        },
+      ],
+      basePriceMinor: 250000,
+      salePriceMinor: null,
+      currency: "HTG",
+      variants: [
+        {
+          id: `${item.id}-standard`,
+          sku: `${item.id.toUpperCase()}-STD`,
+          size: null,
+          color: null,
+          priceMinor: null,
+          stock: 12,
+          isDefault: true,
+          imageUrl: null,
+        },
+      ],
+      material: null,
+      weightGrams: null,
+      dimensionsCm: null,
+      tags: [],
+      status: "draft",
+      isComingSoon: false,
+      isPreorderable: false,
+      preorderWindow: null,
+      preorderMessage: null,
+      availableFrom: null,
+      seo: { title: item.name, description: "", keywords: [] },
+      ratingAverage: 0,
+      ratingCount: 0,
+      createdAt: now,
+      updatedAt: now,
+      createdBy: "demo-vendeur",
+      sellerId: item.sellerId,
+      sellerName: seller.name,
+      moderation: item.moderation,
+      moderationNote: item.moderationNote,
+      moderationRevision: 1,
+      moderatedBy: item.moderation === "rejected" ? "demo-admin" : null,
+    })
+    batch.set(db.collection("sellerDecisions").doc(`${item.id}-submitted`), {
+      type: "product_submitted",
+      applicationId: null,
+      sellerId: item.sellerId,
+      storeName: seller.name,
+      productId: item.id,
+      productName: item.name,
+      reason: null,
+      actorUid: "demo-vendeur",
+      actorEmail: null,
+      createdAt: now,
+    })
+    if (item.moderation === "rejected") {
+      batch.set(db.collection("sellerDecisions").doc(`${item.id}-rejected`), {
+        type: "product_rejected",
+        applicationId: null,
+        sellerId: item.sellerId,
+        storeName: seller.name,
+        productId: item.id,
+        productName: item.name,
+        reason: item.moderationNote,
+        actorUid: "demo-admin",
+        actorEmail: "admin@demo.clag.test",
+        createdAt: Timestamp.fromMillis(now.toMillis() + 60_000),
+      })
+    }
+  }
+  await batch.commit()
+}
+
 await seedUsers()
 await seedCategories()
 await seedSellers()
 await seedApplication()
 await seedProducts()
+await seedModeration()
 console.log(
   `Jeu de démonstration chargé sur ${projectId}${usesEmulators ? " (émulateurs)" : ""}.`
 )

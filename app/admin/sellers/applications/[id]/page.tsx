@@ -72,11 +72,15 @@ export default async function SellerApplicationAdminPage({
           <div className="flex flex-col gap-6">
             <section className="flex flex-col gap-4 rounded-lg border p-4">
               <h2 className="font-semibold">Boutique</h2>
-              {application.logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element -- external Storage URL
+              {application.logoPath || application.logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element -- private file served by an admin-only route
                 <img
-                  src={application.logoUrl}
-                  alt=""
+                  src={
+                    application.logoPath
+                      ? `/admin/sellers/applications/${application.id}/logo`
+                      : application.logoUrl!
+                  }
+                  alt="Logo proposé"
                   className="size-16 rounded-md border object-contain"
                 />
               ) : null}
