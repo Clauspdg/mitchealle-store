@@ -22,7 +22,7 @@ export function CompareBar() {
             duration: shouldReduceMotion ? 0 : 0.3,
             ease: "easeOut",
           }}
-          className="bg-surface-ink text-surface-ink-foreground fixed inset-x-4 bottom-4 z-50 flex flex-wrap items-center justify-between gap-3 rounded-xl px-4 py-3 shadow-xl sm:inset-x-auto sm:right-6 sm:left-6"
+          className="bg-surface-ink text-surface-ink-foreground fixed inset-x-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-50 flex flex-wrap items-center justify-between gap-3 rounded-xl px-4 py-3 shadow-xl sm:inset-x-auto sm:right-6 sm:left-6 md:bottom-4"
         >
           <div className="flex items-center gap-2 text-sm">
             <span className="font-medium">

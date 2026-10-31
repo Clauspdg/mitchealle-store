@@ -58,7 +58,7 @@ export function ScrollCarousel({
         variant="secondary"
         size="icon"
         onClick={() => scrollBy(-scrollAmount)}
-        className="absolute top-1/3 -left-4 hidden rounded-full shadow-md sm:flex"
+        className="absolute top-1/3 -left-3 hidden rounded-full shadow-md md:flex"
         aria-label="Précédent"
       >
         <ChevronLeftIcon className="size-4" />
@@ -68,7 +68,7 @@ export function ScrollCarousel({
         variant="secondary"
         size="icon"
         onClick={() => scrollBy(scrollAmount)}
-        className="absolute top-1/3 -right-4 hidden rounded-full shadow-md sm:flex"
+        className="absolute top-1/3 -right-3 hidden rounded-full shadow-md md:flex"
         aria-label="Suivant"
       >
         <ChevronRightIcon className="size-4" />

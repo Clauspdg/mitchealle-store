@@ -1,13 +1,13 @@
 {
-  "name": "Mitchaella Store",
-  "short_name": "Mitchaella",
-  "description": "Boutique en ligne Mitchaella Store",
+  "name": "C.L.A.G Marketplace",
+  "short_name": "C.L.A.G",
+  "description": "C.L.A.G, la marketplace qui rassemble petits commerçants, vendeurs indépendants et boutiques locales.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#ffffff",
-  "theme_color": "#171717",
+  "theme_color": "#031f49",
   "lang": "fr",
   "icons": [
     {

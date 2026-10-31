@@ -7,10 +7,17 @@ import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { BrandLogo } from "@/components/marketplace/brand-logo"
 import type { StoreSettings } from "@/types/settings"
 import type { MenuItem } from "@/types/menu"
 
 const PAYMENT_METHODS = ["Visa", "Mastercard", "American Express"]
+
+const MARKETPLACE_LINKS = [
+  { label: "Boutiques", href: "/#boutiques" },
+  { label: "Promotions", href: "/products?onSale=1" },
+  { label: "Devenir vendeur", href: "/#devenir-vendeur" },
+]
 
 const SOCIAL_LABELS: Record<keyof StoreSettings["socialLinks"], string> = {
   instagram: "Instagram",
@@ -54,12 +61,36 @@ export function Footer({
 
   return (
     <footer className="bg-surface-ink text-surface-ink-foreground border-t">
-      <div className="mx-auto grid w-full max-w-6xl gap-10 px-6 py-16 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="flex flex-col gap-3">
-          <span className="font-heading text-lg font-medium">
-            {storeSettings.storeName}
-          </span>
+      <div className="mx-auto grid w-full max-w-7xl grid-cols-2 gap-x-6 gap-y-8 px-4 py-10 sm:py-14 lg:grid-cols-4">
+        <div className="col-span-2 flex flex-col items-start gap-3 lg:col-span-1">
+          <BrandLogo
+            alt={storeSettings.storeName}
+            variant="full"
+            customSrc={storeSettings.logoUrl}
+            onDarkSurface
+            className="h-16"
+          />
+          {storeSettings.slogan ? (
+            <p className="text-sm font-medium">{storeSettings.slogan}</p>
+          ) : null}
           <p className="text-sm text-white/70">{storeSettings.description}</p>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          <span className="text-sm font-medium tracking-wide uppercase">
+            Marketplace
+          </span>
+          <nav className="flex flex-col gap-2">
+            {MARKETPLACE_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="text-sm text-white/70 transition-colors hover:text-white"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
         </div>
 
         {footerGroups.map(({ group, links }) => (
@@ -104,7 +135,7 @@ export function Footer({
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 sm:col-span-2 lg:col-span-1">
+        <div className="col-span-2 flex flex-col gap-3 lg:col-span-1">
           <span className="text-sm font-medium tracking-wide uppercase">
             Newsletter
           </span>
@@ -123,7 +154,7 @@ export function Footer({
             <Button
               type="submit"
               size="icon"
-              className="bg-accent-rose text-accent-rose-foreground hover:bg-accent-rose/90 shrink-0"
+              className="bg-accent-gold text-accent-gold-foreground hover:bg-accent-gold/90 shrink-0"
               aria-label="S'inscrire"
             >
               <SendIcon className="size-4" />
@@ -133,7 +164,7 @@ export function Footer({
       </div>
 
       <div className="border-t border-white/10">
-        <div className="mx-auto flex w-full max-w-6xl flex-col-reverse items-center gap-3 px-6 py-6 text-xs text-white/65 sm:flex-row sm:justify-between">
+        <div className="mx-auto flex w-full max-w-7xl flex-col-reverse items-center gap-3 px-4 py-6 text-xs text-white/65 sm:flex-row sm:justify-between">
           <p>
             © {new Date().getFullYear()} {storeSettings.storeName}. Tous droits
             réservés.

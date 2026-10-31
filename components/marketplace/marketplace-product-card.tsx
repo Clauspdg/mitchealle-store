@@ -2,7 +2,6 @@ import Image from "next/image"
 import Link from "next/link"
 import { StarIcon } from "lucide-react"
 
-import { cn } from "@/lib/utils"
 import type { Product } from "@/types/product"
 import { Badge } from "@/components/ui/badge"
 import { PriceDisplay } from "@/features/catalog/components/storefront/price-display"
@@ -14,30 +13,35 @@ import { BuyNowButton } from "@/features/cart/components/buy-now-button"
 import { CompareToggleButton } from "@/features/compare/components/compare-toggle-button"
 import { computeProductBadges } from "@/features/catalog/lib/product-badges"
 
-interface ProductCardProps {
+const IMAGE_SIZES =
+  "(min-width: 1536px) 16vw, (min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+
+interface MarketplaceProductCardProps {
   product: Product
   isInWishlist?: boolean
   /** Set for the first above-the-fold row so its image is an LCP priority
    * candidate instead of lazy-loaded — see `ProductGrid`. */
   priority?: boolean
+  /** Selling store — takes the brand's place once products have a seller. */
+  sellerName?: string | null
 }
 
-export function ProductCard({
+export function MarketplaceProductCard({
   product,
   isInWishlist = false,
   priority = false,
-}: ProductCardProps) {
+  sellerName = null,
+}: MarketplaceProductCardProps) {
   const image = product.images[0]
   const hoverImage = product.images[1]
   const badges = computeProductBadges(product).slice(0, 2)
   const defaultVariant =
     product.variants.find((v) => v.isDefault) ?? product.variants[0]
   const canQuickAdd = product.variants.length <= 1
-  const roundedRating = Math.round(product.ratingAverage)
 
   return (
-    <div className="group relative flex flex-col gap-1.5 transition-transform duration-200 hover:-translate-y-1">
-      <div className="bg-muted relative aspect-[3/4] overflow-hidden rounded-2xl shadow-sm transition-shadow duration-300 group-hover:shadow-xl">
+    <div className="group bg-card relative flex h-full flex-col overflow-hidden rounded-xl border transition-shadow duration-200 hover:shadow-lg">
+      <div className="bg-muted relative aspect-[4/5] overflow-hidden">
         <Link href={`/products/${product.slug}`} className="absolute inset-0">
           {image ? (
             <Image
@@ -45,7 +49,7 @@ export function ProductCard({
               alt={image.alt || product.name}
               fill
               preload={priority}
-              sizes="(min-width: 1536px) 16vw, (min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+              sizes={IMAGE_SIZES}
               className="object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : null}
@@ -54,13 +58,13 @@ export function ProductCard({
               src={hoverImage.url}
               alt={hoverImage.alt || product.name}
               fill
-              sizes="(min-width: 1536px) 16vw, (min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+              sizes={IMAGE_SIZES}
               className="object-cover opacity-0 transition-opacity duration-300 group-hover:opacity-100"
             />
           ) : null}
         </Link>
 
-        <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+        <div className="pointer-events-none absolute top-2 left-2 flex flex-col items-start gap-1">
           {badges.map((badge) => (
             <Badge key={badge.key} className={badge.className}>
               {badge.label}
@@ -72,7 +76,7 @@ export function ProductCard({
           />
         </div>
 
-        <div className="absolute top-3 right-3 flex flex-col gap-1.5">
+        <div className="absolute top-2 right-2 flex flex-col gap-1">
           <WishlistButton
             productId={product.id}
             initialIsInWishlist={isInWishlist}
@@ -91,13 +95,13 @@ export function ProductCard({
               quantity={1}
               disabled={defaultVariant.stock <= 0}
               iconOnly
-              className="bg-background/90 text-foreground hover:bg-background size-10 shadow-md backdrop-blur"
+              className="bg-accent-gold text-accent-gold-foreground hover:bg-accent-gold/90 size-10 shadow-md"
             />
           </div>
         ) : null}
 
-        <div className="absolute right-3 bottom-3 hidden flex-col items-end gap-2 sm:flex">
-          <div className="translate-y-2 opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+        <div className="absolute right-2 bottom-2 hidden flex-col items-end gap-2 sm:flex">
+          <div className="translate-y-2 opacity-0 transition-all duration-200 group-focus-within:translate-y-0 group-focus-within:opacity-100 group-hover:translate-y-0 group-hover:opacity-100">
             <QuickViewDialog
               product={{
                 id: product.id,
@@ -119,17 +123,17 @@ export function ProductCard({
           </div>
           {canQuickAdd && defaultVariant ? (
             <>
-              <div className="translate-y-2 opacity-0 transition-all delay-75 duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+              <div className="translate-y-2 opacity-0 transition-all delay-75 duration-200 group-focus-within:translate-y-0 group-focus-within:opacity-100 group-hover:translate-y-0 group-hover:opacity-100">
                 <AddToCartButton
                   productId={product.id}
                   variantId={defaultVariant.id}
                   quantity={1}
                   disabled={defaultVariant.stock <= 0}
                   iconOnly
-                  className="bg-background/80 text-foreground hover:bg-background backdrop-blur"
+                  className="bg-accent-gold text-accent-gold-foreground hover:bg-accent-gold/90"
                 />
               </div>
-              <div className="translate-y-2 opacity-0 transition-all delay-150 duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+              <div className="translate-y-2 opacity-0 transition-all delay-150 duration-200 group-focus-within:translate-y-0 group-focus-within:opacity-100 group-hover:translate-y-0 group-hover:opacity-100">
                 <BuyNowButton
                   productId={product.id}
                   variantId={defaultVariant.id}
@@ -146,37 +150,26 @@ export function ProductCard({
 
       <Link
         href={`/products/${product.slug}`}
-        className="flex flex-col gap-0.5"
+        className="flex flex-1 flex-col gap-0.5 p-2.5"
       >
-        {product.brand ? (
-          <span className="text-muted-foreground text-[0.65rem] tracking-wide uppercase">
-            {product.brand}
+        {sellerName || product.brand ? (
+          <span className="text-muted-foreground truncate text-[0.68rem]">
+            {sellerName ? `Vendu par ${sellerName}` : product.brand}
           </span>
         ) : null}
-        <span className="font-heading truncate text-sm leading-snug sm:text-base">
+        <span className="line-clamp-2 min-h-[2.5em] text-sm leading-tight font-medium">
           {product.name}
         </span>
         <PriceDisplay
           basePriceMinor={product.basePriceMinor}
           salePriceMinor={product.salePriceMinor}
           currency={product.currency}
+          className="mt-auto pt-1"
         />
         {product.ratingCount > 0 ? (
-          <span className="flex items-center gap-0.5">
-            {Array.from({ length: 5 }, (_, index) => (
-              <StarIcon
-                key={index}
-                className={cn(
-                  "size-2.5",
-                  index < roundedRating
-                    ? "fill-accent-gold text-accent-gold"
-                    : "fill-muted text-muted"
-                )}
-              />
-            ))}
-            <span className="text-muted-foreground ml-1 text-[0.65rem]">
-              ({product.ratingCount})
-            </span>
+          <span className="text-muted-foreground flex items-center gap-0.5 text-[0.68rem]">
+            <StarIcon className="fill-accent-gold text-accent-gold size-3" />
+            {product.ratingAverage.toFixed(1)} ({product.ratingCount})
           </span>
         ) : null}
       </Link>

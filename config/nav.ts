@@ -12,6 +12,18 @@ export const mainNav: NavItem[] = [
   { title: "Collections", href: "/collections" },
 ]
 
+/**
+ * Fixed marketplace rail. Items from the admin-managed header menu are
+ * appended after these — see `MarketplaceHeader`.
+ */
+export const marketplaceNav: NavItem[] = [
+  { title: "Catégories", href: "/categories" },
+  { title: "Boutiques", href: "/#boutiques" },
+  { title: "Promotions", href: "/products?onSale=1" },
+  { title: "Nouveautés", href: "/products?sort=createdAt_desc" },
+  { title: "Meilleures ventes", href: "/products?sort=popularity_desc" },
+]
+
 export const adminNav: Array<
   NavItem & { minimumRole: Role; permission: PermissionKey }
 > = [

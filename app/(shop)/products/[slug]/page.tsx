@@ -15,7 +15,7 @@ import { Reveal } from "@/components/shared/reveal"
 import { ScrollCarousel } from "@/components/shared/scroll-carousel"
 import { PreorderBadge } from "@/features/catalog/components/storefront/preorder-badge"
 import { ProductSpecifications } from "@/features/catalog/components/storefront/product-specifications"
-import { ProductCard } from "@/features/catalog/components/storefront/product-card"
+import { MarketplaceProductCard } from "@/components/marketplace/marketplace-product-card"
 import { ProductDetailInteractive } from "@/features/catalog/components/storefront/product-detail-interactive"
 import { WishlistButton } from "@/features/wishlist/components/wishlist-button"
 import { CompareToggleButton } from "@/features/compare/components/compare-toggle-button"
@@ -250,9 +250,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </h2>
           </Reveal>
           <Reveal delay={0.1}>
-            <ScrollCarousel>
+            <ScrollCarousel itemClassName="w-[44vw] sm:w-52 lg:w-56">
               {similarProducts.map((related) => (
-                <ProductCard
+                <MarketplaceProductCard
                   key={related.id}
                   product={related}
                   isInWishlist={relatedWishlistIds.has(related.id)}

@@ -5,7 +5,8 @@
  * when no active `homepageHero` banner exists yet (see
  * `services/firestore/banners.ts`), not the source of truth. `testimonials`
  * remains static demo copy — no backing collection was requested for it in
- * any sprint so far.
+ * any sprint so far. `demoStores` (Sprint 13.1) are fictional placeholders:
+ * no seller backend exists yet, and every card must stay labelled as a demo.
  */
 
 export interface Testimonial {
@@ -284,47 +285,89 @@ export const brands: Brand[] = [
 
 export const brandNames: string[] = brands.map((brand) => brand.name)
 
-export const promoBanner = {
-  headline: "Livraison offerte dès 100 $",
-  subtext: "Nouvelle collection disponible — quantités limitées.",
-  ctaLabel: "Découvrir",
-  ctaHref: "/products",
-}
-
 export interface HeroSlide {
-  imageSeed: string
+  id: string
   eyebrow: string
   title: string
   subtitle: string
+  primaryButtonLabel: string
+  primaryButtonHref: string
+  secondaryButtonLabel: string
+  secondaryButtonHref: string
 }
 
 export const heroSlides: HeroSlide[] = [
   {
-    imageSeed: "mitchaella-hero-1",
-    eyebrow: "Élégance intemporelle",
-    title: "Une garde-robe qui traverse le temps",
+    id: "local-marketplace",
+    eyebrow: "Your Local Marketplace",
+    title: "Vos commerces locaux, réunis au même endroit",
     subtitle:
-      "Des pièces sélectionnées avec exigence, pensées pour durer bien au-delà des saisons.",
+      "Découvrez les produits de petits commerçants, de vendeurs indépendants et de boutiques de proximité.",
+    primaryButtonLabel: "Explorer les produits",
+    primaryButtonHref: "/products",
+    secondaryButtonLabel: "Voir les catégories",
+    secondaryButtonHref: "/categories",
   },
   {
-    imageSeed: "mitchaella-hero-2",
-    eyebrow: "Nouvelle collection",
-    title: "L'exigence comme signature",
+    id: "small-sellers",
+    eyebrow: "Petits vendeurs, grande visibilité",
+    title: "Donnez à votre boutique la vitrine qu'elle mérite",
     subtitle:
-      "Chaque détail, du tissu à la finition, reflète notre standard de qualité.",
+      "C.L.A.G aide les boutiques locales à présenter leurs produits et à toucher de nouveaux clients.",
+    primaryButtonLabel: "Devenir vendeur",
+    primaryButtonHref: "/#devenir-vendeur",
+    secondaryButtonLabel: "Boutiques en vedette",
+    secondaryButtonHref: "/#boutiques",
   },
   {
-    imageSeed: "mitchaella-hero-3",
-    eyebrow: "Édition limitée",
-    title: "Des pièces rares, faites pour durer",
+    id: "good-deals",
+    eyebrow: "Bonnes affaires",
+    title: "Les promotions du moment, en un coup d'œil",
     subtitle:
-      "Découvrez une sélection pensée pour celles et ceux qui exigent le meilleur.",
+      "Parcourez les offres en cours et trouvez le bon produit au bon prix.",
+    primaryButtonLabel: "Voir les promotions",
+    primaryButtonHref: "/products?onSale=1",
+    secondaryButtonLabel: "Nouveautés",
+    secondaryButtonHref: "/products?sort=createdAt_desc",
+  },
+]
+
+export interface DemoStore {
+  id: string
+  name: string
+  specialty: string
+  description: string
+  /** Key for `getCategoryIcon`. */
+  icon: string
+}
+
+export const demoStores: DemoStore[] = [
+  {
+    id: "demo-mode",
+    name: "Boutique démo Mode",
+    specialty: "Vêtements",
+    description: "Exemple de vitrine pour un vendeur de prêt-à-porter.",
+    icon: "shirt",
   },
   {
-    imageSeed: "mitchaella-hero-4",
-    eyebrow: "Prêt-à-porter premium",
-    title: "Le raffinement au quotidien",
-    subtitle:
-      "Une garde-robe complète, pensée pour accompagner chaque moment avec élégance.",
+    id: "demo-beaute",
+    name: "Boutique démo Beauté",
+    specialty: "Soins et cosmétiques",
+    description: "Exemple de vitrine pour un commerce de beauté.",
+    icon: "beauty",
+  },
+  {
+    id: "demo-maison",
+    name: "Boutique démo Maison",
+    specialty: "Décoration",
+    description: "Exemple de vitrine pour une boutique d'intérieur.",
+    icon: "home",
+  },
+  {
+    id: "demo-artisanat",
+    name: "Boutique démo Artisanat",
+    specialty: "Créations locales",
+    description: "Exemple de vitrine pour un artisan indépendant.",
+    icon: "art",
   },
 ]

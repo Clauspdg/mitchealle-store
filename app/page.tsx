@@ -1,17 +1,12 @@
-import Link from "next/link"
-
 import { getSession } from "@/lib/session.server"
-import {
-  countPublishedProductsByCategory,
-  listProducts,
-} from "@/services/firestore/products"
+import { listProducts } from "@/services/firestore/products"
 import { listCategories } from "@/services/firestore/categories"
 import { listCollections } from "@/services/firestore/collections"
 import { listWishlistItems } from "@/services/firestore/wishlists"
 import { listActiveBanners } from "@/services/firestore/banners"
 import { listHomepageSections } from "@/services/firestore/homepage"
+import { getStoreSettings } from "@/services/firestore/settings"
 import { heroSlides } from "@/lib/demo-content"
-import type { HeroSlideView } from "@/components/home/hero-section"
 import type { Category } from "@/types/category"
 import type { Collection } from "@/types/collection"
 import type { HomepageSectionConfig } from "@/types/homepage-section"
@@ -20,17 +15,24 @@ import type { Product } from "@/types/product"
 // Live catalog data (stock, published status) must never be baked into the
 // build output — always render fresh, per request.
 export const dynamic = "force-dynamic"
-import { Reveal } from "@/components/shared/reveal"
 import { ScrollCarousel } from "@/components/shared/scroll-carousel"
-import { ProductCard } from "@/features/catalog/components/storefront/product-card"
 import { ProductGrid } from "@/features/catalog/components/storefront/product-grid"
-import { HeroSection } from "@/components/home/hero-section"
-import { PromoBanner } from "@/components/home/promo-banner"
 import { CollectionsShowcase } from "@/components/home/collections-showcase"
-import { CategoriesIllustrated } from "@/components/home/categories-illustrated"
 import { BrandsStrip } from "@/components/home/brands-strip"
-import { TestimonialsSection } from "@/components/home/testimonials-section"
 import { NewsletterSection } from "@/components/home/newsletter-section"
+import { BecomeSellerCTA } from "@/components/marketplace/become-seller-cta"
+import { CategoryRail } from "@/components/marketplace/category-rail"
+import { FeaturedStores } from "@/components/marketplace/featured-stores"
+import {
+  MarketplaceHero,
+  type HeroProductVisual,
+  type HeroSlideView,
+} from "@/components/marketplace/marketplace-hero"
+import { MarketplaceProductCard } from "@/components/marketplace/marketplace-product-card"
+import { PromotionalSection } from "@/components/marketplace/promotional-section"
+import { SectionHeading } from "@/components/marketplace/section-heading"
+
+const NEW_ARRIVALS_COUNT = 10
 
 export default async function Home() {
   const session = await getSession()
@@ -42,6 +44,7 @@ export default async function Home() {
     wishlist,
     heroBanners,
     homepageSections,
+    storeSettings,
   ] = await Promise.all([
     listProducts({
       q: "",
@@ -56,10 +59,11 @@ export default async function Home() {
     session ? listWishlistItems(session.uid) : Promise.resolve([]),
     listActiveBanners("homepageHero"),
     listHomepageSections(),
+    getStoreSettings(),
   ])
 
   // If no admin-configured hero banner exists yet, fall back to the
-  // static demo slides — zero-configuration, byte-identical to pre-Sprint-10A.
+  // static marketplace slides, illustrated by the product mosaic.
   const heroSlideViews: HeroSlideView[] =
     heroBanners.length > 0
       ? heroBanners.map((banner) => ({
@@ -73,93 +77,72 @@ export default async function Home() {
           secondaryButtonLabel: banner.secondaryButtonLabel,
           secondaryButtonHref: banner.secondaryButtonHref,
         }))
-      : heroSlides.map((slide) => ({
-          id: slide.imageSeed,
-          imageUrl: `https://picsum.photos/seed/${slide.imageSeed}/1920/1200`,
-          eyebrow: slide.eyebrow,
-          title: slide.title,
-          subtitle: slide.subtitle,
-          primaryButtonLabel: "Acheter maintenant",
-          primaryButtonHref: "/products",
-          secondaryButtonLabel: "Découvrir",
-          secondaryButtonHref: "/collections",
-        }))
+      : heroSlides.map((slide) => ({ ...slide, imageUrl: null }))
 
   const wishlistProductIds = new Set(wishlist.map((item) => item.id))
-  const categoryProductCounts = await countPublishedProductsByCategory(
-    categories.map((category) => category.id)
-  )
 
-  // Split the same already-fetched page into two homepage rails — a
-  // re-sorted "Populaires" slice (in-memory only, no new Firestore query)
-  // and the existing createdAt_desc order for "Nouveautés".
+  // Split the same already-fetched page into homepage rails — a re-sorted
+  // "Populaires" slice (in-memory only, no new Firestore query) and the
+  // existing createdAt_desc order for "Nouveautés".
   const popularProducts = [...products]
     .sort(
       (a, b) =>
         b.ratingAverage * b.ratingCount - a.ratingAverage * a.ratingCount
     )
-    .slice(0, 8)
-  const newArrivals = products.slice(0, 8)
+    .slice(0, 12)
+  const newArrivals = products.slice(0, NEW_ARRIVALS_COUNT)
   const promoProducts = products
     .filter((product) => product.salePriceMinor !== null)
-    .slice(0, 8)
+    .slice(0, 12)
 
-  function renderCarouselRail(
-    heading: string,
-    rail: Product[],
-    showViewAll: boolean
-  ) {
+  const heroVisuals: HeroProductVisual[] = popularProducts.flatMap(
+    (product) => {
+      const image = product.images[0]
+      return image
+        ? [
+            {
+              id: product.id,
+              imageUrl: image.url,
+              alt: image.alt || product.name,
+              href: `/products/${product.slug}`,
+            },
+          ]
+        : []
+    }
+  )
+
+  function renderProductRail(id: string, heading: string, rail: Product[]) {
     if (rail.length === 0) return null
     return (
-      <section className="mx-auto w-full max-w-6xl px-6 py-16">
-        <Reveal>
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="font-heading text-2xl font-medium">{heading}</h2>
-            {showViewAll ? (
-              <Link
-                href="/products"
-                className="text-muted-foreground hover:text-foreground text-sm underline underline-offset-4"
-              >
-                Voir tout
-              </Link>
-            ) : null}
-          </div>
-        </Reveal>
-        <Reveal delay={0.1}>
-          <ScrollCarousel>
-            {rail.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                isInWishlist={wishlistProductIds.has(product.id)}
-              />
-            ))}
-          </ScrollCarousel>
-        </Reveal>
+      <section
+        id={id}
+        className="mx-auto w-full max-w-7xl scroll-mt-32 px-4 py-4 sm:py-6"
+      >
+        <SectionHeading title={heading} href="/products?sort=popularity_desc" />
+        <ScrollCarousel itemClassName="w-[44vw] sm:w-52 lg:w-56">
+          {rail.map((product) => (
+            <MarketplaceProductCard
+              key={product.id}
+              product={product}
+              isInWishlist={wishlistProductIds.has(product.id)}
+            />
+          ))}
+        </ScrollCarousel>
       </section>
     )
   }
 
   function renderNewArrivals(heading: string) {
     return (
-      <section className="mx-auto w-full max-w-6xl px-6 py-16">
-        <Reveal>
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="font-heading text-2xl font-medium">{heading}</h2>
-            <Link
-              href="/products"
-              className="text-muted-foreground hover:text-foreground text-sm underline underline-offset-4"
-            >
-              Voir tout
-            </Link>
-          </div>
-        </Reveal>
-        <Reveal delay={0.1}>
-          <ProductGrid
-            products={newArrivals}
-            wishlistProductIds={wishlistProductIds}
-          />
-        </Reveal>
+      <section
+        id="nouveautes"
+        className="mx-auto w-full max-w-7xl scroll-mt-32 px-4 py-4 sm:py-6"
+      >
+        <SectionHeading title={heading} href="/products" />
+        <ProductGrid
+          products={newArrivals}
+          wishlistProductIds={wishlistProductIds}
+        />
       </section>
     )
   }
@@ -172,14 +155,12 @@ export default async function Home() {
   ) {
     switch (type) {
       case "heroBanner":
-        // `PromoBanner` (generic marketing banner) isn't a managed section
-        // in this sprint's scope — kept immediately after Hero, matching
-        // its pre-Sprint-10A adjacency.
         return (
-          <>
-            <HeroSection slides={heroSlideViews} />
-            <PromoBanner />
-          </>
+          <MarketplaceHero
+            heading={`${storeSettings.storeName} — ${storeSettings.slogan ?? storeSettings.description}`}
+            slides={heroSlideViews}
+            productVisuals={heroVisuals}
+          />
         )
       case "featuredCollections": {
         // `config.collectionIds` (admin-picked) takes priority; otherwise
@@ -191,59 +172,50 @@ export default async function Home() {
         return <CollectionsShowcase collections={picked} />
       }
       case "categoriesShowcase":
-        return (
-          <CategoriesIllustrated
-            categories={categories}
-            productCounts={categoryProductCounts}
-          />
-        )
+        return <CategoryRail categories={categories} />
       case "popularProducts":
-        return renderCarouselRail(
+        return renderProductRail(
+          "populaires",
           config?.heading || "Produits populaires",
-          popularProducts,
-          false
+          popularProducts
         )
       case "newArrivals":
         return newArrivals.length > 0
           ? renderNewArrivals(config?.heading || "Nouveautés")
           : null
       case "promotionBanner":
-        return renderCarouselRail(
-          config?.heading || "Promotions",
-          promoProducts,
-          true
+        return (
+          <PromotionalSection
+            heading={config?.heading || "Promotions et bonnes affaires"}
+            products={promoProducts}
+            wishlistProductIds={wishlistProductIds}
+          />
         )
       case "brandsStrip":
         return <BrandsStrip />
       case "newsletterSignup":
-        // `TestimonialsSection` isn't a managed section either — kept
-        // immediately before Newsletter, matching its original adjacency
-        // regardless of where Newsletter itself is repositioned.
-        return (
-          <>
-            <TestimonialsSection />
-            <NewsletterSection />
-          </>
-        )
+        return <NewsletterSection />
       default:
         return null
     }
   }
 
+  const activeSections = homepageSections.filter((section) => section.isActive)
+  // `FeaturedStores` isn't a managed section: it follows the categories, or
+  // the first section if an admin has turned the categories off.
+  const storesAnchor =
+    activeSections.find((section) => section.type === "categoriesShowcase") ??
+    activeSections[0]
+
   return (
     <div className="flex flex-col">
-      {homepageSections
-        .filter((section) => section.isActive)
-        .map((section) => (
-          <div key={section.id}>
-            {renderSection(
-              section.type,
-              section.config,
-              categories,
-              collections
-            )}
-          </div>
-        ))}
+      {activeSections.map((section) => (
+        <div key={section.id}>
+          {renderSection(section.type, section.config, categories, collections)}
+          {section.id === storesAnchor?.id ? <FeaturedStores /> : null}
+        </div>
+      ))}
+      <BecomeSellerCTA />
     </div>
   )
 }

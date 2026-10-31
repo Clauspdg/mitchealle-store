@@ -2,9 +2,7 @@ import { expect, test } from "@playwright/test"
 
 test("home page loads and shows the site name", async ({ page }) => {
   await page.goto("/")
-  await expect(
-    page.getByRole("link", { name: "Mitchaella Store" })
-  ).toBeVisible()
+  await expect(page.getByRole("link", { name: "C.L.A.G" })).toBeVisible()
 })
 
 test("login page renders the login form", async ({ page }) => {

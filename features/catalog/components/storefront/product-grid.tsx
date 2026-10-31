@@ -2,7 +2,7 @@ import { PackageSearchIcon } from "lucide-react"
 
 import type { Product } from "@/types/product"
 import { EmptyState } from "@/components/shared/empty-state"
-import { ProductCard } from "@/features/catalog/components/storefront/product-card"
+import { MarketplaceProductCard } from "@/components/marketplace/marketplace-product-card"
 
 interface ProductGridProps {
   products: Product[]
@@ -29,9 +29,9 @@ export function ProductGrid({
   }
 
   return (
-    <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
       {products.map((product, index) => (
-        <ProductCard
+        <MarketplaceProductCard
           key={product.id}
           product={product}
           isInWishlist={wishlistProductIds?.has(product.id) ?? false}

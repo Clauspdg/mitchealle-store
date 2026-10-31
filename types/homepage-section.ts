@@ -1,17 +1,16 @@
 import type { FirestoreTimestamp } from "./firestore"
 
 /**
- * The 8 manageable homepage sections. `PromoBanner` (the standalone
- * marketing banner component) and `TestimonialsSection` stay permanently
- * rendered — not in this list, matching the brief's exact 8-item scope.
+ * The 8 manageable homepage sections. `FeaturedStores` and `BecomeSellerCTA`
+ * are permanently rendered marketplace sections — not in this list.
  */
 export const HOMEPAGE_SECTION_TYPES = [
   "heroBanner",
-  "featuredCollections",
   "categoriesShowcase",
   "popularProducts",
-  "newArrivals",
   "promotionBanner",
+  "newArrivals",
+  "featuredCollections",
   "brandsStrip",
   "newsletterSignup",
 ] as const

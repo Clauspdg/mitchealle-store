@@ -13,7 +13,7 @@ export default function LoginPage() {
       <div className="flex flex-col gap-1 text-center">
         <h1 className="text-xl font-semibold tracking-tight">Connexion</h1>
         <p className="text-muted-foreground text-sm">
-          Accédez à votre compte Mitchaella Store.
+          Accédez à votre compte C.L.A.G.
         </p>
       </div>
 

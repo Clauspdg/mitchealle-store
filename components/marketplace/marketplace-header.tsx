@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { HeartIcon, MenuIcon } from "lucide-react"
+import { usePathname } from "next/navigation"
+import { HeartIcon, MenuIcon, UserIcon } from "lucide-react"
 
+import { marketplaceNav } from "@/config/nav"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/hooks/use-auth"
 import type { StoreSettings } from "@/types/settings"
@@ -11,6 +13,7 @@ import type { MenuItem } from "@/types/menu"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { BrandLogo } from "@/components/marketplace/brand-logo"
 import { ModeToggle } from "@/components/shared/mode-toggle"
 import { CartBadge } from "@/features/cart/components/cart-badge"
 import { SignOutButton } from "@/features/auth/components/sign-out-button"
@@ -30,13 +33,15 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 
-const SCROLL_SHRINK_THRESHOLD = 24
+const SCROLL_SHADOW_THRESHOLD = 8
+
+export const SITE_SEARCH_INPUT_ID = "site-search-input"
 
 function getInitials(label: string): string {
   return label.trim().slice(0, 2).toUpperCase()
 }
 
-export function Header({
+export function MarketplaceHeader({
   storeSettings,
   mainNav,
 }: {
@@ -44,11 +49,12 @@ export function Header({
   mainNav: MenuItem[]
 }) {
   const { user, loading } = useAuth()
+  const pathname = usePathname()
   const [isScrolled, setIsScrolled] = useState(false)
 
   useEffect(() => {
     function onScroll() {
-      setIsScrolled(window.scrollY > SCROLL_SHRINK_THRESHOLD)
+      setIsScrolled(window.scrollY > SCROLL_SHADOW_THRESHOLD)
     }
     onScroll()
     window.addEventListener("scroll", onScroll, { passive: true })
@@ -56,28 +62,34 @@ export function Header({
   }, [])
 
   const initialsSource = user?.displayName || user?.email || "?"
+  const isAdmin = pathname.startsWith("/admin")
+
+  // The admin-managed header menu stays live: its entries follow the fixed
+  // marketplace rail, minus the home link (the logo already does that job).
+  const fixedHrefs = new Set(marketplaceNav.map((item) => item.href))
+  const navLinks = [
+    ...marketplaceNav,
+    ...mainNav
+      .filter((item) => item.href !== "/" && !fixedHrefs.has(item.href))
+      .map((item) => ({ title: item.label, href: item.href })),
+  ]
 
   return (
     <header
       className={cn(
-        "bg-background/80 sticky top-0 z-40 border-b backdrop-blur transition-[height,box-shadow] duration-300",
+        "bg-background sticky top-0 z-40 border-b transition-shadow duration-300",
         isScrolled ? "shadow-sm" : "shadow-none"
       )}
     >
-      <div
-        className={cn(
-          "mx-auto grid max-w-6xl grid-cols-[auto_1fr_auto] items-center gap-4 px-4 transition-[height] duration-300",
-          isScrolled ? "h-12" : "h-16"
-        )}
-      >
-        <div className="flex items-center gap-3">
+      <div className="mx-auto grid max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-x-2 gap-y-2 px-4 py-2 md:gap-x-8 md:py-3">
+        <div className="flex items-center gap-1">
           <Sheet>
             <SheetTrigger
               render={
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="md:hidden"
+                  className="-ml-2 size-10 md:hidden"
                   aria-label="Ouvrir le menu"
                 />
               }
@@ -88,28 +100,34 @@ export function Header({
               <SheetHeader>
                 <SheetTitle>{storeSettings.storeName}</SheetTitle>
               </SheetHeader>
-              <nav className="flex flex-col gap-1 px-4">
-                {mainNav.map((item) => (
+              <nav className="flex flex-col gap-1 overflow-y-auto px-4">
+                {navLinks.map((item) => (
                   <Link
-                    key={item.id}
+                    key={item.href}
                     href={item.href}
-                    className="hover:bg-muted rounded-md px-3 py-2 text-sm"
+                    className="hover:bg-muted rounded-md px-3 py-2.5 text-sm"
                   >
-                    {item.label}
+                    {item.title}
                   </Link>
                 ))}
+                <div className="my-2 border-t" />
+                <Link
+                  href="/account/wishlist"
+                  className="hover:bg-muted rounded-md px-3 py-2.5 text-sm"
+                >
+                  Liste de souhaits
+                </Link>
                 {!loading && !user ? (
                   <>
-                    <div className="my-2 border-t" />
                     <Link
                       href="/login"
-                      className="hover:bg-muted rounded-md px-3 py-2 text-sm"
+                      className="hover:bg-muted rounded-md px-3 py-2.5 text-sm"
                     >
                       Connexion
                     </Link>
                     <Link
                       href="/register"
-                      className="hover:bg-muted rounded-md px-3 py-2 text-sm"
+                      className="hover:bg-muted rounded-md px-3 py-2.5 text-sm"
                     >
                       Inscription
                     </Link>
@@ -119,54 +137,39 @@ export function Header({
             </SheetContent>
           </Sheet>
 
-          <Link
-            href="/"
-            className="font-heading flex items-center gap-2 text-xl font-semibold tracking-tight"
-          >
-            {storeSettings.logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element -- external Storage URL
-              <img
-                src={storeSettings.logoUrl}
-                alt={storeSettings.storeName}
-                className="h-8 w-auto object-contain"
-              />
-            ) : null}
-            {storeSettings.storeName}
+          <Link href="/" aria-label={storeSettings.storeName}>
+            <BrandLogo
+              alt=""
+              customSrc={storeSettings.logoUrl}
+              preload
+              className="h-7 md:h-9"
+            />
           </Link>
         </div>
 
-        <div className="hidden min-w-0 items-center justify-center gap-6 md:flex">
-          <nav className="flex items-center gap-6">
-            {mainNav.map((item) => (
-              <Link
-                key={item.id}
-                href={item.href}
-                className="text-muted-foreground hover:text-foreground text-sm whitespace-nowrap transition-colors"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-          <SearchCommand className="w-64" />
-        </div>
+        <SearchCommand
+          inputId={SITE_SEARCH_INPUT_ID}
+          className="order-last col-span-3 mx-auto max-w-2xl md:order-none md:col-span-1"
+        />
 
-        <div className="flex items-center justify-end gap-1">
-          <ModeToggle />
+        <div className="col-span-2 flex items-center justify-end gap-0.5 md:col-span-1">
+          <div className="hidden md:block">
+            <ModeToggle />
+          </div>
 
           <Button
             render={<Link href="/account/wishlist" />}
             nativeButton={false}
             variant="ghost"
             size="icon"
+            className="hidden size-10 sm:inline-flex"
             aria-label="Liste de souhaits"
           >
             <HeartIcon />
           </Button>
 
-          <CartBadge />
-
           {loading ? (
-            <Skeleton className="h-8 w-8 rounded-full" />
+            <Skeleton className="mx-1 size-8 rounded-full" />
           ) : user ? (
             <DropdownMenu>
               <DropdownMenuTrigger
@@ -174,7 +177,7 @@ export function Header({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="rounded-full"
+                    className="size-10 rounded-full"
                     aria-label="Mon compte"
                   />
                 }
@@ -203,30 +206,54 @@ export function Header({
             <>
               <Button
                 render={<Link href="/login" />}
-                variant="ghost"
                 nativeButton={false}
-                className="hidden sm:inline-flex"
+                variant="ghost"
+                size="icon"
+                className="size-10 lg:hidden"
+                aria-label="Connexion"
+              >
+                <UserIcon />
+              </Button>
+              <Button
+                render={<Link href="/login" />}
+                nativeButton={false}
+                variant="ghost"
+                className="hidden lg:inline-flex"
               >
                 Connexion
               </Button>
               <Button
                 render={<Link href="/register" />}
                 nativeButton={false}
-                className="hidden sm:inline-flex"
+                className="hidden lg:inline-flex"
               >
                 Inscription
               </Button>
             </>
           )}
+
+          <CartBadge />
         </div>
       </div>
 
-      {/* Mobile: the header's main row has no room for the always-visible
-          search bar alongside the wordmark and action icons, so it gets its
-          own full-width row instead of squeezing into the grid above. */}
-      <div className="border-t px-4 py-2 md:hidden">
-        <SearchCommand className="w-full" />
-      </div>
+      {isAdmin ? null : (
+        <nav
+          aria-label="Navigation marketplace"
+          className="hidden border-t md:block"
+        >
+          <div className="mx-auto flex max-w-7xl [scrollbar-width:none] items-center gap-6 overflow-x-auto px-4 [&::-webkit-scrollbar]:hidden">
+            {navLinks.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="text-muted-foreground hover:text-foreground py-2.5 text-sm font-medium whitespace-nowrap transition-colors"
+              >
+                {item.title}
+              </Link>
+            ))}
+          </div>
+        </nav>
+      )}
     </header>
   )
 }

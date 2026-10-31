@@ -16,7 +16,7 @@ interface ProductListRowProps {
 }
 
 /** Compact horizontal card for the category page's "list" view — same data
- * as `ProductCard`, laid out image-left/info-right instead of stacked. */
+ * as `MarketplaceProductCard`, laid out image-left/info-right instead of stacked. */
 export function ProductListRow({
   product,
   isInWishlist = false,

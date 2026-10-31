@@ -1,28 +1,15 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import Link from "next/link"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { ShoppingBagIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { onCartUpdated } from "@/lib/cart-events.client"
-import { getCartItemCountAction } from "@/features/cart/actions/cart-actions"
+import { useCartItemCount } from "@/features/cart/hooks/use-cart-item-count"
 
 export function CartBadge() {
-  const [count, setCount] = useState(0)
+  const count = useCartItemCount()
   const shouldReduceMotion = useReducedMotion()
-
-  useEffect(() => {
-    function refresh() {
-      getCartItemCountAction().then((result) => {
-        if (result.success) setCount(result.data)
-      })
-    }
-
-    refresh()
-    return onCartUpdated(refresh)
-  }, [])
 
   return (
     <Button
@@ -31,7 +18,7 @@ export function CartBadge() {
       variant="ghost"
       size="icon"
       aria-label={`Panier${count > 0 ? ` (${count} article${count > 1 ? "s" : ""})` : ""}`}
-      className="relative"
+      className="relative size-10"
     >
       <ShoppingBagIcon />
       <AnimatePresence>

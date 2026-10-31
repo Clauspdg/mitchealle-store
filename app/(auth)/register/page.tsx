@@ -15,7 +15,7 @@ export default function RegisterPage() {
           Créer un compte
         </h1>
         <p className="text-muted-foreground text-sm">
-          Rejoignez Mitchaella Store en quelques secondes.
+          Rejoignez C.L.A.G en quelques secondes.
         </p>
       </div>
 

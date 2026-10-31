@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 
+import { siteConfig } from "@/config/site"
 import { requireSession } from "@/lib/session.server"
 import { getOrder } from "@/services/firestore/orders"
 import { PrintOrderButton } from "@/features/orders/components/print-order-button"
@@ -36,7 +37,7 @@ export default async function ShippingLabelPage({
 
       <div className="rounded-xl border-2 border-dashed p-8">
         <p className="text-muted-foreground mb-6 text-xs tracking-wide uppercase">
-          Expéditeur : Mitchaella Store
+          Expéditeur : {siteConfig.name}
         </p>
 
         {order.delivery.method === "delivery" && address ? (

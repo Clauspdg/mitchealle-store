@@ -35,6 +35,8 @@ const GROUP_LABELS: Record<SearchIndexEntry["type"], string> = {
 
 interface SearchCommandProps {
   className?: string
+  /** Lets the mobile bottom navigation focus this field. */
+  inputId?: string
 }
 
 /** Wraps Fuse's matched character ranges (for the "name" key) in `<mark>`. */
@@ -75,7 +77,7 @@ type NavItem =
     }
   | { kind: "all-results" }
 
-export function SearchCommand({ className }: SearchCommandProps) {
+export function SearchCommand({ className, inputId }: SearchCommandProps) {
   const router = useRouter()
   const containerRef = useRef<HTMLDivElement>(null)
   const fuseRef = useRef<Fuse<SearchIndexEntry> | null>(null)
@@ -266,17 +268,19 @@ export function SearchCommand({ className }: SearchCommandProps) {
       <form onSubmit={handleSubmit} className="flex w-full items-center">
         <div
           className={cn(
-            "relative flex w-full items-center rounded-full border transition-shadow duration-200",
+            "bg-background relative flex w-full items-center rounded-full border transition-shadow duration-200",
             isOpen && "ring-ring/40 ring-2"
           )}
         >
           <SearchIcon className="text-muted-foreground pointer-events-none absolute left-3 size-4" />
           <Input
+            id={inputId}
             value={value}
             onChange={(event) => handleChange(event.target.value)}
             onFocus={() => setIsOpen(true)}
-            placeholder="Rechercher..."
-            className="h-9 border-0 pr-8 pl-9 shadow-none focus-visible:ring-0"
+            placeholder="Rechercher un produit…"
+            aria-label="Rechercher"
+            className="h-10 rounded-full border-0 bg-transparent pr-20 pl-9 shadow-none focus-visible:ring-0 dark:bg-transparent"
             role="combobox"
             aria-expanded={isOpen}
             aria-controls="search-command-listbox"
@@ -291,11 +295,18 @@ export function SearchCommand({ className }: SearchCommandProps) {
               type="button"
               aria-label="Effacer la recherche"
               onClick={close}
-              className="text-muted-foreground hover:text-foreground absolute right-2.5"
+              className="text-muted-foreground hover:text-foreground absolute right-11"
             >
               <XIcon className="size-3.5" />
             </button>
           ) : null}
+          <button
+            type="submit"
+            aria-label="Lancer la recherche"
+            className="bg-accent-gold text-accent-gold-foreground hover:bg-accent-gold/90 absolute right-1 flex size-8 items-center justify-center rounded-full transition-colors"
+          >
+            <SearchIcon className="size-4" />
+          </button>
         </div>
       </form>
 
@@ -303,7 +314,7 @@ export function SearchCommand({ className }: SearchCommandProps) {
         <div
           id="search-command-listbox"
           role="listbox"
-          className="bg-popover text-popover-foreground absolute top-full right-0 z-50 mt-2 w-80 rounded-lg border p-2 shadow-lg"
+          className="bg-popover text-popover-foreground absolute inset-x-0 top-full z-50 mt-2 max-h-[70vh] overflow-y-auto rounded-lg border p-2 shadow-lg"
         >
           {value.trim() === "" ? (
             navItems.length > 0 ? (

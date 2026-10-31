@@ -2,6 +2,7 @@ import "server-only"
 import { FieldValue, Timestamp } from "firebase-admin/firestore"
 
 import { adminDb } from "@/firebase/admin"
+import { applyBrandDefaults } from "@/config/brand"
 import { siteConfig } from "@/config/site"
 import type {
   NotificationSettings,
@@ -23,17 +24,15 @@ import type {
 const SETTINGS_COLLECTION = "settings"
 
 /**
- * Today's exact hardcoded values — used as the fallback whenever the
- * `settings/store` document doesn't exist yet, so a fresh deploy (or this
- * sprint shipping before an admin has touched the new Settings page)
- * renders byte-for-byte what it renders today.
+ * Used as the fallback whenever the `settings/store` document doesn't exist
+ * yet, so a fresh deploy renders the C.L.A.G identity out of the box.
  */
 const DEFAULT_STORE_SETTINGS: Omit<StoreSettingsDocument, "updatedAt"> = {
   storeName: siteConfig.name,
   logoUrl: null,
   faviconUrl: null,
   defaultOgImageUrl: null,
-  slogan: null,
+  slogan: siteConfig.tagline,
   description: siteConfig.description,
   currency: "HTG",
   language: "fr",
@@ -94,7 +93,10 @@ export async function getStoreSettings(): Promise<StoreSettings> {
   if (!doc.exists) {
     return { id: "store", ...DEFAULT_STORE_SETTINGS, updatedAt: nowTimestamp() }
   }
-  return { id: "store", ...(doc.data() as StoreSettingsDocument) }
+  return {
+    id: "store",
+    ...applyBrandDefaults(doc.data() as StoreSettingsDocument),
+  }
 }
 
 export async function updateStoreSettings(

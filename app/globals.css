@@ -9,7 +9,10 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-serif-display);
+  --font-heading: var(--font-display);
+  --color-brand-navy: var(--brand-navy);
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-orange: var(--brand-orange);
   --color-accent-gold: var(--accent-gold);
   --color-accent-gold-foreground: var(--accent-gold-foreground);
   --color-accent-gold-muted: var(--accent-gold-muted);
@@ -59,98 +62,98 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  /* C.L.A.G identity — values sampled from the validated logo. */
+  --brand-navy: #031f49;
+  --brand-blue: #0048e1;
+  --brand-orange: #f77b1e;
+
+  --background: #ffffff;
+  --foreground: #0f1b2d;
+  --card: #ffffff;
+  --card-foreground: #0f1b2d;
+  --popover: #ffffff;
+  --popover-foreground: #0f1b2d;
+  --primary: var(--brand-navy);
+  --primary-foreground: #ffffff;
+  --secondary: #eef2f8;
+  --secondary-foreground: var(--brand-navy);
+  --muted: #f2f4f8;
+  --muted-foreground: #566175;
+  --accent: #e8effb;
+  --accent-foreground: var(--brand-navy);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --border: #e2e6ed;
+  --input: #d9dee7;
+  --ring: var(--brand-blue);
+  --chart-1: var(--brand-blue);
+  --chart-2: var(--brand-orange);
+  --chart-3: var(--brand-navy);
+  --chart-4: #6f9bf0;
+  --chart-5: #9aa6b8;
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: #f6f8fc;
+  --sidebar-foreground: var(--brand-navy);
+  --sidebar-primary: var(--brand-navy);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e1eafa;
+  --sidebar-accent-foreground: var(--brand-navy);
+  --sidebar-border: #e2e6ed;
+  --sidebar-ring: var(--brand-blue);
 
-  /* Premium storefront accent — champagne gold on near-black. Kept separate
-     from --primary (which admin components already depend on site-wide). */
-  --accent-gold: oklch(0.78 0.14 85);
-  --accent-gold-foreground: oklch(0.145 0 0);
-  --accent-gold-muted: oklch(0.93 0.03 85);
-  /* Text-on-light-background variant of --accent-gold: the base gold is only
-     ~2:1 against white (fails WCAG AA's 4.5:1 for text) — this darkened value
-     hits ~4.7:1 while staying visually "gold". Only for small body/label text
-     on light surfaces (e.g. sale price, verified-purchase label); badges/icons
-     already pair gold with a foreground color or a dark backdrop and don't
-     need this. */
-  --accent-gold-text: oklch(0.56 0.14 85);
-  --surface-ink: oklch(0.16 0.01 280);
-  --surface-ink-foreground: oklch(0.96 0.01 85);
-  --surface-beige: oklch(0.94 0.02 80);
-  --surface-beige-foreground: oklch(0.32 0.02 80);
-
-  /* Scoped to the newsletter CTA button only (per Sprint 5 mockup) — not a
-     palette-wide addition, everything else stays on the gold/ink/beige system. */
-  --accent-rose: oklch(0.72 0.15 5);
-  --accent-rose-foreground: oklch(0.98 0 0);
+  /* Action accent. The historical `gold`/`ink`/`beige`/`rose` token names
+     are kept (they're referenced across 70 files) but now resolve to the
+     C.L.A.G palette. White on orange is only ~2.7:1, so the foreground is
+     navy; --accent-gold-text is the darkened variant for small text on light
+     surfaces (~4.9:1 on white). */
+  --accent-gold: var(--brand-orange);
+  --accent-gold-foreground: var(--brand-navy);
+  --accent-gold-muted: #fdebdc;
+  --accent-gold-text: #b9520a;
+  --surface-ink: var(--brand-navy);
+  --surface-ink-foreground: #f5f7fb;
+  --surface-beige: #eef2f8;
+  --surface-beige-foreground: #24344f;
+  --accent-rose: var(--brand-orange);
+  --accent-rose-foreground: var(--brand-navy);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --background: #0a1424;
+  --foreground: #eef2f8;
+  --card: #111e33;
+  --card-foreground: #eef2f8;
+  --popover: #111e33;
+  --popover-foreground: #eef2f8;
+  --primary: #7aa5ff;
+  --primary-foreground: var(--brand-navy);
+  --secondary: #1a2a44;
+  --secondary-foreground: #eef2f8;
+  --muted: #1a2a44;
+  --muted-foreground: #a7b3c6;
+  --accent: #1f3252;
+  --accent-foreground: #eef2f8;
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --ring: #7aa5ff;
+  --chart-1: #7aa5ff;
+  --chart-2: var(--brand-orange);
+  --chart-3: #c5d6fb;
+  --chart-4: #4f7fe6;
+  --chart-5: #7c8aa0;
+  --sidebar: #0f1b2e;
+  --sidebar-foreground: #eef2f8;
+  --sidebar-primary: #7aa5ff;
+  --sidebar-primary-foreground: var(--brand-navy);
+  --sidebar-accent: #1f3252;
+  --sidebar-accent-foreground: #eef2f8;
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-  /* Dark surfaces (--card/--popover ~oklch(0.205)) give the base gold ample
-     contrast already, so the dark-mode text-safe variant can stay the
-     original vibrant color instead of the light-mode-only darkened one. */
-  --accent-gold-text: oklch(0.78 0.14 85);
+  --sidebar-ring: #7aa5ff;
+  --accent-gold-muted: #4a2c14;
+  --accent-gold-text: #ffa45c;
+  --surface-ink: #0f2447;
+  --surface-beige: #111e33;
+  --surface-beige-foreground: #dbe3ef;
 }
 
 @layer base {

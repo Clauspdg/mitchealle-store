@@ -64,14 +64,14 @@ export function computeProductBadges(product: Product): ProductBadge[] {
         discountPercent && discountPercent > 0
           ? `-${discountPercent}%`
           : "Promo",
-      className: "bg-destructive text-white shadow-sm",
+      className: "bg-accent-gold text-accent-gold-foreground shadow-sm",
     })
   }
   if (product.tags.includes("bestseller")) {
     badges.push({
       key: "bestseller",
       label: "Best Seller",
-      className: "bg-accent-gold text-accent-gold-foreground shadow-sm",
+      className: "bg-brand-blue text-white shadow-sm",
     })
   }
   if (product.tags.includes("limited-edition")) {

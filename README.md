@@ -1,6 +1,6 @@
-# Mitchaella Store
+# C.L.A.G Marketplace
 
-Boutique en ligne — Next.js (App Router) + TypeScript + Tailwind CSS +
+Marketplace locale (projet technique `mitchaella-store`) — Next.js (App Router) + TypeScript + Tailwind CSS +
 Shadcn UI + Framer Motion, backend Firebase (Authentication, Firestore,
 Storage, Cloud Functions).
 

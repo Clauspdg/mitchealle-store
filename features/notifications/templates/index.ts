@@ -29,7 +29,7 @@ function itemsListHtml(order: Order): string {
 
 export function renderWelcomeEmail(data: { name: string }): EmailTemplate {
   return {
-    subject: "Bienvenue chez Mitchaella Store",
+    subject: "Bienvenue sur C.L.A.G",
     html: emailLayout(`
       <p>Bonjour ${data.name},</p>
       <p>Votre compte a bien été créé. Merci de nous rejoindre !</p>

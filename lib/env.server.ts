@@ -29,7 +29,7 @@ const serverEnvSchema = z.object({
     .string()
     .min(1)
     .optional()
-    .default("Mitchaella Store <onboarding@resend.dev>"),
+    .default("C.L.A.G <onboarding@resend.dev>"),
   ADMIN_NOTIFICATION_EMAIL: z.string().email().optional(),
   PAYPAL_CLIENT_ID: z.string().min(1).optional(),
   PAYPAL_CLIENT_SECRET: z.string().min(1).optional(),

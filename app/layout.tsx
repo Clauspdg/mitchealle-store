@@ -1,12 +1,14 @@
 import type { Metadata, Viewport } from "next"
-import { Cormorant_Garamond, Geist, Geist_Mono, Inter } from "next/font/google"
+import { Geist, Geist_Mono, Inter, Plus_Jakarta_Sans } from "next/font/google"
 import "./globals.css"
 
+import { brandAssets } from "@/config/brand"
 import { clientEnv } from "@/lib/env.client"
 import { getStoreSettings } from "@/services/firestore/settings"
 import { getMenu } from "@/services/firestore/menus"
 import { AppProviders } from "@/providers/app-providers"
-import { Header } from "@/components/layout/header"
+import { MarketplaceHeader } from "@/components/marketplace/marketplace-header"
+import { MobileBottomNavigation } from "@/components/marketplace/mobile-bottom-navigation"
 import { Footer } from "@/components/layout/footer"
 import { RegisterServiceWorker } from "@/components/shared/register-service-worker"
 import { CompareBar } from "@/features/compare/components/compare-bar"
@@ -23,47 +25,50 @@ const geistMono = Geist_Mono({
 })
 
 // Storefront body font — see --font-sans in app/globals.css. app/admin/layout.tsx
-// resets --font-sans (and --font-heading) back to Geist locally, so the admin
-// panel keeps its original typography.
+// resets --font-sans (and --font-heading) back to the default stack locally, so
+// the admin panel keeps its original typography.
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
 })
 
 // Storefront display font — see --font-heading in app/globals.css.
-// app/admin/layout.tsx resets --font-heading back to Geist locally, so the
-// admin panel is unaffected by this.
-const cormorantGaramond = Cormorant_Garamond({
-  variable: "--font-serif-display",
+// app/admin/layout.tsx resets --font-heading locally, so the admin panel is
+// unaffected by this.
+const plusJakartaSans = Plus_Jakarta_Sans({
+  variable: "--font-display",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
 })
 
-const DEFAULT_OG_IMAGE = "/icons/icon-512.png"
+const DEFAULT_ICON = "/icons/icon-512.png"
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { storeName, description, faviconUrl, defaultOgImageUrl } =
+  const { storeName, slogan, description, faviconUrl, defaultOgImageUrl } =
     await getStoreSettings()
-  const ogImage = defaultOgImageUrl ?? DEFAULT_OG_IMAGE
+  const ogImage = defaultOgImageUrl ?? brandAssets.ogImage.src
+  const ogImageSize = defaultOgImageUrl
+    ? {}
+    : { width: brandAssets.ogImage.width, height: brandAssets.ogImage.height }
+  const pageTitle = slogan ? `${storeName} — ${slogan}` : storeName
 
   return {
     metadataBase: new URL(clientEnv.NEXT_PUBLIC_APP_URL),
     title: {
-      default: storeName,
+      default: pageTitle,
       template: `%s | ${storeName}`,
     },
     description,
     openGraph: {
       type: "website",
       siteName: storeName,
-      title: storeName,
+      title: pageTitle,
       description,
       locale: "fr_FR",
-      images: [{ url: ogImage, width: 512, height: 512 }],
+      images: [{ url: ogImage, ...ogImageSize }],
     },
     twitter: {
       card: "summary_large_image",
-      title: storeName,
+      title: pageTitle,
       description,
       images: [ogImage],
     },
@@ -92,9 +97,11 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export const viewport: Viewport = {
-  themeColor: "#171717",
+  themeColor: "#031f49",
   width: "device-width",
   initialScale: 1,
+  // Lets the bottom navigation reach the safe-area insets on notched phones.
+  viewportFit: "cover",
 }
 
 export default async function RootLayout({
@@ -115,7 +122,7 @@ export default async function RootLayout({
     <html
       lang="fr"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} ${cormorantGaramond.variable} ${inter.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${plusJakartaSans.variable} ${inter.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
         <a
@@ -132,7 +139,7 @@ export default async function RootLayout({
             url: clientEnv.NEXT_PUBLIC_APP_URL,
             logo:
               storeSettings.logoUrl ??
-              `${clientEnv.NEXT_PUBLIC_APP_URL}${DEFAULT_OG_IMAGE}`,
+              `${clientEnv.NEXT_PUBLIC_APP_URL}${DEFAULT_ICON}`,
           }}
         />
         <AppProviders>
@@ -141,7 +148,7 @@ export default async function RootLayout({
               rejects passing non-plain objects from a Server Component to a
               Client Component. Header/Footer never need it, so it's
               stripped here rather than widening their prop types to accept it. */}
-          <Header
+          <MarketplaceHeader
             storeSettings={storeSettingsForClient}
             mainNav={headerMenu.items}
           />
@@ -153,6 +160,7 @@ export default async function RootLayout({
             footerMenu={footerMenu.items}
           />
           <CompareBar />
+          <MobileBottomNavigation />
         </AppProviders>
         <RegisterServiceWorker />
       </body>

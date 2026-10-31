@@ -134,7 +134,7 @@ export function InviteUserDialog() {
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              placeholder="prenom.nom@mitchaella.com"
+              placeholder="prenom.nom@exemple.com"
             />
           </div>
           <div className="flex flex-col gap-1.5">
