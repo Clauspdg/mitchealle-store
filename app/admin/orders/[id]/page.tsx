@@ -17,6 +17,8 @@ import { OrderNotesEditor } from "@/features/orders/components/order-notes-edito
 import { PrintOrderButton } from "@/features/orders/components/print-order-button"
 import { DownloadInvoiceButton } from "@/features/invoices/components/download-invoice-button"
 import { ReturnStatusBadge } from "@/features/returns/components/return-status-badge"
+import { AdminSubOrders } from "@/features/sellers/components/admin-sub-orders"
+import { listSubOrdersOfOrder } from "@/services/firestore/seller/orders"
 
 export const metadata: Metadata = { title: "Détail de la commande" }
 export const dynamic = "force-dynamic"
@@ -34,10 +36,11 @@ export default async function AdminOrderDetailPage({
   const order = await getOrder(id)
   if (!order) notFound()
 
-  const [payments, invoice, returns] = await Promise.all([
+  const [payments, invoice, returns, subOrders] = await Promise.all([
     listPaymentsForOrder(id),
     getInvoiceForOrder(id),
     listReturnsForOrder(id),
+    listSubOrdersOfOrder(id),
   ])
 
   return (
@@ -230,6 +233,7 @@ export default async function AdminOrderDetailPage({
           </div>
 
           <div className="flex flex-col gap-6">
+            <AdminSubOrders subOrders={subOrders} />
             <div className="print:hidden">
               <OrderStatusControl
                 order={{ id: order.id, status: order.status }}

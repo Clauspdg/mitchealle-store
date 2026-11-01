@@ -11,15 +11,20 @@ import { Textarea } from "@/components/ui/textarea"
 import { formatPriceMinor } from "@/utils/currency"
 import { createCheckoutSessionAction } from "@/features/payment/actions/checkout-actions"
 import { applyCouponAction } from "@/features/checkout/actions/apply-coupon-action"
-import { PAYMENT_METHODS } from "@/schemas/order.schema"
+import {
+  PAYMENT_METHODS,
+  SIMULATED_PAYMENT_METHOD,
+} from "@/schemas/order.schema"
 import type { DeliveryMethod, ShippingTier } from "@/types/order"
 import type { AddressWithId } from "@/types/user"
 
-type PaymentMethod = (typeof PAYMENT_METHODS)[number]
+type PaymentMethod =
+  (typeof PAYMENT_METHODS)[number] | typeof SIMULATED_PAYMENT_METHOD
 
 const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   stripe: "Carte bancaire",
   paypal: "PayPal",
+  simulation: "Paiement simulé (émulateurs locaux)",
 }
 
 interface CheckoutFormProps {
@@ -31,6 +36,8 @@ interface CheckoutFormProps {
   /** Sprint 10A — only pre-selects the radio button; the checkout/payment
    * logic itself is unaffected (see `settings/payment` doc comment). */
   defaultPaymentMethod?: PaymentMethod
+  /** Local emulators only: offers the simulated payment. */
+  simulationEnabled?: boolean
 }
 
 export function CheckoutForm({
@@ -40,7 +47,11 @@ export function CheckoutForm({
   expressFeeMinor,
   currency,
   defaultPaymentMethod = "stripe",
+  simulationEnabled = false,
 }: CheckoutFormProps) {
+  const paymentMethods: PaymentMethod[] = simulationEnabled
+    ? [...PAYMENT_METHODS, SIMULATED_PAYMENT_METHOD]
+    : [...PAYMENT_METHODS]
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>("pickup")
   const [shippingTier, setShippingTier] = useState<ShippingTier>("standard")
   const [addressId, setAddressId] = useState<string | null>(
@@ -252,7 +263,7 @@ export function CheckoutForm({
       <div className="flex flex-col gap-2">
         <Label>Mode de paiement</Label>
         <div className="grid gap-3 sm:grid-cols-2">
-          {PAYMENT_METHODS.map((method) => (
+          {paymentMethods.map((method) => (
             <button
               key={method}
               type="button"

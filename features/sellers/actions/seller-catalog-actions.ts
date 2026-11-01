@@ -1,12 +1,11 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
-
-import { requireSellerCenterAccess } from "@/lib/seller-center.server"
-import { SellerAccessError } from "@/lib/seller-session.server"
-import type { SellerPermissionKey } from "@/lib/seller-permissions"
 import { logActivity } from "@/services/monitoring/log-activity"
 import { SellerWorkflowError } from "@/services/firestore/seller/applications"
+import {
+  firstIssue,
+  runSellerAction as run,
+} from "@/features/sellers/lib/run-seller-action.server"
 import {
   createSellerProduct,
   setSellerVariantStock,
@@ -17,51 +16,10 @@ import {
   sellerProductSchema,
   sellerStockSchema,
 } from "@/schemas/product.schema"
-import type { SellerContext } from "@/lib/seller-session.server"
 import type { ActionResult } from "@/types/action-result"
 
-/**
- * Every store action starts here: the store ID comes from the URL, so it is
- * only trusted once `requireSellerCenterAccess` has re-read the membership
- * and the store status for this very request.
- */
-async function run<T>(
-  sellerId: string,
-  permission: SellerPermissionKey,
-  failureLog: string,
-  operation: (context: SellerContext) => Promise<T>
-): Promise<ActionResult<T>> {
-  try {
-    const context = await requireSellerCenterAccess(sellerId, permission)
-    const data = await operation(context)
-    revalidatePath(`/seller/${sellerId}`, "layout")
-    return { success: true, data }
-  } catch (error) {
-    if (error instanceof SellerAccessError) {
-      return { success: false, error: error.message }
-    }
-    if (error instanceof SellerWorkflowError) {
-      return { success: false, error: error.message }
-    }
-    if (
-      error instanceof Error &&
-      /Type de fichier|trop volumineuse/.test(error.message)
-    ) {
-      return { success: false, error: error.message }
-    }
-    await logActivity("error", failureLog, {
-      sellerId,
-      message: error instanceof Error ? error.message : String(error),
-    })
-    return { success: false, error: "L'opération a échoué. Réessayez." }
-  }
-}
-
 function invalid(error: { issues: { message: string }[] }) {
-  return {
-    success: false as const,
-    error: error.issues[0]?.message ?? "Données invalides.",
-  }
+  return { success: false as const, error: firstIssue(error) }
 }
 
 export async function createSellerProductAction(

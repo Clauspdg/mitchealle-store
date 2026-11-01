@@ -9,6 +9,7 @@ import {
   listSellerMembersAdmin,
 } from "@/services/firestore/seller/admin"
 import { listProductsBySeller } from "@/services/firestore/seller/products"
+import { listSubOrdersOfStore } from "@/services/firestore/seller/orders"
 import { getCategory } from "@/services/firestore/categories"
 import { AdminSidebar } from "@/components/layout/admin-sidebar"
 import { Badge } from "@/components/ui/badge"
@@ -24,6 +25,7 @@ import { DecisionHistory } from "@/features/sellers/components/decision-history"
 import { SellerStatusControl } from "@/features/sellers/components/seller-status-control"
 import {
   MEMBER_ROLE_LABELS,
+  SELLER_ORDER_STATUS_LABELS,
   SELLER_STATUS_BADGE,
   SELLER_STATUS_LABELS,
   formatDateTime,
@@ -52,12 +54,17 @@ export default async function AdminSellerPage({
   if (!result) notFound()
   const { seller, profile } = result
 
-  const [members, products, decisions, category] = await Promise.all([
-    listSellerMembersAdmin(sellerId),
-    listProductsBySeller(sellerId),
-    listSellerDecisions({ sellerId }),
-    seller.categoryId ? getCategory(seller.categoryId) : Promise.resolve(null),
-  ])
+  const [members, products, decisions, category, subOrders] = await Promise.all(
+    [
+      listSellerMembersAdmin(sellerId),
+      listProductsBySeller(sellerId),
+      listSellerDecisions({ sellerId }),
+      seller.categoryId
+        ? getCategory(seller.categoryId)
+        : Promise.resolve(null),
+      seller.isHouse ? Promise.resolve([]) : listSubOrdersOfStore(sellerId),
+    ]
+  )
 
   return (
     <div className="flex flex-1">
@@ -221,6 +228,56 @@ export default async function AdminSellerPage({
                   </Table>
                 </div>
               )}
+              {subOrders.length > 0 ? (
+                <div className="mt-3 flex flex-col gap-3">
+                  <h2 className="font-semibold">
+                    Commandes ({subOrders.length})
+                  </h2>
+                  <div className="overflow-x-auto rounded-lg border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Commande</TableHead>
+                          <TableHead>Statut</TableHead>
+                          <TableHead className="text-right">Ventes</TableHead>
+                          <TableHead className="text-right">
+                            Commission
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {subOrders.map((subOrder) => (
+                          <TableRow key={subOrder.id}>
+                            <TableCell>
+                              <Link
+                                href={`/admin/orders/${subOrder.orderId}`}
+                                className="underline-offset-4 hover:underline"
+                              >
+                                {subOrder.orderNumber}
+                              </Link>
+                            </TableCell>
+                            <TableCell>
+                              {SELLER_ORDER_STATUS_LABELS[subOrder.status]}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {formatPriceMinor(
+                                subOrder.grossMinor,
+                                subOrder.currency
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {formatPriceMinor(
+                                subOrder.commissionMinor,
+                                subOrder.currency
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              ) : null}
               {products.length > PRODUCTS_SHOWN ? (
                 <p className="text-muted-foreground text-xs">
                   {PRODUCTS_SHOWN} premiers produits affichés sur{" "}

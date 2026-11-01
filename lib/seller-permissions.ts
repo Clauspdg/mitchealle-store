@@ -14,6 +14,7 @@ export const SELLER_PERMISSION_KEYS = [
   "inventory.edit",
   "orders.view",
   "orders.fulfill",
+  "orders.cancel",
   "returns.manage",
   "finance.view",
 ] as const
@@ -33,6 +34,8 @@ const STAFF_PERMISSIONS: SellerPermissionKey[] = [
 const MANAGER_PERMISSIONS: SellerPermissionKey[] = [
   ...STAFF_PERMISSIONS,
   "products.edit",
+  // Cancelling gives stock back and leaves the customer owed a refund.
+  "orders.cancel",
   "store.edit",
   "returns.manage",
 ]

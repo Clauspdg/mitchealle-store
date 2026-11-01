@@ -10,6 +10,16 @@ import {
 } from "@/features/notifications/templates"
 import { logActivity } from "@/services/monitoring/log-activity"
 import { decodeCursor, encodeCursor } from "@/utils/pagination"
+import {
+  isStoreLine,
+  listSellerReturnsOfReturn,
+  SELLER_RETURNS,
+  sellerReturnId,
+} from "@/services/firestore/seller/orders"
+import type {
+  SellerReturnDocument,
+  SellerReturnItem,
+} from "@/types/seller-order"
 import type { CursorPage } from "@/types/pagination"
 import type {
   Return,
@@ -52,6 +62,33 @@ export async function createReturnRequest(
     throw new Error("Seule une commande livrée peut faire l'objet d'un retour.")
   }
 
+  // Each line must be one of the order's, for no more than what is left
+  // once earlier, non-refused returns are counted.
+  const previous = await listReturnsForOrder(input.orderId)
+  const alreadyReturned = new Map<string, number>()
+  for (const earlier of previous.filter((r) => r.status !== "rejected")) {
+    for (const item of earlier.items) {
+      const key = `${item.productId}_${item.variantId}`
+      alreadyReturned.set(key, (alreadyReturned.get(key) ?? 0) + item.quantity)
+    }
+  }
+  const lineOf = (item: ReturnItem) =>
+    order.items.find(
+      (orderItem) =>
+        orderItem.productId === item.productId &&
+        orderItem.variantId === item.variantId
+    )
+  const requested = new Map<string, number>()
+  for (const item of input.items) {
+    const key = `${item.productId}_${item.variantId}`
+    requested.set(key, (requested.get(key) ?? 0) + item.quantity)
+    const line = lineOf(item)
+    const left = (line?.quantity ?? 0) - (alreadyReturned.get(key) ?? 0)
+    if (!line || item.quantity < 1 || requested.get(key)! > left) {
+      throw new Error("Un article de la demande ne peut pas être retourné.")
+    }
+  }
+
   const now = Timestamp.now()
   const doc: ReturnDocument = {
     orderId: input.orderId,
@@ -65,7 +102,51 @@ export async function createReturnRequest(
     updatedAt: now,
   }
 
-  const ref = await adminDb.collection(RETURNS_COLLECTION).add(doc)
+  // Store lines also go to their store, one request per store, written
+  // with the customer's return so neither exists without the other.
+  const ref = adminDb.collection(RETURNS_COLLECTION).doc()
+  const batch = adminDb.batch()
+  batch.create(ref, doc)
+  const byStore = new Map<string, SellerReturnItem[]>()
+  for (const item of input.items) {
+    const line = lineOf(item)!
+    if (!isStoreLine(line)) continue
+    byStore.set(line.sellerId!, [
+      ...(byStore.get(line.sellerId!) ?? []),
+      {
+        productId: item.productId,
+        variantId: item.variantId,
+        nameSnapshot: line.nameSnapshot,
+        unitPriceMinor: line.unitPriceMinor,
+        quantity: item.quantity,
+        reason: item.reason,
+      },
+    ])
+  }
+  for (const [sellerId, items] of byStore) {
+    const sellerReturn: SellerReturnDocument = {
+      returnId: ref.id,
+      orderId: input.orderId,
+      orderNumber: order.orderNumber,
+      sellerId,
+      items,
+      currency: order.currency,
+      status: "requested",
+      restocked: false,
+      refundDueMinor: items.reduce(
+        (sum, item) => sum + item.unitPriceMinor * item.quantity,
+        0
+      ),
+      statusHistory: [{ status: "requested", at: now, by: uid, note: null }],
+      createdAt: now,
+      updatedAt: now,
+    }
+    batch.create(
+      adminDb.collection(SELLER_RETURNS).doc(sellerReturnId(ref.id, sellerId)),
+      sellerReturn
+    )
+  }
+  await batch.commit()
   await logActivity(
     "admin_action",
     `Retour demandé pour la commande ${order.orderNumber}`,
@@ -181,6 +262,17 @@ export async function updateReturnStatus(
   const existing = await getReturn(id)
   if (!existing) {
     throw new Error("Demande de retour introuvable.")
+  }
+  // `refundOrder` refunds the whole order: right for the house catalog,
+  // wrong when some lines belong to stores, whose own return decides what
+  // is owed. That partial refund comes with the finance phase.
+  if (
+    status === "refunded" &&
+    (await listSellerReturnsOfReturn(id)).length > 0
+  ) {
+    throw new Error(
+      "Ce retour comprend des articles de boutiques : leur remboursement partiel arrive avec la gestion financière."
+    )
   }
 
   const now = Timestamp.now()

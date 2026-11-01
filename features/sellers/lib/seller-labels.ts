@@ -5,6 +5,10 @@ import type {
   SellerMemberRole,
   SellerStatus,
 } from "@/types/seller"
+import type {
+  SellerOrderStatus,
+  SellerReturnStatus,
+} from "@/types/seller-order"
 
 export const APPLICATION_STATUS_LABELS: Record<
   SellerApplicationStatus,
@@ -63,6 +67,40 @@ export const MODERATION_BADGE: Record<ProductModerationStatus, string> = {
   pending: "bg-accent-gold-muted text-accent-gold-foreground",
   approved: "bg-brand-blue text-white",
   rejected: "bg-destructive/10 text-destructive",
+}
+
+export const SELLER_ORDER_STATUS_LABELS: Record<SellerOrderStatus, string> = {
+  awaiting_payment: "Paiement en attente",
+  to_prepare: "À préparer",
+  preparing: "En préparation",
+  shipped: "Expédiée",
+  delivered: "Livrée",
+  cancelled: "Annulée",
+}
+
+export const SELLER_ORDER_STATUS_BADGE: Record<SellerOrderStatus, string> = {
+  awaiting_payment: "bg-muted text-muted-foreground",
+  to_prepare: "bg-accent-gold-muted text-accent-gold-foreground",
+  preparing: "bg-accent-gold-muted text-accent-gold-foreground",
+  shipped: "bg-brand-blue text-white",
+  delivered: "bg-brand-blue text-white",
+  cancelled: "bg-destructive/10 text-destructive",
+}
+
+/** Button label for each step a store or an admin can take. */
+export const SELLER_ORDER_ACTION_LABELS: Partial<
+  Record<SellerOrderStatus, string>
+> = {
+  preparing: "Commencer la préparation",
+  shipped: "Marquer expédiée",
+  delivered: "Marquer livrée",
+  cancelled: "Annuler",
+}
+
+export const SELLER_RETURN_STATUS_LABELS: Record<SellerReturnStatus, string> = {
+  requested: "À traiter",
+  received: "Reçu",
+  rejected: "Refusé",
 }
 
 export const PRODUCT_STATUS_LABELS: Record<string, string> = {

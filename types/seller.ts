@@ -161,6 +161,8 @@ export interface SellerStockMovementDocument {
   quantityAfter: number
   delta: number
   reason: string | null
+  /** The order or return behind the change, if any. */
+  reference?: string | null
   actorUid: string
   createdAt: FirestoreTimestamp
 }

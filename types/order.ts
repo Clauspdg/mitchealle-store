@@ -95,6 +95,9 @@ export interface OrderDocument {
   delivery: OrderDelivery
   preorder: OrderPreorder | null
   notes: string | null
+  /** Stores (house excluded) with a sub-order in `sellerOrders`. Absent on
+   * orders from before multi-vendor. */
+  sellerIds?: string[]
   createdAt: FirestoreTimestamp
   updatedAt: FirestoreTimestamp
 }

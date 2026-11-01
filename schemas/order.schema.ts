@@ -3,6 +3,9 @@ import { z } from "zod"
 import { DELIVERY_METHODS, SHIPPING_TIERS } from "@/types/order"
 
 export const PAYMENT_METHODS = ["stripe", "paypal"] as const
+/** Accepted by the schema, refused by `getPaymentProvider` outside the local
+ * emulators. */
+export const SIMULATED_PAYMENT_METHOD = "simulation"
 
 export const createOrderSchema = z
   .object({
@@ -11,7 +14,7 @@ export const createOrderSchema = z
     addressId: z.string().nullable(),
     notes: z.string().nullable(),
     couponCode: z.string().nullable(),
-    paymentMethod: z.enum(PAYMENT_METHODS),
+    paymentMethod: z.enum([...PAYMENT_METHODS, SIMULATED_PAYMENT_METHOD]),
   })
   .refine(
     (data) => data.deliveryMethod !== "delivery" || data.addressId !== null,

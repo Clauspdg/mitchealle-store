@@ -44,6 +44,17 @@ const DEMO_USERS = [
   { uid: "demo-staff", email: "staff@demo.clag.test", role: "staff" },
   { uid: "demo-client", email: "client@demo.clag.test", role: "customer" },
   { uid: "demo-vendeur", email: "vendeur@demo.clag.test", role: "customer" },
+  // Two shoppers with no store, for the multi-vendor order tests.
+  {
+    uid: "demo-acheteur-1",
+    email: "acheteur1@demo.clag.test",
+    role: "customer",
+  },
+  {
+    uid: "demo-acheteur-2",
+    email: "acheteur2@demo.clag.test",
+    role: "customer",
+  },
 ]
 
 // Store roles are memberships, not platform roles: `demo-client` stays a

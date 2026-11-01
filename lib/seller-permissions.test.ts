@@ -25,6 +25,7 @@ describe("store roles", () => {
     for (const key of [
       "store.edit",
       "products.edit",
+      "orders.cancel",
       "returns.manage",
     ] as const) {
       expect(hasSellerPermission("manager", key)).toBe(true)

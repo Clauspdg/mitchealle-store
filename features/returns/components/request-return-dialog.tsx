@@ -23,7 +23,13 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import type { Order } from "@/types/order"
 
-export function RequestReturnDialog({ order }: { order: Order }) {
+// Only plain fields: an `Order` carries Firestore `Timestamp`s, which can't
+// cross into a Client Component.
+export function RequestReturnDialog({
+  order,
+}: {
+  order: Pick<Order, "id" | "items">
+}) {
   const [open, setOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set())

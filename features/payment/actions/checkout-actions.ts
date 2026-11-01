@@ -4,11 +4,17 @@ import { requireSession } from "@/lib/session.server"
 import { getAddress } from "@/services/firestore/addresses"
 import {
   cancelUnpaidOrder,
+  confirmOrderPayment,
   createOrderFromCart,
   createPendingPayment,
   getOrder,
+  listPaymentsForOrder,
 } from "@/services/firestore/orders"
 import { getPaymentProvider } from "@/features/payment/lib/get-payment-provider"
+import {
+  isPaymentSimulationEnabled,
+  SIMULATION_PROVIDER,
+} from "@/features/payment/lib/simulated-provider"
 import { clientEnv } from "@/lib/env.client"
 import { createOrderSchema } from "@/schemas/order.schema"
 import type { ActionResult } from "@/types/action-result"
@@ -22,6 +28,14 @@ export async function createCheckoutSessionAction(
   const parsed = createOrderSchema.safeParse(input)
   if (!parsed.success) {
     return { success: false, error: "Informations de livraison invalides." }
+  }
+  // Checked before anything is reserved: outside the local emulators the
+  // simulated payment doesn't exist.
+  if (
+    parsed.data.paymentMethod === "simulation" &&
+    !isPaymentSimulationEnabled()
+  ) {
+    return { success: false, error: "Mode de paiement indisponible." }
   }
 
   const addressSnapshot = parsed.data.addressId
@@ -109,6 +123,38 @@ export async function createCheckoutSessionAction(
   })
 
   return { success: true, data: { url: checkoutSession.url } }
+}
+
+/**
+ * Local emulators only: stands in for the provider's "payment succeeded"
+ * webhook, then for its "expired" one when the customer gives up. Same
+ * `confirmOrderPayment` / `cancelUnpaidOrder` as the real webhooks.
+ */
+export async function settleSimulatedPaymentAction(
+  orderId: string,
+  outcome: "paid" | "abandoned"
+): Promise<ActionResult> {
+  const session = await requireSession("customer")
+  if (!isPaymentSimulationEnabled()) {
+    return { success: false, error: "Mode de paiement indisponible." }
+  }
+  const order = await getOrder(orderId)
+  if (!order || order.userId !== session.uid) {
+    return { success: false, error: "Commande introuvable." }
+  }
+  const payment = (await listPaymentsForOrder(orderId)).find(
+    (p) => p.provider === SIMULATION_PROVIDER && p.status === "pending"
+  )
+  if (!payment) {
+    return { success: false, error: "Aucun paiement simulé en attente." }
+  }
+
+  if (outcome === "paid") {
+    await confirmOrderPayment(orderId, payment.providerRef ?? "")
+  } else {
+    await cancelUnpaidOrder(orderId, "Paiement simulé abandonné")
+  }
+  return { success: true, data: undefined }
 }
 
 export async function getOrderStatusAction(

@@ -9,6 +9,12 @@ import { OrderStatusBadge } from "@/features/orders/components/order-status-badg
 import { OrderTimeline } from "@/features/orders/components/order-timeline"
 import { DownloadInvoiceButton } from "@/features/invoices/components/download-invoice-button"
 import { RequestReturnDialog } from "@/features/returns/components/request-return-dialog"
+import { Badge } from "@/components/ui/badge"
+import {
+  SELLER_ORDER_STATUS_BADGE,
+  SELLER_ORDER_STATUS_LABELS,
+} from "@/features/sellers/lib/seller-labels"
+import { listSubOrdersOfOrder } from "@/services/firestore/seller/orders"
 
 export const metadata: Metadata = { title: "Détail de la commande" }
 
@@ -25,9 +31,10 @@ export default async function OrderDetailPage({
   const order = await getOrder(orderId)
   if (!order || order.userId !== session.uid) notFound()
 
-  const [payments, invoice] = await Promise.all([
+  const [payments, invoice, subOrders] = await Promise.all([
     listPaymentsForOrder(orderId),
     getInvoiceForOrder(orderId),
+    listSubOrdersOfOrder(orderId),
   ])
 
   return (
@@ -39,7 +46,7 @@ export default async function OrderDetailPage({
         <div className="flex items-center gap-2">
           {invoice ? <DownloadInvoiceButton orderId={order.id} /> : null}
           {order.status === "delivered" ? (
-            <RequestReturnDialog order={order} />
+            <RequestReturnDialog order={{ id: order.id, items: order.items }} />
           ) : null}
           <OrderStatusBadge status={order.status} />
         </div>
@@ -116,6 +123,31 @@ export default async function OrderDetailPage({
         <div className="flex flex-col gap-4 rounded-xl border p-4">
           <h2 className="font-heading text-base font-medium">Suivi</h2>
           <OrderTimeline history={order.statusHistory} />
+
+          {subOrders.length > 0 ? (
+            <div className="border-t pt-3">
+              <h3 className="mb-2 text-sm font-medium">Suivi par boutique</h3>
+              <ul className="flex flex-col gap-2 text-sm">
+                {subOrders.map((subOrder) => (
+                  <li key={subOrder.id} className="flex flex-col gap-0.5">
+                    <span className="flex flex-wrap items-center justify-between gap-2">
+                      <span>{subOrder.sellerName}</span>
+                      <Badge
+                        className={SELLER_ORDER_STATUS_BADGE[subOrder.status]}
+                      >
+                        {SELLER_ORDER_STATUS_LABELS[subOrder.status]}
+                      </Badge>
+                    </span>
+                    {subOrder.trackingNumber ? (
+                      <span className="text-muted-foreground text-xs">
+                        Suivi : {subOrder.trackingNumber}
+                      </span>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
 
           {payments.length > 0 ? (
             <div className="border-t pt-3">

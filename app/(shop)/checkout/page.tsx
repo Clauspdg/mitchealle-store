@@ -10,6 +10,7 @@ import {
   getShippingSettings,
 } from "@/services/firestore/settings"
 import { CheckoutForm } from "@/features/payment/components/checkout-form"
+import { isPaymentSimulationEnabled } from "@/features/payment/lib/simulated-provider"
 
 export const metadata: Metadata = { title: "Paiement" }
 export const dynamic = "force-dynamic"
@@ -40,6 +41,7 @@ export default async function CheckoutPage() {
         expressFeeMinor={shippingSettings.expressFeeMinor}
         currency={currency}
         defaultPaymentMethod={paymentSettings.defaultProvider}
+        simulationEnabled={isPaymentSimulationEnabled()}
       />
     </div>
   )

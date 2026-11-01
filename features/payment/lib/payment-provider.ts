@@ -44,4 +44,5 @@ export interface PaymentProvider {
   ): Promise<PaymentWebhookEvent>
 }
 
-export type PaymentMethod = "stripe" | "paypal"
+/** `simulation` exists only on the local emulators: see `simulated-provider.ts`. */
+export type PaymentMethod = "stripe" | "paypal" | "simulation"

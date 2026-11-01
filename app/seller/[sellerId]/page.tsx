@@ -6,6 +6,8 @@ import { requireSellerCenterPage } from "@/lib/seller-center.server"
 import { listSellerDecisions } from "@/services/firestore/seller/admin"
 import { getSellerDashboard } from "@/services/firestore/seller/catalog"
 import { listSellerProducts } from "@/services/firestore/seller/scoped-resources"
+import { listSellerOrders } from "@/services/firestore/seller/orders"
+import type { SellerOrderStatus } from "@/types/seller-order"
 import { StatTile } from "@/features/analytics/components/stat-tile"
 import { DecisionHistory } from "@/features/sellers/components/decision-history"
 import { Button } from "@/components/ui/button"
@@ -23,10 +25,15 @@ export default async function SellerDashboardPage({
   const { sellerId } = await params
   const context = await requireSellerCenterPage(sellerId, "store.view")
   const products = await listSellerProducts(context)
-  const [stats, decisions] = await Promise.all([
+  const [stats, decisions, orders] = await Promise.all([
     getSellerDashboard(context, products),
     listSellerDecisions({ sellerId }),
+    hasSellerPermission(context.role, "orders.view")
+      ? listSellerOrders(context)
+      : Promise.resolve(null),
   ])
+  const countOrders = (status: SellerOrderStatus) =>
+    orders?.filter((order) => order.status === status).length ?? 0
   const productDecisions = decisions
     .filter((decision) => decision.productId)
     .slice(0, RECENT_DECISIONS)
@@ -41,7 +48,8 @@ export default async function SellerDashboardPage({
             Tableau de bord
           </h1>
           <p className="text-muted-foreground text-sm">
-            Calculé à partir de votre catalogue et de votre stock actuels.
+            Calculé à partir de vos commandes, de votre catalogue et de votre
+            stock actuels.
           </p>
         </div>
         {hasSellerPermission(context.role, "products.edit") ? (
@@ -53,6 +61,38 @@ export default async function SellerDashboardPage({
           </Button>
         ) : null}
       </div>
+
+      {orders ? (
+        <section aria-label="Commandes" className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold">Commandes</h2>
+            <Link
+              href={`${root}/orders`}
+              className="text-sm underline underline-offset-4"
+            >
+              Voir les commandes
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <StatTile
+              label="À préparer"
+              value={format(countOrders("to_prepare"))}
+            />
+            <StatTile
+              label="En préparation"
+              value={format(countOrders("preparing"))}
+            />
+            <StatTile
+              label="Expédiées"
+              value={format(countOrders("shipped"))}
+            />
+            <StatTile
+              label="Livrées"
+              value={format(countOrders("delivered"))}
+            />
+          </div>
+        </section>
+      ) : null}
 
       <section aria-label="Catalogue" className="flex flex-col gap-3">
         <h2 className="font-semibold">Catalogue</h2>
@@ -91,11 +131,6 @@ export default async function SellerDashboardPage({
           productHref={(productId) => `${root}/products/${productId}`}
         />
       </section>
-
-      <p className="text-muted-foreground text-xs">
-        Les commandes et les ventes apparaîtront ici avec la gestion des
-        commandes vendeur.
-      </p>
     </>
   )
 }

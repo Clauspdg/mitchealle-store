@@ -37,6 +37,12 @@ export default async function SellerStoreLayout({
     ...(hasSellerPermission(context.role, "inventory.edit")
       ? [{ title: "Stock", href: `${root}/inventory` }]
       : []),
+    ...(hasSellerPermission(context.role, "orders.view")
+      ? [{ title: "Commandes", href: `${root}/orders` }]
+      : []),
+    ...(hasSellerPermission(context.role, "returns.manage")
+      ? [{ title: "Retours", href: `${root}/returns` }]
+      : []),
   ]
 
   return (
