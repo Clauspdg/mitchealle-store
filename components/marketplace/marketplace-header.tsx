@@ -7,6 +7,7 @@ import { HeartIcon, MenuIcon, UserIcon } from "lucide-react"
 
 import { marketplaceNav } from "@/config/nav"
 import { cn } from "@/lib/utils"
+import { loginHref } from "@/lib/safe-redirect"
 import { useAuth } from "@/hooks/use-auth"
 import type { StoreSettings } from "@/types/settings"
 import type { MenuItem } from "@/types/menu"
@@ -36,6 +37,9 @@ import {
 const SCROLL_SHADOW_THRESHOLD = 8
 
 export const SITE_SEARCH_INPUT_ID = "site-search-input"
+
+/** The Phase 2 application; a visitor signs in first and comes back here. */
+const SELL_HREF = "/account/seller-application"
 
 function getInitials(label: string): string {
   return label.trim().slice(0, 2).toUpperCase()
@@ -70,6 +74,10 @@ export function MarketplaceHeader({
 
   // The admin-managed header menu stays live: its entries follow the fixed
   // marketplace rail, minus the home link (the logo already does that job).
+  // Signing in from any page brings the visitor back to it.
+  const loginLink = loginHref(pathname)
+  const registerLink = loginHref(pathname, "/register")
+
   const fixedHrefs = new Set(marketplaceNav.map((item) => item.href))
   const navLinks = [
     ...marketplaceNav,
@@ -124,19 +132,26 @@ export function MarketplaceHeader({
                 {!loading && !user ? (
                   <>
                     <Link
-                      href="/login"
+                      href={loginLink}
                       className="hover:bg-muted rounded-md px-3 py-2.5 text-sm"
                     >
                       Connexion
                     </Link>
                     <Link
-                      href="/register"
+                      href={registerLink}
                       className="hover:bg-muted rounded-md px-3 py-2.5 text-sm"
                     >
                       Inscription
                     </Link>
                   </>
                 ) : null}
+                <div className="my-2 border-t" />
+                <Link
+                  href={SELL_HREF}
+                  className="hover:bg-muted text-muted-foreground rounded-md px-3 py-2.5 text-sm"
+                >
+                  Vendre sur C.L.A.G
+                </Link>
               </nav>
             </SheetContent>
           </Sheet>
@@ -195,6 +210,10 @@ export function MarketplaceHeader({
                 <DropdownMenuItem render={<Link href="/account/wishlist" />}>
                   Ma liste de souhaits
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem render={<Link href={SELL_HREF} />}>
+                  Vendre sur C.L.A.G
+                </DropdownMenuItem>
                 <DropdownMenuItem render={<Link href="/seller" />}>
                   Espace vendeur
                 </DropdownMenuItem>
@@ -207,7 +226,7 @@ export function MarketplaceHeader({
           ) : (
             <>
               <Button
-                render={<Link href="/login" />}
+                render={<Link href={loginLink} />}
                 nativeButton={false}
                 variant="ghost"
                 size="icon"
@@ -217,7 +236,7 @@ export function MarketplaceHeader({
                 <UserIcon />
               </Button>
               <Button
-                render={<Link href="/login" />}
+                render={<Link href={loginLink} />}
                 nativeButton={false}
                 variant="ghost"
                 className="hidden lg:inline-flex"
@@ -225,7 +244,7 @@ export function MarketplaceHeader({
                 Connexion
               </Button>
               <Button
-                render={<Link href="/register" />}
+                render={<Link href={registerLink} />}
                 nativeButton={false}
                 className="hidden lg:inline-flex"
               >
@@ -253,6 +272,12 @@ export function MarketplaceHeader({
                 {item.title}
               </Link>
             ))}
+            <Link
+              href={SELL_HREF}
+              className="text-muted-foreground hover:text-foreground ml-auto py-2.5 text-sm whitespace-nowrap underline-offset-4 transition-colors hover:underline"
+            >
+              Vendre sur C.L.A.G
+            </Link>
           </div>
         </nav>
       )}

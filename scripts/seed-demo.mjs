@@ -182,8 +182,9 @@ async function seedProducts() {
           size: null,
           color: null,
           priceMinor: null,
-          // A few low-stock and sold-out cases for the badges.
-          stock: index % 11 === 0 ? 0 : index % 7 === 0 ? 3 : 25,
+          // Enough units to place several test orders; two sold-out and
+          // three low-stock products keep the storefront badges visible.
+          stock: index % 11 === 0 ? 0 : index % 7 === 0 ? 4 : 100,
           isDefault: true,
           imageUrl: null,
         },

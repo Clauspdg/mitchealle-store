@@ -9,8 +9,9 @@ export default async function AuthLayout({
 }) {
   const session = await getSession()
 
+  // Already signed in: back to the shop, not to the account dashboard.
   if (session) {
-    redirect("/account")
+    redirect("/")
   }
 
   return (

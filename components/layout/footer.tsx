@@ -16,7 +16,8 @@ const PAYMENT_METHODS = ["Visa", "Mastercard", "American Express"]
 const MARKETPLACE_LINKS = [
   { label: "Boutiques", href: "/#boutiques" },
   { label: "Promotions", href: "/products?onSale=1" },
-  { label: "Devenir vendeur", href: "/#devenir-vendeur" },
+  // The application itself, not an anchor at the bottom of the home page.
+  { label: "Vendre sur C.L.A.G", href: "/account/seller-application" },
 ]
 
 const SOCIAL_LABELS: Record<keyof StoreSettings["socialLinks"], string> = {

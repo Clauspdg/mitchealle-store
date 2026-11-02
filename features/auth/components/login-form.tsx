@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { signInWithEmailAndPassword } from "firebase/auth"
@@ -15,8 +14,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-export function LoginForm() {
-  const router = useRouter()
+/** `redirectTo` is already checked by `safeRedirectPath` on the page:
+ * the visitor goes back to what they were doing, not to their account. */
+export function LoginForm({ redirectTo = "/" }: { redirectTo?: string }) {
   const [submitting, setSubmitting] = useState(false)
 
   const {
@@ -37,7 +37,9 @@ export function LoginForm() {
       await syncSessionCookie(idToken)
 
       toast.success("Connexion réussie.")
-      router.push("/account")
+      // A full navigation: the next page is rendered with the new session
+      // cookie, and the auth page can't redirect in between.
+      window.location.assign(redirectTo)
     } catch (error) {
       toast.error(getAuthErrorMessage(error))
     } finally {
