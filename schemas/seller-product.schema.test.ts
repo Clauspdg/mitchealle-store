@@ -14,7 +14,7 @@ const valid = {
   description: "Sac tressé à la main.",
   sku: "SAC-1",
   categoryId: "mode",
-  currency: "HTG",
+  currency: "BSD",
   basePriceMinor: 250000,
   images: [{ url: "https://storage.test/a.png", alt: "", position: 0 }],
   variants: [

@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest"
 
 import {
   canMoveRefund,
+  lineKey,
   lineNetMinor,
+  paidForLines,
   REFUND_STATUS_LABELS,
+  refundedByLine,
   refundForUnits,
   refundId,
 } from "@/lib/refunds"
@@ -19,19 +22,64 @@ describe("refund amounts after discount", () => {
 
   it("adds up to the line's net total whatever the split of the returns", () => {
     for (const split of [[3], [1, 1, 1], [2, 1], [1, 2]]) {
-      let returned = 0
-      let total = 0
+      const already = { units: 0, amountMinor: 0 }
       for (const quantity of split) {
-        total += refundForUnits(line, returned, quantity)
-        returned += quantity
+        already.amountMinor += refundForUnits(line, already, quantity)
+        already.units += quantity
       }
-      expect(total).toBe(28_999)
+      expect(already.amountMinor).toBe(28_999)
     }
   })
 
   it("never refunds more units than were bought", () => {
-    expect(refundForUnits(line, 3, 1)).toBe(0)
-    expect(refundForUnits(line, 2, 5)).toBe(refundForUnits(line, 2, 1))
+    const refundedTwo = { units: 2, amountMinor: 19_333 }
+    expect(refundForUnits(line, { units: 3, amountMinor: 28_999 }, 1)).toBe(0)
+    expect(refundForUnits(line, refundedTwo, 5)).toBe(
+      refundForUnits(line, refundedTwo, 1)
+    )
+  })
+
+  it("stays exact when a refused return frees units in the middle", () => {
+    // 9 666 refused, 9 667 kept: the two units left share what remains.
+    const kept = { units: 1, amountMinor: 9_667 }
+    const next = refundForUnits(line, kept, 1)
+    const last = refundForUnits(
+      line,
+      { units: 2, amountMinor: kept.amountMinor + next },
+      1
+    )
+    expect(kept.amountMinor + next + last).toBe(28_999)
+  })
+
+  it("adds each line's share of the tax to what was paid", () => {
+    const taxed = {
+      lineTotalMinor: 10_000,
+      discountMinor: 1_000,
+      taxMinor: 900,
+    }
+    expect(lineNetMinor(taxed)).toBe(9_900)
+    expect(paidForLines([taxed, { lineTotalMinor: 500 }])).toBe(10_400)
+  })
+
+  it("counts refunded units by line and ignores what was voided", () => {
+    const lines = [
+      {
+        productId: "p",
+        variantId: "v",
+        nameSnapshot: "P",
+        quantity: 1,
+        amountMinor: 700,
+      },
+    ]
+    const counted = refundedByLine([
+      { status: "completed", lines },
+      { status: "requested", lines },
+      { status: "void", lines },
+    ])
+    expect(counted.get(lineKey(lines[0]))).toEqual({
+      units: 2,
+      amountMinor: 1_400,
+    })
   })
 })
 

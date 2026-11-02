@@ -22,7 +22,13 @@ export interface TopEntryDatum {
 /** Ranked, single-measure bars (revenue per product/category/brand) — one
  * hue throughout, since these aren't parallel categorical series, just a
  * magnitude ranked by name. No legend needed for a single series. */
-export function TopEntriesChart({ data }: { data: TopEntryDatum[] }) {
+export function TopEntriesChart({
+  data,
+  currency,
+}: {
+  data: TopEntryDatum[]
+  currency: string
+}) {
   const truncatedLabel = (label: string) =>
     label.length > 18 ? `${label.slice(0, 18)}…` : label
 
@@ -32,7 +38,7 @@ export function TopEntriesChart({ data }: { data: TopEntryDatum[] }) {
         <CartesianGrid horizontal={false} stroke="var(--border)" />
         <XAxis
           type="number"
-          tickFormatter={(value) => formatPriceMinor(Number(value), "HTG")}
+          tickFormatter={(value) => formatPriceMinor(Number(value), currency)}
           tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
           axisLine={false}
           tickLine={false}
@@ -48,7 +54,7 @@ export function TopEntriesChart({ data }: { data: TopEntryDatum[] }) {
         />
         <Tooltip
           formatter={(value) => [
-            formatPriceMinor(Number(value), "HTG"),
+            formatPriceMinor(Number(value), currency),
             "Revenus",
           ]}
         />

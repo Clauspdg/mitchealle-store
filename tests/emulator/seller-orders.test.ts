@@ -57,7 +57,7 @@ async function storeProduct(sellerId: string, stock: number, price = 100_000) {
     images: [],
     basePriceMinor: price,
     salePriceMinor: null,
-    currency: "HTG",
+    currency: "BSD",
     variants: [
       {
         id: "v",
@@ -87,7 +87,7 @@ async function houseProduct(onHand: number) {
     images: [],
     basePriceMinor: 50_000,
     salePriceMinor: null,
-    currency: "HTG",
+    currency: "BSD",
     variants: [
       {
         id: "v",

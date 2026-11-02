@@ -6,6 +6,7 @@ import { belongsToSeller } from "@/lib/seller-access"
 import type { SellerContext } from "@/lib/seller-session.server"
 import { generateUniqueSlug } from "@/validators/slug.validator"
 import { productSlugExists } from "@/services/firestore/products"
+import { getStoreSettings } from "@/services/firestore/settings"
 import { getSeller } from "@/services/firestore/seller/sellers"
 import { SellerWorkflowError } from "@/services/firestore/seller/applications"
 import { isSellerProductImage } from "@/services/storage/seller-files"
@@ -22,6 +23,15 @@ const STOCK_MOVEMENTS = "sellerStockMovements"
 /** Same message whether the product is missing or another store's, so a
  * store can't probe what others own. */
 const NOT_FOUND = "Produit introuvable."
+
+/** A store sells in the marketplace's currency: a price in another one
+ * could never be ordered. */
+async function assertStoreCurrency(input: SellerProductInput) {
+  const { currency } = await getStoreSettings()
+  if (input.currency.toUpperCase() !== currency) {
+    throw new SellerWorkflowError(`Les prix doivent être en ${currency}.`)
+  }
+}
 
 function contentFields(input: SellerProductInput) {
   return {
@@ -131,6 +141,7 @@ export async function createSellerProduct(
   await Promise.all([
     assertActiveCategory(input.categoryId),
     assertOwnImages(context, input.images),
+    assertStoreCurrency(input),
   ])
 
   const slug = await generateUniqueSlug(input.name, productSlugExists)
@@ -184,7 +195,10 @@ export async function updateSellerProduct(
   if (!current || !belongsToSeller(current, context.sellerId)) {
     throw new SellerWorkflowError(NOT_FOUND)
   }
-  await assertActiveCategory(input.categoryId)
+  await Promise.all([
+    assertActiveCategory(input.categoryId),
+    assertStoreCurrency(input),
+  ])
   const slug =
     input.name === current.name
       ? current.slug

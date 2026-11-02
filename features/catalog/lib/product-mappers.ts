@@ -1,3 +1,4 @@
+import { REFERENCE_CURRENCY } from "@/config/currency"
 import type { ProductFormInput } from "@/schemas/product.schema"
 import type { ClientSafeProduct, Product } from "@/types/product"
 
@@ -39,7 +40,7 @@ export function productToFormDefaults(
       images: [],
       basePriceMinor: 0,
       salePriceMinor: null,
-      currency: "USD",
+      currency: REFERENCE_CURRENCY,
       variants: [],
       tags: [],
       status: "draft",

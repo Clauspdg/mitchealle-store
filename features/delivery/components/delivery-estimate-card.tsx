@@ -7,9 +7,7 @@ import {
   PICKUP_FEE_MINOR,
 } from "@/features/delivery/lib/shipping"
 
-const CURRENCY = "HTG"
-
-export function DeliveryEstimateCard() {
+export function DeliveryEstimateCard({ currency }: { currency: string }) {
   return (
     <Card>
       <CardContent className="flex flex-col gap-4">
@@ -22,7 +20,7 @@ export function DeliveryEstimateCard() {
             <span className="text-sm font-medium">National</span>
             <span className="text-muted-foreground text-xs">
               2-4 jours ouvrés ·{" "}
-              {formatPriceMinor(DELIVERY_FLAT_FEE_MINOR, CURRENCY)}
+              {formatPriceMinor(DELIVERY_FLAT_FEE_MINOR, currency)}
             </span>
           </div>
         </div>
@@ -37,7 +35,7 @@ export function DeliveryEstimateCard() {
         </div>
         <p className="text-muted-foreground text-xs">
           Retrait en boutique gratuit (
-          {formatPriceMinor(PICKUP_FEE_MINOR, CURRENCY)}) disponible au moment
+          {formatPriceMinor(PICKUP_FEE_MINOR, currency)}) disponible au moment
           du paiement.
         </p>
       </CardContent>

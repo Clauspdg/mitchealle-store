@@ -455,7 +455,7 @@ export function ProductForm({
                 <Input
                   id="currency"
                   {...register("currency")}
-                  placeholder="USD"
+                  placeholder="BSD"
                   aria-invalid={!!errors.currency}
                 />
                 {errors.currency && (

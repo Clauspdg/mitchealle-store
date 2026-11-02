@@ -1,4 +1,5 @@
 import { clientEnv } from "@/lib/env.client"
+import { LEGACY_CURRENCY } from "@/config/currency"
 import { formatPriceMinor } from "@/utils/currency"
 import {
   emailButton,
@@ -105,7 +106,7 @@ export function renderCouponEmail(coupon: Coupon): EmailTemplate {
   const value =
     coupon.type === "percentage"
       ? `${coupon.value}%`
-      : formatPriceMinor(coupon.value, "HTG")
+      : formatPriceMinor(coupon.value, coupon.currency ?? LEGACY_CURRENCY)
   return {
     subject: `Votre code promo ${coupon.code}`,
     html: emailLayout(`

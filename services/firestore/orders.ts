@@ -15,7 +15,10 @@ import {
 } from "@/services/firestore/inventory"
 import { getNextOrderNumber } from "@/services/firestore/counters"
 import { getShippingFeeMinor } from "@/features/delivery/lib/shipping"
-import { getShippingSettings } from "@/services/firestore/settings"
+import {
+  getShippingSettings,
+  getStoreSettings,
+} from "@/services/firestore/settings"
 import {
   getCouponByCode,
   incrementCouponUsage,
@@ -31,7 +34,7 @@ import { decodeCursor, encodeCursor } from "@/utils/pagination"
 import { isMissingIndexError } from "@/utils/firestore-errors"
 import { HOUSE_SELLER_ID } from "@/config/seller"
 import { resolveSellerId } from "@/lib/seller-access"
-import { computeSellerOrderAmounts } from "@/lib/seller-orders"
+import { allocateProRata, computeSellerOrderAmounts } from "@/lib/seller-orders"
 import {
   applyStockChange,
   cancelSubOrders,
@@ -45,12 +48,14 @@ import {
 } from "@/services/firestore/seller/orders"
 import {
   createRefundOnce,
+  moveRefund,
   refundRef,
   refundsOfOrderQuery,
 } from "@/services/firestore/refunds"
-import { refundId } from "@/lib/refunds"
+import { lineKey, lineNetMinor, refundId } from "@/lib/refunds"
 import type { SellerDocument } from "@/types/seller"
 import type { SellerOrderDocument } from "@/types/seller-order"
+import type { ReturnItem } from "@/types/return"
 import type { Address } from "@/types/user"
 import type { Product, ProductDocument } from "@/types/product"
 import type { CursorPage } from "@/types/pagination"
@@ -203,7 +208,9 @@ export async function createOrderFromCart(
   const orderRef = adminDb.collection(ORDERS_COLLECTION).doc()
   const items: OrderItem[] = []
   const couponLines: CouponValidationLine[] = []
-  let currency: string | null = null
+  // Fees and coupons are expressed in the store's currency, so an order is
+  // too: a product priced in another one is refused, never reinterpreted.
+  const { currency } = await getStoreSettings()
   const reserved: Array<{
     productId: string
     variantId: string
@@ -228,15 +235,16 @@ export async function createOrderFromCart(
         ...(productSnap.data() as ProductDocument),
       }
 
-      if (currency === null) {
-        currency = product.currency
-      } else if (currency !== product.currency) {
+      if (product.currency !== currency) {
         throw new Error(
-          "Les produits de votre panier utilisent des devises différentes."
+          `« ${product.name} » est affiché en ${product.currency} et n'est pas vendu en ${currency} pour le moment.`
         )
       }
 
       const unitPriceMinor = resolveUnitPriceMinor(product, cartItem.variantId)
+      if (!Number.isSafeInteger(unitPriceMinor) || unitPriceMinor < 0) {
+        throw new Error(`Le prix de « ${product.name} » n'est pas valide.`)
+      }
       const sellerId = resolveSellerId(product)
 
       if (sellerId === HOUSE_SELLER_ID) {
@@ -312,7 +320,11 @@ export async function createOrderFromCart(
       if (!coupon) {
         throw new Error("Ce code promo n'existe pas.")
       }
-      const result = validateCoupon(coupon, { uid, items: couponLines })
+      const result = validateCoupon(coupon, {
+        uid,
+        items: couponLines,
+        currency,
+      })
       if (!result.valid) {
         if (result.code === "expired") {
           await dispatchNotification({
@@ -345,6 +357,12 @@ export async function createOrderFromCart(
     const taxMinor = Math.round(
       (taxableAmountMinor * shippingSettings.taxRatePercent) / 100
     )
+    // Each line keeps its share of the tax too: a refund gives it back.
+    allocateProRata(taxMinor, items.map(lineNetMinor)).forEach(
+      (share, index) => {
+        if (share > 0) items[index] = { ...items[index], taxMinor: share }
+      }
+    )
     const totals = computeOrderTotals(
       items,
       effectiveShippingFeeMinor,
@@ -368,7 +386,7 @@ export async function createOrderFromCart(
       appliedCouponCode,
       appliedPromotionIds: [],
       totalMinor: totals.totalMinor,
-      currency: currency!,
+      currency,
       statusHistory: [{ status: "pending", at: now, by: uid }],
       delivery: {
         method: input.deliveryMethod,
@@ -796,7 +814,7 @@ export async function refundOrder(
   reason: string
 ): Promise<void> {
   const orderRef = adminDb.collection(ORDERS_COLLECTION).doc(orderId)
-  const order = await adminDb.runTransaction(async (tx) => {
+  const claimed = await adminDb.runTransaction(async (tx) => {
     const [snap, subOrders] = await Promise.all([
       tx.get(orderRef),
       tx.get(subOrdersQuery(orderId)),
@@ -810,10 +828,11 @@ export async function refundOrder(
     ) {
       return null
     }
-    const [products, refunds, ownRefund] = await Promise.all([
+    const [products, refunds, ownRefund, returns] = await Promise.all([
       readProducts(tx, productIdsOf(subOrders.docs)),
       tx.get(refundsOfOrderQuery(orderId)),
       tx.get(refundRef(refundId("order_refund", orderId))),
+      tx.get(adminDb.collection("returns").where("orderId", "==", orderId)),
     ])
     cancelSubOrders(tx, subOrders.docs, products, ["to_prepare", "preparing"], {
       actorUid: "system",
@@ -821,11 +840,25 @@ export async function refundOrder(
       reference: orderId,
     })
     // The whole order is owed back, less what other refunds (a store's
-    // cancellation, a return) already cover.
+    // cancellation, a received return) already confirmed. A return still
+    // waiting is absorbed: its refund is voided, so refusing it later
+    // can't change what the customer is owed.
     const current = toOrder(snap.id, snap.data()!)
-    const alreadyOwed = refunds.docs
-      .filter((doc) => doc.id !== ownRefund.id && doc.get("status") !== "void")
+    const others = refunds.docs.filter((doc) => doc.id !== ownRefund.id)
+    const alreadyOwed = others
+      .filter((doc) => ["pending", "completed"].includes(doc.get("status")))
       .reduce((sum, doc) => sum + (doc.get("amountMinor") as number), 0)
+    for (const doc of others) {
+      if (doc.get("status") === "requested") {
+        moveRefund(
+          tx,
+          doc,
+          "void",
+          "system",
+          "Couvert par le remboursement de la commande"
+        )
+      }
+    }
     createRefundOnce(
       tx,
       ownRefund,
@@ -854,16 +887,31 @@ export async function refundOrder(
       }),
       updatedAt: FieldValue.serverTimestamp(),
     })
-    return toOrder(snap.id, snap.data()!)
+    // On an order with store lines, a received return already put its
+    // house units back.
+    const restocked = new Map<string, number>()
+    if (current.items.some(isStoreLine)) {
+      for (const doc of returns.docs) {
+        if (!["received", "refunded"].includes(doc.get("status"))) continue
+        for (const item of doc.get("items") as ReturnItem[]) {
+          const key = lineKey(item)
+          restocked.set(key, (restocked.get(key) ?? 0) + item.quantity)
+        }
+      }
+    }
+    return { order: current, restocked }
   })
-  if (!order) return
+  if (!claimed) return
+  const { order, restocked } = claimed
 
   for (const item of order.items.filter((line) => !isStoreLine(line))) {
+    const quantity = item.quantity - (restocked.get(lineKey(item)) ?? 0)
+    if (quantity <= 0) continue
     await stockIn(
       {
         productId: item.productId,
         variantId: item.variantId,
-        quantity: item.quantity,
+        quantity,
         reason: "Remboursement commande",
         reference: orderId,
         sku: "",

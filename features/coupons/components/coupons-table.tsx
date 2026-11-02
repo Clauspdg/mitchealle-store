@@ -5,6 +5,7 @@ import { toast } from "sonner"
 
 import { toggleCouponActiveAction } from "@/features/coupons/actions/coupon-actions"
 import { CouponFormDialog } from "@/features/coupons/components/coupon-form-dialog"
+import { LEGACY_CURRENCY } from "@/config/currency"
 import { formatPriceMinor } from "@/utils/currency"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -23,10 +24,16 @@ function formatValue(coupon: ClientSafeCoupon): string {
   if (coupon.type === "freeShipping") return "Livraison gratuite"
   return coupon.type === "percentage"
     ? `-${coupon.value}%`
-    : `-${formatPriceMinor(coupon.value, "HTG")}`
+    : `-${formatPriceMinor(coupon.value, coupon.currency ?? LEGACY_CURRENCY)}`
 }
 
-export function CouponsTable({ coupons }: { coupons: ClientSafeCoupon[] }) {
+export function CouponsTable({
+  coupons,
+  currency,
+}: {
+  coupons: ClientSafeCoupon[]
+  currency: string
+}) {
   const router = useRouter()
 
   async function handleToggle(id: string, next: boolean) {
@@ -94,6 +101,7 @@ export function CouponsTable({ coupons }: { coupons: ClientSafeCoupon[] }) {
               </TableCell>
               <TableCell className="text-right">
                 <CouponFormDialog
+                  currency={currency}
                   coupon={coupon}
                   trigger={
                     <Button variant="outline" size="sm">

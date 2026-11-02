@@ -12,7 +12,11 @@ export const storeSettingsFormSchema = z.object({
   defaultOgImageUrl: z.string().nullable(),
   slogan: z.string().nullable(),
   description: z.string(),
-  currency: z.string().min(1, "Devise requise."),
+  currency: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .length(3, "Code devise ISO 4217 (3 lettres, ex. BSD)."),
   language: z.string().min(1, "Langue requise."),
   timezone: z.string().min(1, "Fuseau horaire requis."),
   contactEmail: z.email("Adresse e-mail invalide."),

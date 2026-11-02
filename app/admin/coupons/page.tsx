@@ -3,6 +3,7 @@ import { PlusIcon } from "lucide-react"
 
 import { requireSession } from "@/lib/session.server"
 import { listCoupons } from "@/services/firestore/coupons"
+import { getStoreSettings } from "@/services/firestore/settings"
 import { AdminSidebar } from "@/components/layout/admin-sidebar"
 import { CouponFormDialog } from "@/features/coupons/components/coupon-form-dialog"
 import { CouponsTable } from "@/features/coupons/components/coupons-table"
@@ -12,7 +13,10 @@ export const metadata: Metadata = { title: "Coupons" }
 
 export default async function CouponsPage() {
   await requireSession("staff")
-  const coupons = await listCoupons()
+  const [coupons, { currency }] = await Promise.all([
+    listCoupons(),
+    getStoreSettings(),
+  ])
   // Firestore `Timestamp` fields can't cross into a Client Component as raw
   // props. `startsAt`/`expiresAt` are still needed by the table's display
   // and the edit form's date pickers, so they're converted to millis
@@ -33,6 +37,7 @@ export default async function CouponsPage() {
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-semibold tracking-tight">Coupons</h1>
           <CouponFormDialog
+            currency={currency}
             trigger={
               <Button>
                 <PlusIcon />
@@ -42,7 +47,7 @@ export default async function CouponsPage() {
           />
         </div>
 
-        <CouponsTable coupons={clientSafeCoupons} />
+        <CouponsTable coupons={clientSafeCoupons} currency={currency} />
       </div>
     </div>
   )

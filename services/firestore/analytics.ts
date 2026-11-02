@@ -7,9 +7,11 @@ import {
   countProductsByStatus,
   listPublishedProductsForSearch,
 } from "@/services/firestore/products"
+import { getStoreSettings } from "@/services/firestore/settings"
 import {
   computeOrdersByDay,
   computeTopProducts,
+  splitByCurrency,
   type OrdersByDayPoint,
   type TopEntry,
 } from "@/validators/analytics.validator"
@@ -58,21 +60,40 @@ function isSettled(order: Order): boolean {
   return !UNPAID_STATUSES.includes(order.status)
 }
 
+/** Settled orders in the store's currency, the only ones revenue adds up. */
+async function listRevenueOrders(days: number) {
+  const [orders, { currency }] = await Promise.all([
+    listOrdersSince(days),
+    getStoreSettings(),
+  ])
+  const { inCurrency, otherCurrencyOrders } = splitByCurrency(
+    orders.filter(isSettled),
+    currency
+  )
+  return {
+    orders: inCurrency,
+    otherCurrencyOrders,
+    currency,
+    scanned: orders.length,
+  }
+}
+
 export interface SalesOverview {
   totalRevenueMinor: number
   orderCount: number
   averageOrderValueMinor: number
   currency: string
+  /** Settled orders left out because they are in another currency. */
+  otherCurrencyOrders: number
   rangeDays: number
   scanned: number
   truncated: boolean
 }
 
 export async function getSalesOverview(rangeDays = 90): Promise<SalesOverview> {
-  const allOrders = await listOrdersSince(rangeDays)
-  const orders = allOrders.filter(isSettled)
+  const { orders, otherCurrencyOrders, currency, scanned } =
+    await listRevenueOrders(rangeDays)
   const totalRevenueMinor = orders.reduce((sum, o) => sum + o.totalMinor, 0)
-  const currency = orders[0]?.currency ?? "HTG"
 
   return {
     totalRevenueMinor,
@@ -80,16 +101,17 @@ export async function getSalesOverview(rangeDays = 90): Promise<SalesOverview> {
     averageOrderValueMinor:
       orders.length > 0 ? Math.round(totalRevenueMinor / orders.length) : 0,
     currency,
+    otherCurrencyOrders,
     rangeDays,
-    scanned: allOrders.length,
-    truncated: allOrders.length >= MAX_ORDERS_SCANNED,
+    scanned,
+    truncated: scanned >= MAX_ORDERS_SCANNED,
   }
 }
 
 export async function getOrdersByDay(
   rangeDays = 30
 ): Promise<OrdersByDayPoint[]> {
-  const orders = (await listOrdersSince(rangeDays)).filter(isSettled)
+  const { orders } = await listRevenueOrders(rangeDays)
   return computeOrdersByDay(orders)
 }
 
@@ -127,7 +149,7 @@ export async function getTopProducts(
   rangeDays = 90,
   limit = 10
 ): Promise<TopEntry[]> {
-  const orders = (await listOrdersSince(rangeDays)).filter(isSettled)
+  const { orders } = await listRevenueOrders(rangeDays)
   return computeTopProducts(orders, limit)
 }
 
@@ -135,7 +157,7 @@ export async function getTopCategories(
   rangeDays = 90,
   limit = 10
 ): Promise<TopEntry[]> {
-  const orders = (await listOrdersSince(rangeDays)).filter(isSettled)
+  const { orders } = await listRevenueOrders(rangeDays)
   const productIds = orders.flatMap((o) => o.items.map((i) => i.productId))
   const products = await resolveProducts(productIds)
   const categoryIds = [...products.values()].map((p) => p.categoryId)
@@ -170,7 +192,7 @@ export async function getTopBrands(
   rangeDays = 90,
   limit = 10
 ): Promise<TopEntry[]> {
-  const orders = (await listOrdersSince(rangeDays)).filter(isSettled)
+  const { orders } = await listRevenueOrders(rangeDays)
   const productIds = orders.flatMap((o) => o.items.map((i) => i.productId))
   const products = await resolveProducts(productIds)
 
@@ -208,7 +230,7 @@ export async function getTopCustomers(
   rangeDays = 90,
   limit = 10
 ): Promise<TopCustomer[]> {
-  const orders = (await listOrdersSince(rangeDays)).filter(isSettled)
+  const { orders } = await listRevenueOrders(rangeDays)
   const byCustomer = new Map<
     string,
     { revenueMinor: number; orderCount: number }

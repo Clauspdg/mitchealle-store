@@ -234,7 +234,7 @@ export function StoreSettingsForm({
             <Input
               id="store-currency"
               {...register("currency")}
-              placeholder="HTG"
+              placeholder="BSD"
             />
           </div>
           <div className="flex flex-col gap-1.5">

@@ -74,6 +74,9 @@ export default async function AdminPage() {
               {overview.truncated
                 ? " (données tronquées au-delà de 2000 commandes)"
                 : ""}
+              {overview.otherCurrencyOrders > 0
+                ? ` · montants en ${overview.currency} uniquement : ${overview.otherCurrencyOrders} commande(s) dans une autre devise non incluse(s)`
+                : ""}
             </p>
           </div>
           <ExportAnalyticsButtons rangeDays={RANGE_DAYS} />
@@ -113,7 +116,7 @@ export default async function AdminPage() {
 
         <Card>
           <CardContent>
-            <OrdersByDayChart data={ordersByDay} />
+            <OrdersByDayChart data={ordersByDay} currency={overview.currency} />
           </CardContent>
         </Card>
 
@@ -132,7 +135,10 @@ export default async function AdminPage() {
               <CardTitle>Top produits</CardTitle>
             </CardHeader>
             <CardContent>
-              <TopEntriesChart data={topProducts} />
+              <TopEntriesChart
+                data={topProducts}
+                currency={overview.currency}
+              />
             </CardContent>
           </Card>
           <Card>
@@ -140,7 +146,10 @@ export default async function AdminPage() {
               <CardTitle>Top catégories</CardTitle>
             </CardHeader>
             <CardContent>
-              <TopEntriesChart data={topCategories} />
+              <TopEntriesChart
+                data={topCategories}
+                currency={overview.currency}
+              />
             </CardContent>
           </Card>
           <Card>
@@ -148,7 +157,7 @@ export default async function AdminPage() {
               <CardTitle>Top marques</CardTitle>
             </CardHeader>
             <CardContent>
-              <TopEntriesChart data={topBrands} />
+              <TopEntriesChart data={topBrands} currency={overview.currency} />
             </CardContent>
           </Card>
           <Card>
@@ -157,6 +166,7 @@ export default async function AdminPage() {
             </CardHeader>
             <CardContent>
               <TopEntriesChart
+                currency={overview.currency}
                 data={topCustomers.map((c) => ({
                   label: c.label,
                   revenueMinor: c.revenueMinor,

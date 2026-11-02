@@ -45,6 +45,8 @@ const COUPON_TYPE_ITEMS = {
 interface CouponFormDialogProps {
   trigger: ReactElement
   coupon?: ClientSafeCoupon
+  /** The store's currency: amounts entered here are saved in it. */
+  currency: string
 }
 
 function couponToFormDefaults(coupon?: ClientSafeCoupon): CouponFormInput {
@@ -63,7 +65,11 @@ function couponToFormDefaults(coupon?: ClientSafeCoupon): CouponFormInput {
   }
 }
 
-export function CouponFormDialog({ trigger, coupon }: CouponFormDialogProps) {
+export function CouponFormDialog({
+  trigger,
+  coupon,
+  currency,
+}: CouponFormDialogProps) {
   const [open, setOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
@@ -153,12 +159,15 @@ export function CouponFormDialog({ trigger, coupon }: CouponFormDialogProps) {
             {watch("type") !== "freeShipping" && (
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="coupon-value">
-                  Valeur {watch("type") === "percentage" ? "(%)" : "(HTG)"}
+                  Valeur{" "}
+                  {watch("type") === "percentage"
+                    ? "(%)"
+                    : `(cents ${currency})`}
                 </Label>
                 <Input
                   id="coupon-value"
                   type="number"
-                  step="0.01"
+                  step={watch("type") === "percentage" ? "0.01" : "1"}
                   {...register("value", { valueAsNumber: true })}
                 />
                 {errors.value && (
@@ -211,7 +220,7 @@ export function CouponFormDialog({ trigger, coupon }: CouponFormDialogProps) {
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="coupon-min-purchase">
-              Achat minimum en HTG (optionnel)
+              Achat minimum en cents {currency} (optionnel)
             </Label>
             <Input
               id="coupon-min-purchase"

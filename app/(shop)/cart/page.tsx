@@ -5,6 +5,7 @@ import { ShoppingBagIcon } from "lucide-react"
 import { requireSession } from "@/lib/session.server"
 import { getCart } from "@/services/firestore/carts"
 import { getProduct } from "@/services/firestore/products"
+import { getStoreSettings } from "@/services/firestore/settings"
 import { EmptyState } from "@/components/shared/empty-state"
 import { CartLineItem } from "@/features/cart/components/cart-line-item"
 import { CartSummary } from "@/features/cart/components/cart-summary"
@@ -34,9 +35,10 @@ export default async function CartPage() {
     )
   }
 
-  const products = await Promise.all(
-    cart.items.map((item) => getProduct(item.productId))
-  )
+  const [products, { currency }] = await Promise.all([
+    Promise.all(cart.items.map((item) => getProduct(item.productId))),
+    getStoreSettings(),
+  ])
 
   const lines = cart.items.map((item, index) => {
     const product = products[index]
@@ -53,16 +55,18 @@ export default async function CartPage() {
         [variant?.size, variant?.color].filter(Boolean).join(" / ") || null,
       quantity: item.quantity,
       unitPriceMinor: item.unitPriceMinorSnapshot,
-      currency: product?.currency ?? "HTG",
+      currency: product?.currency ?? currency,
       maxQuantity: Math.max(item.quantity, variant?.stock ?? item.quantity),
     }
   })
 
-  const subtotalMinor = lines.reduce(
+  // A line priced in another currency can't be ordered, and its digits
+  // don't belong in this total.
+  const payable = lines.filter((line) => line.currency === currency)
+  const subtotalMinor = payable.reduce(
     (sum, line) => sum + line.unitPriceMinor * line.quantity,
     0
   )
-  const currency = lines[0]?.currency ?? "HTG"
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-12 sm:px-6">
@@ -76,7 +80,11 @@ export default async function CartPage() {
         </div>
 
         <div>
-          <CartSummary subtotalMinor={subtotalMinor} currency={currency} />
+          <CartSummary
+            subtotalMinor={subtotalMinor}
+            currency={currency}
+            blockedCount={lines.length - payable.length}
+          />
         </div>
       </div>
     </div>

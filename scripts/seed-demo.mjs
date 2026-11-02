@@ -174,7 +174,7 @@ async function seedProducts() {
       ],
       basePriceMinor,
       salePriceMinor: index % 3 === 0 ? Math.round(basePriceMinor * 0.8) : null,
-      currency: "HTG",
+      currency: "BSD",
       variants: [
         {
           id: variantId,
@@ -358,7 +358,7 @@ async function seedModeration() {
       ],
       basePriceMinor: 250000,
       salePriceMinor: null,
-      currency: "HTG",
+      currency: "BSD",
       variants: [
         {
           id: `${item.id}-standard`,
@@ -470,8 +470,81 @@ async function seedCoupon() {
       allowedCategoryIds: null,
       allowedProductIds: ["demo-produit-1"],
       allowedUserIds: null,
+      currency: "BSD",
       isActive: true,
       createdBy: "demo-admin",
+      createdAt: now,
+      updatedAt: now,
+    })
+}
+
+// What the Bahamas launch leaves behind, kept in HTG with its own digits: a
+// product that can't be ordered in BSD and an already delivered order.
+async function seedLegacyHtg() {
+  const productSnap = await db
+    .collection("products")
+    .doc("demo-produit-2")
+    .get()
+  const source = productSnap.data()
+  await db
+    .collection("products")
+    .doc("demo-produit-htg")
+    .set({
+      ...source,
+      slug: "demo-produit-htg",
+      name: "Produit historique HTG",
+      nameLower: "produit historique htg",
+      sku: "DEMO-HTG",
+      basePriceMinor: 125000,
+      salePriceMinor: null,
+      currency: "HTG",
+      variants: source.variants.map((variant) => ({
+        ...variant,
+        id: "demo-produit-htg-standard",
+        sku: "DEMO-HTG-STD",
+      })),
+    })
+  const buyer = await auth.getUserByEmail("acheteur1@demo.clag.test")
+  const items = [
+    {
+      productId: "demo-produit-htg",
+      variantId: "demo-produit-htg-standard",
+      nameSnapshot: "Produit historique HTG",
+      imageSnapshot: "",
+      unitPriceMinor: 125000,
+      quantity: 2,
+      lineTotalMinor: 250000,
+    },
+  ]
+  await db
+    .collection("orders")
+    .doc("demo-commande-htg")
+    .set({
+      orderNumber: "ORD-HTG-0001",
+      userId: buyer.uid,
+      customerEmail: "acheteur1@demo.clag.test",
+      type: "standard",
+      status: "delivered",
+      items,
+      subtotalMinor: 250000,
+      shippingFeeMinor: 0,
+      discountMinor: 0,
+      taxMinor: 0,
+      appliedCouponCode: null,
+      appliedPromotionIds: [],
+      totalMinor: 250000,
+      currency: "HTG",
+      statusHistory: [{ status: "delivered", at: now, by: "system" }],
+      delivery: {
+        method: "pickup",
+        tier: null,
+        addressSnapshot: null,
+        trackingNumber: null,
+        estimatedAt: null,
+        status: "delivered",
+      },
+      preorder: null,
+      notes: null,
       createdAt: now,
       updatedAt: now,
     })
@@ -485,6 +558,7 @@ await seedProducts()
 await seedModeration()
 await seedHouseInventory()
 await seedCoupon()
+await seedLegacyHtg()
 console.log(
   `Jeu de démonstration chargé sur ${projectId}${usesEmulators ? " (émulateurs)" : ""}.`
 )

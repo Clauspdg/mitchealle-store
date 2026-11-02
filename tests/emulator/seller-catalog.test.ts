@@ -71,7 +71,7 @@ function input(imageUrl: string, extra: Record<string, unknown> = {}) {
     images: [{ url: imageUrl, alt: "Sac", position: 0 }],
     basePriceMinor: 250000,
     salePriceMinor: null,
-    currency: "HTG",
+    currency: "BSD",
     variants: [
       {
         id: "v1",

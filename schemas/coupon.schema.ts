@@ -35,6 +35,10 @@ export const couponFormSchema = z
     error: "La valeur doit être supérieure à 0.",
     path: ["value"],
   })
+  .refine((data) => data.type !== "fixed" || Number.isInteger(data.value), {
+    error: "Un montant s'exprime en unités mineures entières (cents).",
+    path: ["value"],
+  })
   .refine(
     (data) =>
       !data.startsAt || !data.expiresAt || data.startsAt < data.expiresAt,

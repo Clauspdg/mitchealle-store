@@ -8,6 +8,7 @@ import { PICKUP_FEE_MINOR } from "@/features/delivery/lib/shipping"
 import {
   getPaymentSettings,
   getShippingSettings,
+  getStoreSettings,
 } from "@/services/firestore/settings"
 import { CheckoutForm } from "@/features/payment/components/checkout-form"
 import { isPaymentSimulationEnabled } from "@/features/payment/lib/simulated-provider"
@@ -17,19 +18,18 @@ export const dynamic = "force-dynamic"
 
 export default async function CheckoutPage() {
   const session = await requireSession("customer")
-  const [cart, addresses, shippingSettings, paymentSettings] =
+  const [cart, addresses, shippingSettings, paymentSettings, storeSettings] =
     await Promise.all([
       getCart(session.uid),
       listAddresses(session.uid),
       getShippingSettings(),
       getPaymentSettings(),
+      getStoreSettings(),
     ])
 
   if (cart.items.length === 0) {
     redirect("/cart")
   }
-
-  const currency = "HTG"
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-6 py-12">
@@ -39,7 +39,7 @@ export default async function CheckoutPage() {
         pickupFeeMinor={PICKUP_FEE_MINOR}
         standardFeeMinor={shippingSettings.standardFeeMinor}
         expressFeeMinor={shippingSettings.expressFeeMinor}
-        currency={currency}
+        currency={storeSettings.currency}
         defaultPaymentMethod={paymentSettings.defaultProvider}
         simulationEnabled={isPaymentSimulationEnabled()}
       />

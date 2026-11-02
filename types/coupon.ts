@@ -19,6 +19,9 @@ export interface CouponDocument {
   /** Percentage (0-100) or a fixed amount in minor units, per `type`.
    * Unused (0) when `type` is `freeShipping`. */
   value: number
+  /** Currency of `value` (fixed amounts) and `minPurchaseMinor`. Missing on
+   * coupons older than the BSD launch, whose amounts are in HTG. */
+  currency?: string
   /** `null` means valid immediately — no scheduled start. */
   startsAt: FirestoreTimestamp | null
   expiresAt: FirestoreTimestamp | null

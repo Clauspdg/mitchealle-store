@@ -3,8 +3,22 @@ import { describe, expect, it } from "vitest"
 import {
   computeOrdersByDay,
   computeTopProducts,
+  splitByCurrency,
 } from "@/validators/analytics.validator"
 import type { FirestoreTimestamp } from "@/types/firestore"
+
+describe("splitByCurrency", () => {
+  it("never adds another currency to the revenue, and counts what it left out", () => {
+    const orders = [
+      { currency: "BSD", totalMinor: 1000 },
+      { currency: "HTG", totalMinor: 90000 },
+      { currency: "BSD", totalMinor: 500 },
+    ]
+    const { inCurrency, otherCurrencyOrders } = splitByCurrency(orders, "BSD")
+    expect(inCurrency.map((o) => o.totalMinor)).toEqual([1000, 500])
+    expect(otherCurrencyOrders).toBe(1)
+  })
+})
 
 function timestamp(date: Date): FirestoreTimestamp {
   return {

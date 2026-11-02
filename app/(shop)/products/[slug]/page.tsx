@@ -235,7 +235,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             />
 
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <DeliveryEstimateCard />
+              <DeliveryEstimateCard currency={product.currency} />
               <ReturnPolicyCard />
             </div>
           </>

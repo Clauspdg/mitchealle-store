@@ -5,6 +5,7 @@ import {
   getCouponByCode,
   resolveCouponValidationLines,
 } from "@/services/firestore/coupons"
+import { getStoreSettings } from "@/services/firestore/settings"
 import { dispatchNotification } from "@/services/notifications/dispatch"
 import { validateCoupon } from "@/validators/coupon.validator"
 import { applyCouponSchema } from "@/schemas/coupon.schema"
@@ -38,7 +39,8 @@ export async function applyCouponAction(
     return { success: false, error: "Votre panier est vide." }
   }
 
-  const result = validateCoupon(coupon, { uid: session.uid, items })
+  const { currency } = await getStoreSettings()
+  const result = validateCoupon(coupon, { uid: session.uid, items, currency })
   if (!result.valid) {
     if (result.code === "expired") {
       await dispatchNotification({

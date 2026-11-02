@@ -18,6 +18,7 @@ import {
   hasPremiumFilters,
   type CatalogSearchParams,
 } from "@/schemas/storefront.schema"
+import { REFERENCE_CURRENCY } from "@/config/currency"
 import type { CursorPage } from "@/types/pagination"
 import type { Product, ProductDocument, ProductStatus } from "@/types/product"
 
@@ -867,7 +868,7 @@ export async function importProductsFromCsv(
         images: [{ url: imageUrl, alt: name, position: 0 }],
         basePriceMinor,
         salePriceMinor,
-        currency: record.currency?.trim() || "HTG",
+        currency: record.currency?.trim() || REFERENCE_CURRENCY,
         variants: [
           {
             id: crypto.randomUUID(),

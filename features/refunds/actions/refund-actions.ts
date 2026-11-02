@@ -12,7 +12,7 @@ import type { ActionResult } from "@/types/action-result"
 const referenceSchema = z.string().trim().max(200).nullable()
 
 /**
- * Records that a pending refund was paid back outside the app (MonCash,
+ * Records that a pending refund was paid back outside the app (transfer,
  * transfer...). No payment is made here.
  */
 export async function completeRefundAction(

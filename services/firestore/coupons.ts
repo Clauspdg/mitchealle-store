@@ -3,6 +3,7 @@ import { FieldValue, Timestamp } from "firebase-admin/firestore"
 
 import { adminDb } from "@/firebase/admin"
 import { getCart, resolveUnitPriceMinor } from "@/services/firestore/carts"
+import { getStoreSettings } from "@/services/firestore/settings"
 import type { CouponValidationLine } from "@/validators/coupon.validator"
 import type { CouponFormInput } from "@/schemas/coupon.schema"
 import type { Coupon, CouponDocument } from "@/types/coupon"
@@ -84,8 +85,10 @@ export async function createCoupon(
   actorUid: string
 ): Promise<Coupon> {
   const now = FieldValue.serverTimestamp()
+  const { currency } = await getStoreSettings()
   const docData = {
     ...buildDocData(input),
+    currency,
     usedCount: 0,
     createdBy: actorUid,
     createdAt: now,
@@ -101,11 +104,14 @@ export async function updateCoupon(
   id: string,
   input: CouponFormInput
 ): Promise<Coupon> {
+  // Its amounts were just entered in the store's currency.
+  const { currency } = await getStoreSettings()
   await adminDb
     .collection(COUPONS_COLLECTION)
     .doc(id)
     .update({
       ...buildDocData(input),
+      currency,
       updatedAt: FieldValue.serverTimestamp(),
     })
 

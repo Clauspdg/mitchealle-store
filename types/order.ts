@@ -43,6 +43,8 @@ export interface OrderItem {
    * applies to get one, and all shares add up to the order's
    * `discountMinor`. Absent when the line got no discount. */
   discountMinor?: number
+  /** This line's share of the order's tax. Missing on older orders. */
+  taxMinor?: number
 }
 
 export interface OrderStatusHistoryEntry {

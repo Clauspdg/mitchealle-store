@@ -63,7 +63,7 @@ export function CompleteRefundButton({
           <DialogTitle>Remboursement de {amountLabel}</DialogTitle>
           <DialogDescription>
             Confirmez que le client a été remboursé en dehors de la boutique
-            (MonCash, virement…). Aucun paiement n&apos;est effectué ici.
+            (virement, carte…). Aucun paiement n&apos;est effectué ici.
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-1.5">

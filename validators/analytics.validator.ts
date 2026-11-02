@@ -4,6 +4,16 @@ export interface OrdersByDayPoint {
   revenueMinor: number
 }
 
+/** Amounts in different currencies never add up: every revenue figure
+ * covers one currency, the rest is only counted. */
+export function splitByCurrency<T extends { currency: string }>(
+  orders: T[],
+  currency: string
+): { inCurrency: T[]; otherCurrencyOrders: number } {
+  const inCurrency = orders.filter((order) => order.currency === currency)
+  return { inCurrency, otherCurrencyOrders: orders.length - inCurrency.length }
+}
+
 /**
  * Pure grouping/aggregation — deliberately framework-agnostic (plain objects,
  * no Firestore types) so it's testable without a database, same idiom as

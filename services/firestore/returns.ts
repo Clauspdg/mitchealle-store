@@ -2,10 +2,21 @@ import "server-only"
 import { FieldValue, Timestamp } from "firebase-admin/firestore"
 
 import { adminDb } from "@/firebase/admin"
-import { getOrder, refundOrder } from "@/services/firestore/orders"
+import { refundOrder } from "@/services/firestore/orders"
 import { stockIn } from "@/services/firestore/inventory"
-import { moveRefund, REFUNDS, refundRef } from "@/services/firestore/refunds"
-import { refundForUnits, refundId } from "@/lib/refunds"
+import {
+  moveRefund,
+  REFUNDS,
+  refundRef,
+  refundsOfOrderQuery,
+} from "@/services/firestore/refunds"
+import {
+  lineKey,
+  refundedByLine,
+  refundForUnits,
+  refundId,
+  type LineRefunded,
+} from "@/lib/refunds"
 import type { RefundDocument, RefundLine } from "@/types/refund"
 import type { OrderDocument } from "@/types/order"
 import { emailProvider } from "@/features/notifications/lib/email-provider"
@@ -49,6 +60,24 @@ function hasStoreLines(order: Pick<OrderDocument, "items">): boolean {
   return order.items.some(isStoreLine)
 }
 
+/** Units held by a house-only order's returns: those have no refund of
+ * their own, so only the units matter. */
+function unitsOfReturns(
+  returns: FirebaseFirestore.QueryDocumentSnapshot[]
+): Map<string, LineRefunded> {
+  const units = new Map<string, LineRefunded>()
+  for (const snap of returns) {
+    const earlier = snap.data() as ReturnDocument
+    if (earlier.status === "rejected") continue
+    for (const item of earlier.items) {
+      const key = lineKey(item)
+      const known = units.get(key)?.units ?? 0
+      units.set(key, { units: known + item.quantity, amountMinor: 0 })
+    }
+  }
+  return units
+}
+
 function toReturn(id: string, data: FirebaseFirestore.DocumentData): Return {
   return { id, ...(data as ReturnDocument) }
 }
@@ -72,165 +101,181 @@ export async function createReturnRequest(
     photoUrls: string[]
   }
 ): Promise<Return> {
-  const order = await getOrder(input.orderId)
-  if (!order || order.userId !== uid) {
-    throw new Error("Commande introuvable.")
-  }
-  if (order.status !== "delivered") {
-    throw new Error("Seule une commande livrée peut faire l'objet d'un retour.")
-  }
-
-  // Each line must be one of the order's, for no more than what is left
-  // once earlier, non-refused returns are counted.
-  const previous = await listReturnsForOrder(input.orderId)
-  const alreadyReturned = new Map<string, number>()
-  for (const earlier of previous.filter((r) => r.status !== "rejected")) {
-    for (const item of earlier.items) {
-      const key = `${item.productId}_${item.variantId}`
-      alreadyReturned.set(key, (alreadyReturned.get(key) ?? 0) + item.quantity)
-    }
-  }
-  const lineOf = (item: ReturnItem) =>
-    order.items.find(
-      (orderItem) =>
-        orderItem.productId === item.productId &&
-        orderItem.variantId === item.variantId
-    )
-  const requested = new Map<string, number>()
-  for (const item of input.items) {
-    const key = `${item.productId}_${item.variantId}`
-    requested.set(key, (requested.get(key) ?? 0) + item.quantity)
-    const line = lineOf(item)
-    const left = (line?.quantity ?? 0) - (alreadyReturned.get(key) ?? 0)
-    if (!line || item.quantity < 1 || requested.get(key)! > left) {
-      throw new Error("Un article de la demande ne peut pas être retourné.")
-    }
-  }
-
-  const now = Timestamp.now()
-  const doc: ReturnDocument = {
-    orderId: input.orderId,
-    userId: uid,
-    items: input.items,
-    comment: input.comment,
-    photoUrls: input.photoUrls,
-    status: "requested",
-    statusHistory: [{ status: "requested", at: now, by: uid }],
-    createdAt: now,
-    updatedAt: now,
-  }
-
-  // Store lines also go to their store, one request per store, written
-  // with the customer's return so neither exists without the other.
-  const ref = adminDb.collection(RETURNS_COLLECTION).doc()
-  const batch = adminDb.batch()
-  batch.create(ref, doc)
-
-  // What each returned unit is worth: the line's net after its share of
-  // the coupon, counted on top of the units returned before.
-  const counted = new Map(alreadyReturned)
-  const byStore = new Map<string, SellerReturnItem[]>()
-  const houseLines: RefundLine[] = []
-  const refundLines = new Map<string, RefundLine[]>()
-  for (const item of input.items) {
-    const line = lineOf(item)!
-    const key = `${item.productId}_${item.variantId}`
-    const amountMinor = refundForUnits(
-      line,
-      counted.get(key) ?? 0,
-      item.quantity
-    )
-    counted.set(key, (counted.get(key) ?? 0) + item.quantity)
-    const refundLine: RefundLine = {
-      productId: item.productId,
-      variantId: item.variantId,
-      nameSnapshot: line.nameSnapshot,
-      quantity: item.quantity,
-      amountMinor,
-    }
-    if (!isStoreLine(line)) {
-      houseLines.push(refundLine)
-      continue
-    }
-    refundLines.set(line.sellerId!, [
-      ...(refundLines.get(line.sellerId!) ?? []),
-      refundLine,
+  const orderRef = adminDb.collection("orders").doc(input.orderId)
+  // Checked and written in one transaction, on the order's document: two
+  // requests at once can't both claim the same units.
+  const { ref, doc, order } = await adminDb.runTransaction(async (tx) => {
+    const [orderSnap, earlierReturns, earlierRefunds] = await Promise.all([
+      tx.get(orderRef),
+      tx.get(
+        adminDb
+          .collection(RETURNS_COLLECTION)
+          .where("orderId", "==", input.orderId)
+      ),
+      tx.get(refundsOfOrderQuery(input.orderId)),
     ])
-    byStore.set(line.sellerId!, [
-      ...(byStore.get(line.sellerId!) ?? []),
-      {
+    const order = orderSnap.data() as OrderDocument | undefined
+    if (!order || order.userId !== uid) {
+      throw new Error("Commande introuvable.")
+    }
+    if (order.status !== "delivered") {
+      throw new Error(
+        "Seule une commande livrée peut faire l'objet d'un retour."
+      )
+    }
+
+    // Each line must be one of the order's, for no more than what is left.
+    // Orders with store lines count what their refunds already cover
+    // (cancelled sub-orders included); a house-only order counts its returns.
+    const already = hasStoreLines(order)
+      ? refundedByLine(
+          earlierRefunds.docs.map((d) => d.data() as RefundDocument)
+        )
+      : unitsOfReturns(earlierReturns.docs)
+    const lineOf = (item: ReturnItem) =>
+      order.items.find(
+        (orderItem) =>
+          orderItem.productId === item.productId &&
+          orderItem.variantId === item.variantId
+      )
+    const requested = new Map<string, number>()
+    for (const item of input.items) {
+      const key = lineKey(item)
+      requested.set(key, (requested.get(key) ?? 0) + item.quantity)
+      const line = lineOf(item)
+      const left = (line?.quantity ?? 0) - (already.get(key)?.units ?? 0)
+      if (!line || item.quantity < 1 || requested.get(key)! > left) {
+        throw new Error("Un article de la demande ne peut pas être retourné.")
+      }
+    }
+
+    const now = Timestamp.now()
+    const doc: ReturnDocument = {
+      orderId: input.orderId,
+      userId: uid,
+      items: input.items,
+      comment: input.comment,
+      photoUrls: input.photoUrls,
+      status: "requested",
+      statusHistory: [{ status: "requested", at: now, by: uid }],
+      createdAt: now,
+      updatedAt: now,
+    }
+
+    // Store lines also go to their store, one request per store, written
+    // with the customer's return so neither exists without the other.
+    const ref = adminDb.collection(RETURNS_COLLECTION).doc()
+    tx.create(ref, doc)
+    tx.update(orderRef, { updatedAt: FieldValue.serverTimestamp() })
+
+    // What each returned unit is worth: its share of what the line still has
+    // to give back.
+    const counted = new Map(already)
+    const byStore = new Map<string, SellerReturnItem[]>()
+    const houseLines: RefundLine[] = []
+    const refundLines = new Map<string, RefundLine[]>()
+    for (const item of input.items) {
+      const line = lineOf(item)!
+      const key = lineKey(item)
+      const before = counted.get(key) ?? { units: 0, amountMinor: 0 }
+      const amountMinor = refundForUnits(line, before, item.quantity)
+      counted.set(key, {
+        units: before.units + item.quantity,
+        amountMinor: before.amountMinor + amountMinor,
+      })
+      const refundLine: RefundLine = {
         productId: item.productId,
         variantId: item.variantId,
         nameSnapshot: line.nameSnapshot,
-        unitPriceMinor: line.unitPriceMinor,
         quantity: item.quantity,
-        reason: item.reason,
-      },
-    ])
-  }
-
-  const sumOf = (lines: RefundLine[]) =>
-    lines.reduce((sum, line) => sum + line.amountMinor, 0)
-  const refund = (
-    id: string,
-    lines: RefundLine[],
-    seller: { id: string; name: string } | null
-  ) => {
-    batch.create(refundRef(id), {
-      orderId: input.orderId,
-      orderNumber: order.orderNumber,
-      userId: uid,
-      sellerId: seller?.id ?? null,
-      sellerName: seller?.name ?? null,
-      source: seller ? "store_return" : "house_return",
-      sourceId: ref.id,
-      amountMinor: sumOf(lines),
-      currency: order.currency,
-      status: "requested",
-      lines,
-      reference: null,
-      history: [{ status: "requested", at: now, by: uid, note: null }],
-      createdAt: now,
-      updatedAt: now,
-    } satisfies RefundDocument)
-  }
-
-  for (const [sellerId, items] of byStore) {
-    const sellerReturn: SellerReturnDocument = {
-      returnId: ref.id,
-      orderId: input.orderId,
-      orderNumber: order.orderNumber,
-      sellerId,
-      items,
-      currency: order.currency,
-      status: "requested",
-      restocked: false,
-      refundDueMinor: sumOf(refundLines.get(sellerId)!),
-      statusHistory: [{ status: "requested", at: now, by: uid, note: null }],
-      createdAt: now,
-      updatedAt: now,
-    }
-    batch.create(
-      adminDb.collection(SELLER_RETURNS).doc(sellerReturnId(ref.id, sellerId)),
-      sellerReturn
-    )
-    const sellerName =
-      order.items.find((item) => item.sellerId === sellerId)?.sellerName ?? ""
-    refund(
-      refundId("store_return", ref.id, sellerId),
-      refundLines.get(sellerId)!,
-      {
-        id: sellerId,
-        name: sellerName,
+        amountMinor,
       }
-    )
-  }
-  // House lines of an order with store lines follow the same refund
-  // tracking; a house-only order keeps its historical whole-order refund.
-  if (houseLines.length > 0 && hasStoreLines(order)) {
-    refund(refundId("house_return", ref.id), houseLines, null)
-  }
-  await batch.commit()
+      if (!isStoreLine(line)) {
+        houseLines.push(refundLine)
+        continue
+      }
+      refundLines.set(line.sellerId!, [
+        ...(refundLines.get(line.sellerId!) ?? []),
+        refundLine,
+      ])
+      byStore.set(line.sellerId!, [
+        ...(byStore.get(line.sellerId!) ?? []),
+        {
+          productId: item.productId,
+          variantId: item.variantId,
+          nameSnapshot: line.nameSnapshot,
+          unitPriceMinor: line.unitPriceMinor,
+          quantity: item.quantity,
+          reason: item.reason,
+        },
+      ])
+    }
+
+    const sumOf = (lines: RefundLine[]) =>
+      lines.reduce((sum, line) => sum + line.amountMinor, 0)
+    const refund = (
+      id: string,
+      lines: RefundLine[],
+      seller: { id: string; name: string } | null
+    ) => {
+      tx.create(refundRef(id), {
+        orderId: input.orderId,
+        orderNumber: order.orderNumber,
+        userId: uid,
+        sellerId: seller?.id ?? null,
+        sellerName: seller?.name ?? null,
+        source: seller ? "store_return" : "house_return",
+        sourceId: ref.id,
+        amountMinor: sumOf(lines),
+        currency: order.currency,
+        status: "requested",
+        lines,
+        reference: null,
+        history: [{ status: "requested", at: now, by: uid, note: null }],
+        createdAt: now,
+        updatedAt: now,
+      } satisfies RefundDocument)
+    }
+
+    for (const [sellerId, items] of byStore) {
+      const sellerReturn: SellerReturnDocument = {
+        returnId: ref.id,
+        orderId: input.orderId,
+        orderNumber: order.orderNumber,
+        sellerId,
+        items,
+        currency: order.currency,
+        status: "requested",
+        restocked: false,
+        refundDueMinor: sumOf(refundLines.get(sellerId)!),
+        statusHistory: [{ status: "requested", at: now, by: uid, note: null }],
+        createdAt: now,
+        updatedAt: now,
+      }
+      tx.create(
+        adminDb
+          .collection(SELLER_RETURNS)
+          .doc(sellerReturnId(ref.id, sellerId)),
+        sellerReturn
+      )
+      const sellerName =
+        order.items.find((item) => item.sellerId === sellerId)?.sellerName ?? ""
+      refund(
+        refundId("store_return", ref.id, sellerId),
+        refundLines.get(sellerId)!,
+        {
+          id: sellerId,
+          name: sellerName,
+        }
+      )
+    }
+    // House lines of an order with store lines follow the same refund
+    // tracking; a house-only order keeps its historical whole-order refund.
+    if (houseLines.length > 0 && hasStoreLines(order)) {
+      refund(refundId("house_return", ref.id), houseLines, null)
+    }
+    return { ref, doc, order }
+  })
   await logActivity(
     "admin_action",
     `Retour demandé pour la commande ${order.orderNumber}`,
@@ -377,6 +422,23 @@ export async function updateReturnStatus(
         "Une boutique doit encore réceptionner les articles de ce retour."
       )
     }
+    if (
+      status === "rejected" &&
+      refunds.some((refund) => refund.get("status") === "pending")
+    ) {
+      throw new Error(
+        "Une boutique a déjà réceptionné des articles de ce retour : il ne peut plus être refusé."
+      )
+    }
+    // Refusing the return refuses it for its stores too.
+    const storeParts =
+      tracked && status === "rejected"
+        ? (
+            await tx.get(
+              adminDb.collection(SELLER_RETURNS).where("returnId", "==", id)
+            )
+          ).docs
+        : []
 
     tx.update(returnRef, {
       status,
@@ -388,14 +450,35 @@ export async function updateReturnStatus(
       }),
       updatedAt: FieldValue.serverTimestamp(),
     })
+    for (const part of storeParts) {
+      if (part.get("status") !== "requested") continue
+      tx.update(part.ref, {
+        status: "rejected",
+        refundDueMinor: 0,
+        statusHistory: FieldValue.arrayUnion({
+          status: "rejected",
+          at: Timestamp.now(),
+          by: actorUid,
+          note: note ?? null,
+        }),
+        updatedAt: FieldValue.serverTimestamp(),
+      })
+    }
+    // A refund the whole-order refund already absorbed stays void.
     const house = refunds.find(
-      (refund) => refund.id === refundId("house_return", id)
+      (refund) =>
+        refund.id === refundId("house_return", id) &&
+        refund.get("status") === "requested"
     )
     if (house && status === "received") {
       moveRefund(tx, house, "pending", actorUid, null)
     }
-    if (house && status === "rejected") {
-      moveRefund(tx, house, "void", actorUid, note ?? null)
+    if (status === "rejected") {
+      for (const refund of refunds) {
+        if (refund.get("status") === "requested") {
+          moveRefund(tx, refund, "void", actorUid, note ?? null)
+        }
+      }
     }
     if (status === "refunded") {
       for (const refund of refunds) {
@@ -410,8 +493,14 @@ export async function updateReturnStatus(
   const { existing, order, tracked } = claimed
 
   // House units come back to the warehouse once the return is received;
-  // store units are put back by their store.
-  if (tracked && status === "received" && order) {
+  // store units are put back by their store. A refunded order has already
+  // given all its house units back.
+  if (
+    tracked &&
+    status === "received" &&
+    order &&
+    order.status !== "refunded"
+  ) {
     for (const item of existing.items) {
       const line = order.items.find(
         (orderItem) =>

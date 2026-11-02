@@ -16,7 +16,7 @@ import {
   moveRefund,
   refundRef,
 } from "@/services/firestore/refunds"
-import { lineNetMinor, refundId } from "@/lib/refunds"
+import { lineNetMinor, paidForLines, refundId } from "@/lib/refunds"
 import type { OrderDocument, OrderItem } from "@/types/order"
 import type { ProductDocument } from "@/types/product"
 import type {
@@ -200,7 +200,7 @@ export function cancelSubOrders(
     tx.update(snap.ref, {
       status: "cancelled",
       stockState: "released",
-      refundDueMinor: paid ? subOrder.netSalesMinor : 0,
+      refundDueMinor: paid ? paidForLines(subOrder.items) : 0,
       statusHistory: FieldValue.arrayUnion(
         historyEntry("cancelled", audit.actorUid, null, audit.note)
       ),
@@ -291,7 +291,7 @@ export async function transitionSellerOrder(
             refundDueMinor:
               subOrder.status === "awaiting_payment"
                 ? 0
-                : subOrder.netSalesMinor,
+                : paidForLines(subOrder.items),
           }
         : {}),
       ...(to === "shipped" && input.trackingNumber
@@ -316,7 +316,7 @@ export async function transitionSellerOrder(
           sellerName: subOrder.sellerName,
           source: "store_cancellation",
           sourceId: subOrderId,
-          amountMinor: subOrder.netSalesMinor,
+          amountMinor: paidForLines(subOrder.items),
           currency: subOrder.currency,
           status: "pending",
           lines: subOrder.items.map((item) => ({
@@ -478,6 +478,9 @@ export async function decideSellerReturn(
         refundId("store_return", sellerReturn.returnId, context.sellerId)
       )
     )
+    // A whole-order refund may have voided it already: the units still
+    // come back, but nothing more is owed.
+    const absorbed = refundSnap.get("status") === "void"
     if (restock) {
       applyStockChange(
         tx,
@@ -497,7 +500,9 @@ export async function decideSellerReturn(
     tx.update(ref, {
       status: decision.status,
       restocked: restock,
-      ...(decision.status === "rejected" ? { refundDueMinor: 0 } : {}),
+      ...(decision.status === "rejected" || absorbed
+        ? { refundDueMinor: 0 }
+        : {}),
       statusHistory: FieldValue.arrayUnion({
         status: decision.status,
         at: Timestamp.now(),
@@ -507,13 +512,15 @@ export async function decideSellerReturn(
       updatedAt: FieldValue.serverTimestamp(),
     })
     // Received: the amount is now owed. Refused: nothing is.
-    moveRefund(
-      tx,
-      refundSnap,
-      decision.status === "received" ? "pending" : "void",
-      context.uid,
-      decision.status === "rejected" ? decision.reason : null
-    )
+    if (!absorbed) {
+      moveRefund(
+        tx,
+        refundSnap,
+        decision.status === "received" ? "pending" : "void",
+        context.uid,
+        decision.status === "rejected" ? decision.reason : null
+      )
+    }
     return { changed: true }
   })
 }

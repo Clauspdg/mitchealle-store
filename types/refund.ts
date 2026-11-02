@@ -4,7 +4,7 @@ import type { FirestoreTimestamp } from "./firestore"
  * - `requested`: the customer asked (a return not checked yet).
  * - `pending`: the amount is owed and confirmed, not paid back yet.
  * - `completed`: an admin recorded the refund as done. The app never moves
- *   money itself: the refund is made outside it (MonCash, transfer...).
+ *   money itself: the refund is made outside it (transfer, card...).
  * - `void`: nothing is owed after all (a refused return).
  */
 export const REFUND_STATUSES = [

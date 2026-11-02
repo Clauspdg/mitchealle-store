@@ -1,3 +1,4 @@
+import { LEGACY_CURRENCY } from "@/config/currency"
 import { allocateProRata } from "@/lib/seller-orders"
 import type { Coupon } from "@/types/coupon"
 
@@ -11,6 +12,8 @@ export interface CouponValidationLine {
 export interface CouponValidationContext {
   uid: string
   items: CouponValidationLine[]
+  /** The currency the order will be paid in. */
+  currency: string
   /** Injectable for tests — defaults to the real current time. */
   now?: Date
 }
@@ -23,6 +26,7 @@ export type CouponRejectionCode =
   | "not_allowed_user"
   | "below_minimum"
   | "not_eligible"
+  | "wrong_currency"
 
 export type CouponValidationResult =
   | {
@@ -83,6 +87,18 @@ export function validateCoupon(
       valid: false,
       reason: "Ce coupon ne vous est pas destiné.",
       code: "not_allowed_user",
+    }
+  }
+
+  // An amount in another currency means something else here: the coupon is
+  // refused rather than applied with the same digits. A percentage has no
+  // currency.
+  const hasAmount = coupon.type === "fixed" || coupon.minPurchaseMinor !== null
+  if (hasAmount && (coupon.currency ?? LEGACY_CURRENCY) !== context.currency) {
+    return {
+      valid: false,
+      reason: `Ce coupon n'est pas valable en ${context.currency}.`,
+      code: "wrong_currency",
     }
   }
 

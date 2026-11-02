@@ -27,7 +27,13 @@ function formatDateLabel(date: string): string {
  * dual-axis chart — different scales/units, and a dual y-axis chart is the
  * #1 chart mistake to avoid (see the dataviz skill's anti-patterns).
  */
-export function OrdersByDayChart({ data }: { data: OrdersByDayPoint[] }) {
+export function OrdersByDayChart({
+  data,
+  currency,
+}: {
+  data: OrdersByDayPoint[]
+  currency: string
+}) {
   return (
     <div className="grid gap-6 sm:grid-cols-2">
       <div>
@@ -98,12 +104,14 @@ export function OrdersByDayChart({ data }: { data: OrdersByDayPoint[] }) {
               axisLine={false}
               tickLine={false}
               width={48}
-              tickFormatter={(value) => formatPriceMinor(Number(value), "HTG")}
+              tickFormatter={(value) =>
+                formatPriceMinor(Number(value), currency)
+              }
             />
             <Tooltip
               labelFormatter={(label) => formatDateLabel(String(label))}
               formatter={(value) => [
-                formatPriceMinor(Number(value), "HTG"),
+                formatPriceMinor(Number(value), currency),
                 "Revenus",
               ]}
             />

@@ -1,5 +1,5 @@
 import { Timestamp } from "firebase-admin/firestore"
-import { beforeAll, describe, expect, it } from "vitest"
+import { afterEach, beforeAll, describe, expect, it } from "vitest"
 
 import { createTestUser, signInAs } from "./helpers/auth-session"
 import { adminDb } from "@/firebase/admin"
@@ -45,7 +45,7 @@ async function product(
     images: [],
     basePriceMinor: price,
     salePriceMinor: null,
-    currency: "HTG",
+    currency: "BSD",
     variants: [
       {
         id: "v",
@@ -247,6 +247,7 @@ describe("coupon shares follow the lines the coupon applies to", () => {
       product("rf-y", 10, 99_999),
     ])
     await coupon("RFFIXED", {
+      currency: "BSD",
       type: "fixed",
       value: 10_001,
       allowedCategoryIds: ["cat-promo"],
@@ -374,6 +375,7 @@ describe("a mixed order from checkout to refund: house + two stores", () => {
   it("refunds the rest of a split return without rounding drift", async () => {
     const x = await product("rf-x", 5, 33_333)
     await coupon("RFTHIRD", {
+      currency: "BSD",
       type: "fixed",
       value: 1_000,
       allowedProductIds: [x],
@@ -546,5 +548,332 @@ describe("refund stages are explicit and idempotent", () => {
       status: "pending",
       amountMinor: 20_000,
     })
+  })
+})
+
+describe("refused returns and rounding", () => {
+  // 3 units, 30 000 less a 1 001 coupon: 28 999 does not divide by 3.
+  async function delivered(quantity = 3) {
+    const item = await product("rf-x", 10, 10_000)
+    const code = `FIX-${item}`.toUpperCase()
+    await coupon(code, {
+      type: "fixed",
+      value: 1_001,
+      currency: "BSD",
+    })
+    const created = await buy("rf-buyer", [[item, quantity]], code)
+    await confirmOrderPayment(created.id, "sim")
+    await deliverStores(created.id, [["rf-x-owner", "rf-x"]])
+    return { orderId: created.id, item }
+  }
+  const askReturn = (orderId: string, item: string, quantity = 1) =>
+    createReturnRequest("rf-buyer", {
+      orderId,
+      items: [{ productId: item, variantId: "v", quantity, reason: "Taille" }],
+      comment: null,
+      photoUrls: [],
+    })
+  const totalOwed = async (orderId: string) =>
+    (await refundsOf(orderId))
+      .filter((doc) => doc.get("status") !== "void")
+      .reduce((sum, doc) => sum + doc.get("amountMinor"), 0)
+
+  it("never refunds a unit more than was paid after a refused return", async () => {
+    const { orderId, item } = await delivered()
+    const first = await askReturn(orderId, item)
+    await askReturn(orderId, item)
+    await updateReturnStatus(first.id, "rejected", "rf-admin", "Hors délai")
+    await askReturn(orderId, item)
+    await askReturn(orderId, item)
+
+    expect(await totalOwed(orderId)).toBe(28_999)
+    await expect(askReturn(orderId, item)).rejects.toThrow(
+      "ne peut pas être retourné"
+    )
+  })
+
+  it("refuses a return for its stores too", async () => {
+    const { orderId, item } = await delivered()
+    const request = await askReturn(orderId, item, 2)
+    await updateReturnStatus(request.id, "rejected", "rf-admin", "Hors délai")
+
+    const part = (
+      await adminDb.doc(`sellerReturns/${request.id}_rf-x`).get()
+    ).data()!
+    expect(part).toMatchObject({ status: "rejected", refundDueMinor: 0 })
+    expect((await refund(`return_${request.id}_rf-x`))?.status).toBe("void")
+    await signInAs("rf-x-owner")
+    expect(
+      await decideSellerReturnAction("rf-x", request.id, {
+        status: "received",
+        restock: true,
+      })
+    ).toMatchObject({ success: false })
+    expect(await stockOf(item)).toBe(7)
+  })
+
+  it("can't refuse a return a store has already received", async () => {
+    const { orderId, item } = await delivered()
+    const request = await askReturn(orderId, item)
+    await signInAs("rf-x-owner")
+    await decideSellerReturnAction("rf-x", request.id, {
+      status: "received",
+      restock: true,
+    })
+    await expect(
+      updateReturnStatus(request.id, "rejected", "rf-admin", "Non")
+    ).rejects.toThrow("déjà réceptionné")
+  })
+
+  it("gives units refused by a store back to the customer", async () => {
+    const { orderId, item } = await delivered()
+    const request = await askReturn(orderId, item, 3)
+    await signInAs("rf-x-owner")
+    await decideSellerReturnAction("rf-x", request.id, {
+      status: "rejected",
+      reason: "Article porté, retour impossible.",
+    })
+    await askReturn(orderId, item, 3)
+    expect(await totalOwed(orderId)).toBe(28_999)
+  })
+
+  it("lets only one of two simultaneous returns take the last units", async () => {
+    const { orderId, item } = await delivered()
+    const results = await Promise.allSettled([
+      askReturn(orderId, item, 2),
+      askReturn(orderId, item, 2),
+    ])
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1)
+    expect((await refundsOf(orderId)).length).toBe(1)
+  })
+
+  it("never refunds again a line whose sub-order was cancelled", async () => {
+    const [x, y] = await Promise.all([
+      product("rf-x", 5, 10_000),
+      product("rf-y", 5, 10_000),
+    ])
+    const created = await buy("rf-buyer", [
+      [x, 1],
+      [y, 1],
+    ])
+    await confirmOrderPayment(created.id, "sim")
+    await move("rf-x-owner", "rf-x", created.id, "cancelled", REASON)
+    await deliverStores(created.id, [["rf-y-owner", "rf-y"]])
+    await updateOrderStatus(created.id, "delivered", "rf-admin")
+
+    await expect(askReturn(created.id, x)).rejects.toThrow(
+      "ne peut pas être retourné"
+    )
+    await askReturn(created.id, y)
+    expect(await totalOwed(created.id)).toBe(20_000)
+  })
+})
+
+describe("a whole-order refund next to returns", () => {
+  async function mixedDelivered() {
+    const [house, store] = await Promise.all([
+      product(null, 5, 40_000),
+      product("rf-x", 5, 10_000),
+    ])
+    const created = await buy("rf-buyer", [
+      [house, 1],
+      [store, 1],
+    ])
+    await confirmOrderPayment(created.id, "sim")
+    await deliverStores(created.id, [["rf-x-owner", "rf-x"]])
+    await updateOrderStatus(created.id, "delivered", "rf-admin")
+    return { orderId: created.id, house, store }
+  }
+  const askReturn = (orderId: string, item: string) =>
+    createReturnRequest("rf-buyer", {
+      orderId,
+      items: [
+        { productId: item, variantId: "v", quantity: 1, reason: "Taille" },
+      ],
+      comment: null,
+      photoUrls: [],
+    })
+
+  it("absorbs a return still waiting, whatever is decided on it later", async () => {
+    const { orderId, store } = await mixedDelivered()
+    const request = await askReturn(orderId, store)
+    await refundOrder(orderId, "Geste commercial")
+
+    expect((await refund(`order_${orderId}`))?.amountMinor).toBe(50_000)
+    expect((await refund(`return_${request.id}_rf-x`))?.status).toBe("void")
+
+    await signInAs("rf-x-owner")
+    expect(
+      await decideSellerReturnAction("rf-x", request.id, {
+        status: "received",
+        restock: true,
+      })
+    ).toMatchObject({ success: true })
+    expect(await stockOf(store)).toBe(5)
+    const part = (
+      await adminDb.doc(`sellerReturns/${request.id}_rf-x`).get()
+    ).data()!
+    expect(part.refundDueMinor).toBe(0)
+    expect((await refund(`return_${request.id}_rf-x`))?.status).toBe("void")
+    expect((await refund(`order_${orderId}`))?.amountMinor).toBe(50_000)
+  })
+
+  it("deducts a return already received, once", async () => {
+    const { orderId, store } = await mixedDelivered()
+    const request = await askReturn(orderId, store)
+    await signInAs("rf-x-owner")
+    await decideSellerReturnAction("rf-x", request.id, {
+      status: "received",
+      restock: false,
+    })
+    await refundOrder(orderId, "Geste commercial")
+    expect((await refund(`order_${orderId}`))?.amountMinor).toBe(40_000)
+  })
+
+  it("puts a house unit back once when its return came first", async () => {
+    const { orderId, house } = await mixedDelivered()
+    expect(await onHandOf(house)).toBe(4)
+    const request = await askReturn(orderId, house)
+    for (const status of ["approved", "received"] as const) {
+      await updateReturnStatus(request.id, status, "rf-admin")
+    }
+    expect(await onHandOf(house)).toBe(5)
+    await refundOrder(orderId, "Geste commercial")
+    expect(await onHandOf(house)).toBe(5)
+  })
+
+  it("puts a house unit back once when the refund came first", async () => {
+    const { orderId, house } = await mixedDelivered()
+    const request = await askReturn(orderId, house)
+    await updateReturnStatus(request.id, "approved", "rf-admin")
+    await refundOrder(orderId, "Geste commercial")
+    expect(await onHandOf(house)).toBe(5)
+    await updateReturnStatus(request.id, "received", "rf-admin")
+    expect(await onHandOf(house)).toBe(5)
+    expect((await refund(`return_${request.id}_house`))?.status).toBe("void")
+  })
+})
+
+describe("tax is part of what comes back", () => {
+  afterEach(() => adminDb.doc("settings/shipping").delete())
+
+  it("refunds each line's share of the tax", async () => {
+    await adminDb.doc("settings/shipping").set({
+      standardFeeMinor: 500,
+      expressFeeMinor: 1500,
+      freeShippingThresholdMinor: null,
+      taxRatePercent: 10,
+      pickupEnabled: true,
+      deliveryEnabled: true,
+    })
+    const [x, y] = await Promise.all([
+      product("rf-x", 5, 10_000),
+      product("rf-y", 5, 33_333),
+    ])
+    const created = await buy("rf-buyer", [
+      [x, 1],
+      [y, 1],
+    ])
+    expect(created.taxMinor).toBe(4_333)
+    expect(created.items.reduce((sum, i) => sum + i.taxMinor!, 0)).toBe(4_333)
+
+    await confirmOrderPayment(created.id, "sim")
+    await move("rf-x-owner", "rf-x", created.id, "cancelled", REASON)
+    await deliverStores(created.id, [["rf-y-owner", "rf-y"]])
+    await updateOrderStatus(created.id, "delivered", "rf-admin")
+    const request = await createReturnRequest("rf-buyer", {
+      orderId: created.id,
+      items: [{ productId: y, variantId: "v", quantity: 1, reason: "Taille" }],
+      comment: null,
+      photoUrls: [],
+    })
+
+    const cancelled = await refund(`cancel_${created.id}_rf-x`)
+    const returned = await refund(`return_${request.id}_rf-y`)
+    expect(cancelled!.amountMinor + returned!.amountMinor).toBe(
+      created.totalMinor
+    )
+  })
+})
+
+describe("the BSD launch never converts anything", () => {
+  afterEach(() => adminDb.doc("settings/store").delete())
+
+  it("records BSD and whole minor units on everything an order creates", async () => {
+    const item = await product("rf-x", 5, 33_333)
+    await coupon("BSD-7", { value: 7 })
+    const created = await buy("rf-buyer", [[item, 3]], "BSD-7")
+    await confirmOrderPayment(created.id, "sim")
+
+    expect(created.currency).toBe("BSD")
+    expect((await sub(created.id, "rf-x")).currency).toBe("BSD")
+    for (const amount of [
+      created.subtotalMinor,
+      created.discountMinor,
+      created.totalMinor,
+      created.items[0].discountMinor,
+    ]) {
+      expect(Number.isInteger(amount)).toBe(true)
+    }
+  })
+
+  it("refuses a product still priced in HTG instead of reading its digits as BSD", async () => {
+    const item = await product("rf-x", 5, 125_000)
+    await adminDb.doc(`products/${item}`).update({ currency: "HTG" })
+    await expect(buy("rf-buyer", [[item, 1]])).rejects.toThrow(
+      "n'est pas vendu en BSD"
+    )
+    expect(await stockOf(item)).toBe(5)
+  })
+
+  it("refuses an older fixed coupon, whose amount is in HTG", async () => {
+    const item = await product("rf-x", 5, 100_000)
+    await coupon("OLD-FIXED", { type: "fixed", value: 50_000 })
+    await expect(buy("rf-buyer", [[item, 1]], "OLD-FIXED")).rejects.toThrow(
+      "pas valable en BSD"
+    )
+    await coupon("OLD-PERCENT", { value: 10 })
+    const created = await buy("rf-buyer", [[item, 1]], "OLD-PERCENT")
+    expect(created.discountMinor).toBe(10_000)
+  })
+
+  it("leaves a historical HTG order and its refunds in HTG, with the same digits", async () => {
+    const item = await product("rf-x", 5, 125_000)
+    const created = await buy("rf-buyer", [[item, 2]])
+    await adminDb.doc(`orders/${created.id}`).update({
+      currency: "HTG",
+      status: "delivered",
+    })
+    await adminDb
+      .doc(`sellerOrders/${created.id}_rf-x`)
+      .update({ currency: "HTG" })
+    const before = await order(created.id)
+
+    const request = await createReturnRequest("rf-buyer", {
+      orderId: created.id,
+      items: [
+        { productId: item, variantId: "v", quantity: 1, reason: "Taille" },
+      ],
+      comment: null,
+      photoUrls: [],
+    })
+
+    expect(await refund(`return_${request.id}_rf-x`)).toMatchObject({
+      currency: "HTG",
+      amountMinor: 125_000,
+    })
+    const after = await order(created.id)
+    expect(after.currency).toBe("HTG")
+    expect(after.totalMinor).toBe(before.totalMinor)
+    expect(after.items).toEqual(before.items)
+  })
+
+  it("keeps selling in HTG until the store's currency is changed on purpose", async () => {
+    await adminDb.doc("settings/store").set({ currency: "HTG" })
+    const item = await product("rf-x", 5, 125_000)
+    await adminDb.doc(`products/${item}`).update({ currency: "HTG" })
+    const created = await buy("rf-buyer", [[item, 1]])
+    expect(created.currency).toBe("HTG")
+    expect(created.totalMinor).toBe(125_000)
   })
 })

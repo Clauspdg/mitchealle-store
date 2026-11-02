@@ -3,6 +3,7 @@ import { FieldValue, Timestamp } from "firebase-admin/firestore"
 
 import { adminDb } from "@/firebase/admin"
 import { applyBrandDefaults } from "@/config/brand"
+import { REFERENCE_CURRENCY } from "@/config/currency"
 import { siteConfig } from "@/config/site"
 import type {
   NotificationSettings,
@@ -34,7 +35,7 @@ const DEFAULT_STORE_SETTINGS: Omit<StoreSettingsDocument, "updatedAt"> = {
   defaultOgImageUrl: null,
   slogan: siteConfig.tagline,
   description: siteConfig.description,
-  currency: "HTG",
+  currency: REFERENCE_CURRENCY,
   language: "fr",
   timezone: "America/Port-au-Prince",
   contactEmail: "",

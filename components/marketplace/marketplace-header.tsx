@@ -55,6 +55,7 @@ export function MarketplaceHeader({
   const { user, loading } = useAuth()
   const pathname = usePathname()
   const [isScrolled, setIsScrolled] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
     function onScroll() {
@@ -95,7 +96,7 @@ export function MarketplaceHeader({
     >
       <div className="mx-auto grid max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-x-2 gap-y-2 px-4 py-2 md:gap-x-8 md:py-3">
         <div className="flex items-center gap-1">
-          <Sheet>
+          <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
             <SheetTrigger
               render={
                 <Button
@@ -112,7 +113,16 @@ export function MarketplaceHeader({
               <SheetHeader>
                 <SheetTitle>{storeSettings.storeName}</SheetTitle>
               </SheetHeader>
-              <nav className="flex flex-col gap-1 overflow-y-auto px-4">
+              <nav
+                className="flex flex-col gap-1 overflow-y-auto px-4"
+                onClick={(event) => {
+                  // The header stays mounted: the menu must not stay open
+                  // over the page a link leads to.
+                  if ((event.target as HTMLElement).closest("a")) {
+                    setMenuOpen(false)
+                  }
+                }}
+              >
                 {navLinks.map((item) => (
                   <Link
                     key={item.href}
