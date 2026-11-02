@@ -18,7 +18,7 @@ export default async function CartPage() {
 
   if (cart.items.length === 0) {
     return (
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-6 py-12">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-12 sm:px-6">
         <h1 className="font-heading text-3xl font-medium">Panier</h1>
         <EmptyState
           icon={ShoppingBagIcon}
@@ -65,10 +65,10 @@ export default async function CartPage() {
   const currency = lines[0]?.currency ?? "HTG"
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-6 py-12">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-12 sm:px-6">
       <h1 className="font-heading text-3xl font-medium">Panier</h1>
 
-      <div className="grid gap-8 lg:grid-cols-3">
+      <div className="grid gap-8 lg:grid-cols-3 [&>*]:min-w-0">
         <div className="divide-y lg:col-span-2">
           {lines.map(({ key, ...line }) => (
             <CartLineItem key={key} {...line} />

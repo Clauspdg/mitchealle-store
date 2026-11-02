@@ -4,10 +4,19 @@ import type { Metadata } from "next"
 import { LoginForm } from "@/features/auth/components/login-form"
 import { GoogleSignInButton } from "@/features/auth/components/google-sign-in-button"
 import { Separator } from "@/components/ui/separator"
+import { safeRedirectPath } from "@/lib/safe-redirect"
 
 export const metadata: Metadata = { title: "Connexion" }
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ redirect?: string | string[] }>
+}) {
+  const redirectTo = safeRedirectPath((await searchParams).redirect)
+  const keep =
+    redirectTo === "/" ? "" : `?redirect=${encodeURIComponent(redirectTo)}`
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1 text-center">
@@ -17,7 +26,7 @@ export default function LoginPage() {
         </p>
       </div>
 
-      <LoginForm />
+      <LoginForm redirectTo={redirectTo} />
 
       <div className="flex items-center gap-3">
         <Separator className="flex-1" />
@@ -25,7 +34,7 @@ export default function LoginPage() {
         <Separator className="flex-1" />
       </div>
 
-      <GoogleSignInButton />
+      <GoogleSignInButton redirectTo={redirectTo} />
 
       <div className="text-muted-foreground flex flex-col items-center gap-1 text-sm">
         <Link
@@ -37,7 +46,7 @@ export default function LoginPage() {
         <p>
           Pas encore de compte ?{" "}
           <Link
-            href="/register"
+            href={`/register${keep}`}
             className="text-foreground underline underline-offset-4"
           >
             Créer un compte

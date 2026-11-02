@@ -1,3 +1,4 @@
+import Link from "next/link"
 import type { Metadata } from "next"
 
 import { requireSession } from "@/lib/session.server"
@@ -5,12 +6,20 @@ import { getUserProfile } from "@/services/firestore/users"
 import { SignOutButton } from "@/features/auth/components/sign-out-button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { listSellerCenterStores } from "@/lib/seller-center.server"
+import { listApplicationsForApplicant } from "@/services/firestore/seller/applications"
 
 export const metadata: Metadata = { title: "Mon compte" }
 
 export default async function AccountPage() {
   const session = await requireSession()
-  const profile = await getUserProfile(session.uid)
+  const [profile, stores, applications] = await Promise.all([
+    getUserProfile(session.uid),
+    listSellerCenterStores(),
+    listApplicationsForApplicant(session.uid),
+  ])
+  const pending = applications.find((a) => a.status === "pending")
 
   return (
     <div className="flex flex-col gap-6">
@@ -40,6 +49,53 @@ export default async function AccountPage() {
             <p className="text-muted-foreground">
               Profil Firestore en cours de synchronisation...
             </p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Vendre sur C.L.A.G</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col items-start gap-3 text-sm">
+          {stores.length > 0 ? (
+            <>
+              <p>
+                {stores.length === 1
+                  ? `Votre boutique ${stores[0].name} est ouverte.`
+                  : `Vous gérez ${stores.length} boutiques.`}
+              </p>
+              <Button render={<Link href="/seller" />} nativeButton={false}>
+                Ouvrir l&apos;espace vendeur
+              </Button>
+            </>
+          ) : pending ? (
+            <>
+              <p>
+                Votre candidature « {pending.storeName} » est en cours
+                d&apos;examen.
+              </p>
+              <Link
+                href="/account/seller-application"
+                className="underline underline-offset-4"
+              >
+                Suivre ma candidature
+              </Link>
+            </>
+          ) : (
+            <>
+              <p className="text-muted-foreground">
+                Ouvrez votre boutique et vendez vos produits sur la marketplace.
+                Votre compte client reste inchangé.
+              </p>
+              <Button
+                render={<Link href="/account/seller-application" />}
+                nativeButton={false}
+                variant="outline"
+              >
+                Déposer une candidature
+              </Button>
+            </>
           )}
         </CardContent>
       </Card>

@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import {
@@ -20,8 +19,9 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-export function RegisterForm() {
-  const router = useRouter()
+/** `redirectTo` is already checked by `safeRedirectPath` on the page:
+ * the visitor goes back to what they were doing, not to their account. */
+export function RegisterForm({ redirectTo = "/" }: { redirectTo?: string }) {
   const [submitting, setSubmitting] = useState(false)
 
   const {
@@ -55,7 +55,9 @@ export function RegisterForm() {
       await syncSessionCookie(idToken)
 
       toast.success("Compte créé. Vérifiez votre email pour le confirmer.")
-      router.push("/account")
+      // A full navigation: the next page is rendered with the new session
+      // cookie, and the auth page can't redirect in between.
+      window.location.assign(redirectTo)
     } catch (error) {
       toast.error(getAuthErrorMessage(error))
     } finally {
