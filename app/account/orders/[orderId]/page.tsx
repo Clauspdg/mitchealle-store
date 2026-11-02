@@ -15,6 +15,8 @@ import {
   SELLER_ORDER_STATUS_LABELS,
 } from "@/features/sellers/lib/seller-labels"
 import { listSubOrdersOfOrder } from "@/services/firestore/seller/orders"
+import { listRefundsForOrder } from "@/services/firestore/refunds"
+import { RefundList } from "@/features/refunds/components/refund-list"
 
 export const metadata: Metadata = { title: "Détail de la commande" }
 
@@ -31,10 +33,11 @@ export default async function OrderDetailPage({
   const order = await getOrder(orderId)
   if (!order || order.userId !== session.uid) notFound()
 
-  const [payments, invoice, subOrders] = await Promise.all([
+  const [payments, invoice, subOrders, refunds] = await Promise.all([
     listPaymentsForOrder(orderId),
     getInvoiceForOrder(orderId),
     listSubOrdersOfOrder(orderId),
+    listRefundsForOrder(orderId),
   ])
 
   return (
@@ -123,6 +126,13 @@ export default async function OrderDetailPage({
         <div className="flex flex-col gap-4 rounded-xl border p-4">
           <h2 className="font-heading text-base font-medium">Suivi</h2>
           <OrderTimeline history={order.statusHistory} />
+
+          {refunds.length > 0 ? (
+            <div className="border-t pt-3">
+              <h3 className="mb-2 text-sm font-medium">Remboursements</h3>
+              <RefundList refunds={refunds} />
+            </div>
+          ) : null}
 
           {subOrders.length > 0 ? (
             <div className="border-t pt-3">

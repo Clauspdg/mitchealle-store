@@ -1,3 +1,4 @@
+import { allocateProRata } from "@/lib/seller-orders"
 import type { Coupon } from "@/types/coupon"
 
 export interface CouponValidationLine {
@@ -24,7 +25,15 @@ export type CouponRejectionCode =
   | "not_eligible"
 
 export type CouponValidationResult =
-  | { valid: true; discountMinor: number; freeShipping: boolean }
+  | {
+      valid: true
+      discountMinor: number
+      freeShipping: boolean
+      /** The discount line by line, in the order of `context.items`: only
+       * eligible lines get a share, and the shares add up to
+       * `discountMinor` exactly. */
+      lineDiscountsMinor: number[]
+    }
   | { valid: false; reason: string; code: CouponRejectionCode }
 
 /**
@@ -92,7 +101,7 @@ export function validateCoupon(
     }
   }
 
-  const eligibleItems = context.items.filter((item) => {
+  const isEligible = (item: CouponValidationLine) => {
     if (
       coupon.allowedProductIds !== null &&
       !coupon.allowedProductIds.includes(item.productId)
@@ -106,7 +115,8 @@ export function validateCoupon(
       return false
     }
     return true
-  })
+  }
+  const eligibleItems = context.items.filter(isEligible)
 
   if (eligibleItems.length === 0) {
     return {
@@ -121,12 +131,24 @@ export function validateCoupon(
     0
   )
   if (coupon.type === "freeShipping") {
-    return { valid: true, discountMinor: 0, freeShipping: true }
+    return {
+      valid: true,
+      discountMinor: 0,
+      freeShipping: true,
+      lineDiscountsMinor: context.items.map(() => 0),
+    }
   }
   const discountMinor =
     coupon.type === "percentage"
       ? Math.round(eligibleSubtotalMinor * (coupon.value / 100))
       : Math.min(coupon.value, eligibleSubtotalMinor)
 
-  return { valid: true, discountMinor, freeShipping: false }
+  const lineDiscountsMinor = allocateProRata(
+    discountMinor,
+    context.items.map((item) =>
+      isEligible(item) ? item.unitPriceMinor * item.quantity : 0
+    )
+  )
+
+  return { valid: true, discountMinor, freeShipping: false, lineDiscountsMinor }
 }

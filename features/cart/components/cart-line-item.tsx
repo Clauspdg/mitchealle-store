@@ -74,11 +74,13 @@ export function CartLineItem({
     })
   }
 
+  // Phones: name and price first, quantity and line total underneath, the
+  // remove button always within reach. From `sm` up, a single row.
   return (
-    <div className="flex items-center gap-4 py-4">
+    <div className="flex items-start gap-3 py-4 sm:items-center sm:gap-4">
       <Link
         href={`/products/${productSlug}`}
-        className="bg-muted size-20 shrink-0 overflow-hidden rounded-md"
+        className="bg-muted size-16 shrink-0 overflow-hidden rounded-md sm:size-20"
       >
         {imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- external Storage URL
@@ -90,36 +92,42 @@ export function CartLineItem({
         ) : null}
       </Link>
 
-      <div className="flex flex-1 flex-col gap-1">
-        <Link
-          href={`/products/${productSlug}`}
-          className="font-heading text-base"
-        >
-          {productName}
-        </Link>
-        {variantLabel ? (
-          <span className="text-muted-foreground text-xs">{variantLabel}</span>
-        ) : null}
-        <span className="text-sm">
-          {formatPriceMinor(unitPriceMinor, currency)}
-        </span>
+      <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <Link
+            href={`/products/${productSlug}`}
+            className="font-heading text-base break-words"
+          >
+            {productName}
+          </Link>
+          {variantLabel ? (
+            <span className="text-muted-foreground text-xs">
+              {variantLabel}
+            </span>
+          ) : null}
+          <span className="text-sm">
+            {formatPriceMinor(unitPriceMinor, currency)}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between gap-3 sm:gap-4">
+          <QuantityStepper
+            value={localQuantity}
+            onChange={handleQuantityChange}
+            max={maxQuantity}
+            disabled={isPending}
+          />
+          <span className="text-right text-sm font-medium whitespace-nowrap sm:w-24">
+            {formatPriceMinor(unitPriceMinor * localQuantity, currency)}
+          </span>
+        </div>
       </div>
-
-      <QuantityStepper
-        value={localQuantity}
-        onChange={handleQuantityChange}
-        max={maxQuantity}
-        disabled={isPending}
-      />
-
-      <span className="w-24 text-right text-sm font-medium">
-        {formatPriceMinor(unitPriceMinor * localQuantity, currency)}
-      </span>
 
       <Button
         type="button"
         variant="ghost"
         size="icon"
+        className="shrink-0"
         disabled={isPending}
         onClick={handleRemove}
         aria-label="Retirer du panier"

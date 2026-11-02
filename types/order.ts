@@ -39,6 +39,10 @@ export interface OrderItem {
   sellerName?: string
   /** Commission rate frozen at order time, in basis points. */
   commissionBpsSnapshot?: number
+  /** This line's share of the coupon discount: only lines the coupon
+   * applies to get one, and all shares add up to the order's
+   * `discountMinor`. Absent when the line got no discount. */
+  discountMinor?: number
 }
 
 export interface OrderStatusHistoryEntry {

@@ -423,12 +423,67 @@ async function seedModeration() {
   await batch.commit()
 }
 
+// The house catalog sells from the warehouse `inventory`, as in
+// production: without these documents a house product can't be ordered.
+async function seedHouseInventory() {
+  const batch = db.batch()
+  for (let index = 3; index <= 24; index += 3) {
+    const id = `demo-produit-${index}`
+    const product = (await db.collection("products").doc(id).get()).data()
+    const variant = product.variants[0]
+    batch.set(db.collection("inventory").doc(`${id}_${variant.id}`), {
+      productId: id,
+      variantId: variant.id,
+      sku: variant.sku,
+      warehouseLocation: "main",
+      quantityOnHand: variant.stock,
+      quantityReserved: 0,
+      quantityInTransit: 0,
+      quantityDamaged: 0,
+      quantityAvailable: variant.stock,
+      reorderThreshold: 2,
+      isLowStock: variant.stock <= 2,
+      lastRestockedAt: now,
+      updatedAt: now,
+    })
+  }
+  await batch.commit()
+}
+
+// A coupon limited to one product of the Mode store: only that line may
+// receive a discount share.
+async function seedCoupon() {
+  await db
+    .collection("coupons")
+    .doc("demo-coupon-mode")
+    .set({
+      sellerId: null,
+      code: "DEMOMODE10",
+      type: "percentage",
+      value: 10,
+      startsAt: null,
+      expiresAt: null,
+      maxUses: null,
+      usedCount: 0,
+      minPurchaseMinor: null,
+      allowedCategoryIds: null,
+      allowedProductIds: ["demo-produit-1"],
+      allowedUserIds: null,
+      isActive: true,
+      createdBy: "demo-admin",
+      createdAt: now,
+      updatedAt: now,
+    })
+}
+
 await seedUsers()
 await seedCategories()
 await seedSellers()
 await seedApplication()
 await seedProducts()
 await seedModeration()
+await seedHouseInventory()
+await seedCoupon()
 console.log(
   `Jeu de démonstration chargé sur ${projectId}${usesEmulators ? " (émulateurs)" : ""}.`
 )

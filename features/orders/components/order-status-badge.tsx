@@ -11,7 +11,9 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
   delivered: "Livrée",
   cancelled: "Annulée",
   refund_requested: "Remboursement demandé",
-  refunded: "Remboursée",
+  // The amounts themselves are tracked one by one in `refunds`, each
+  // "demandé", "en attente" or "effectué".
+  refunded: "Remboursement accordé",
 }
 
 const STATUS_VARIANTS: Record<

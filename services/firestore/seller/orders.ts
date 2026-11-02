@@ -11,6 +11,12 @@ import {
 } from "@/lib/seller-orders"
 import type { SellerContext } from "@/lib/seller-session.server"
 import { SellerWorkflowError } from "@/services/firestore/seller/applications"
+import {
+  createRefundOnce,
+  moveRefund,
+  refundRef,
+} from "@/services/firestore/refunds"
+import { lineNetMinor, refundId } from "@/lib/refunds"
 import type { OrderDocument, OrderItem } from "@/types/order"
 import type { ProductDocument } from "@/types/product"
 import type {
@@ -253,7 +259,10 @@ export async function transitionSellerOrder(
     const giveBack =
       releasesStock(to) &&
       (subOrder.stockState === "held" || subOrder.stockState === "sold")
-    const [products, orderSnap, siblings] = await Promise.all([
+    // A paid sub-order cancelled leaves the customer owed its net amount.
+    const owesRefund =
+      to === "cancelled" && subOrder.status !== "awaiting_payment"
+    const [products, orderSnap, siblings, refundSnap] = await Promise.all([
       giveBack
         ? readProducts(
             tx,
@@ -262,6 +271,9 @@ export async function transitionSellerOrder(
         : Promise.resolve(new Map<string, ProductDocument | undefined>()),
       tx.get(orderRef),
       tx.get(subOrdersQuery(subOrder.orderId)),
+      owesRefund
+        ? tx.get(refundRef(refundId("store_cancellation", subOrderId)))
+        : Promise.resolve(null),
     ])
 
     if (giveBack) {
@@ -292,6 +304,32 @@ export async function transitionSellerOrder(
     })
 
     const order = orderSnap.data() as OrderDocument | undefined
+    if (refundSnap && order) {
+      createRefundOnce(
+        tx,
+        refundSnap,
+        {
+          orderId: subOrder.orderId,
+          orderNumber: subOrder.orderNumber,
+          userId: order.userId,
+          sellerId: subOrder.sellerId,
+          sellerName: subOrder.sellerName,
+          source: "store_cancellation",
+          sourceId: subOrderId,
+          amountMinor: subOrder.netSalesMinor,
+          currency: subOrder.currency,
+          status: "pending",
+          lines: subOrder.items.map((item) => ({
+            productId: item.productId,
+            variantId: item.variantId,
+            nameSnapshot: item.nameSnapshot,
+            quantity: item.quantity,
+            amountMinor: lineNetMinor(item),
+          })),
+        },
+        actorUid
+      )
+    }
     if (order && order.items.every(isStoreLine)) {
       const statuses = siblings.docs.map((doc) =>
         doc.id === subOrderId ? to : (doc.data() as SellerOrderDocument).status
@@ -435,6 +473,11 @@ export async function decideSellerReturn(
           sellerReturn.items.map((item) => item.productId)
         )
       : new Map<string, ProductDocument | undefined>()
+    const refundSnap = await tx.get(
+      refundRef(
+        refundId("store_return", sellerReturn.returnId, context.sellerId)
+      )
+    )
     if (restock) {
       applyStockChange(
         tx,
@@ -463,6 +506,14 @@ export async function decideSellerReturn(
       }),
       updatedAt: FieldValue.serverTimestamp(),
     })
+    // Received: the amount is now owed. Refused: nothing is.
+    moveRefund(
+      tx,
+      refundSnap,
+      decision.status === "received" ? "pending" : "void",
+      context.uid,
+      decision.status === "rejected" ? decision.reason : null
+    )
     return { changed: true }
   })
 }

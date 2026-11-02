@@ -18,6 +18,8 @@ import { PrintOrderButton } from "@/features/orders/components/print-order-butto
 import { DownloadInvoiceButton } from "@/features/invoices/components/download-invoice-button"
 import { ReturnStatusBadge } from "@/features/returns/components/return-status-badge"
 import { AdminSubOrders } from "@/features/sellers/components/admin-sub-orders"
+import { RefundList } from "@/features/refunds/components/refund-list"
+import { listRefundsForOrder } from "@/services/firestore/refunds"
 import { listSubOrdersOfOrder } from "@/services/firestore/seller/orders"
 
 export const metadata: Metadata = { title: "Détail de la commande" }
@@ -36,11 +38,12 @@ export default async function AdminOrderDetailPage({
   const order = await getOrder(id)
   if (!order) notFound()
 
-  const [payments, invoice, returns, subOrders] = await Promise.all([
+  const [payments, invoice, returns, subOrders, refunds] = await Promise.all([
     listPaymentsForOrder(id),
     getInvoiceForOrder(id),
     listReturnsForOrder(id),
     listSubOrdersOfOrder(id),
+    listRefundsForOrder(id),
   ])
 
   return (
@@ -234,6 +237,19 @@ export default async function AdminOrderDetailPage({
 
           <div className="flex flex-col gap-6">
             <AdminSubOrders subOrders={subOrders} />
+            {refunds.length > 0 ? (
+              <section className="flex flex-col gap-3 rounded-xl border p-4">
+                <h2 className="font-heading text-base font-medium">
+                  Remboursements
+                </h2>
+                <p className="text-muted-foreground text-xs">
+                  Aucun paiement n&apos;est effectué depuis la boutique : un
+                  remboursement en attente est réglé à part, puis enregistré
+                  ici.
+                </p>
+                <RefundList refunds={refunds} canComplete />
+              </section>
+            ) : null}
             <div className="print:hidden">
               <OrderStatusControl
                 order={{ id: order.id, status: order.status }}
