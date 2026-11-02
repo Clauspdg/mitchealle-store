@@ -825,7 +825,7 @@ describe("partial returns per store", () => {
     })
   })
 
-  it("keeps the admin's whole-order refund away from returns with store lines", async () => {
+  it("never turns a store return into a whole-order refund", async () => {
     const { orderId, x } = await deliveredOrder()
     const request = await createReturnRequest("buyer-1", {
       orderId,
@@ -833,9 +833,16 @@ describe("partial returns per store", () => {
       comment: null,
       photoUrls: [],
     })
+    // A step can't be skipped, and the last one only records refunds.
     await expect(
       updateReturnStatus(request.id, "refunded", "ord-admin")
-    ).rejects.toThrow("articles de boutiques")
+    ).rejects.toThrow("n'est pas possible")
+    for (const status of ["approved", "received"] as const) {
+      await updateReturnStatus(request.id, status, "ord-admin")
+    }
+    await expect(
+      updateReturnStatus(request.id, "refunded", "ord-admin")
+    ).rejects.toThrow("doit encore réceptionner")
     expect((await parent(orderId)).status).toBe("delivered")
   })
 })

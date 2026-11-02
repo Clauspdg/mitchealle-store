@@ -50,6 +50,7 @@ describe("validateCoupon", () => {
       valid: true,
       discountMinor: 250,
       freeShipping: false,
+      lineDiscountsMinor: [200, 50],
     })
   })
 
@@ -62,6 +63,7 @@ describe("validateCoupon", () => {
       valid: true,
       discountMinor: 2500,
       freeShipping: false,
+      lineDiscountsMinor: [2000, 500],
     })
   })
 
@@ -132,6 +134,8 @@ describe("validateCoupon", () => {
       valid: true,
       discountMinor: 200,
       freeShipping: false,
+      // The ineligible line gets no share.
+      lineDiscountsMinor: [200, 0],
     })
   })
 
@@ -169,6 +173,42 @@ describe("validateCoupon", () => {
       valid: true,
       discountMinor: 0,
       freeShipping: true,
+      lineDiscountsMinor: [0, 0],
     })
+  })
+
+  it("spreads a fixed discount over eligible products only, to the minor unit", () => {
+    const items = [
+      {
+        productId: "house",
+        categoryId: "cat_a",
+        unitPriceMinor: 3333,
+        quantity: 1,
+      },
+      {
+        productId: "store-x",
+        categoryId: "cat_a",
+        unitPriceMinor: 3333,
+        quantity: 2,
+      },
+      {
+        productId: "store-y",
+        categoryId: "cat_b",
+        unitPriceMinor: 9999,
+        quantity: 1,
+      },
+    ]
+    const result = validateCoupon(
+      baseCoupon({
+        type: "fixed",
+        value: 1000,
+        allowedProductIds: ["house", "store-x"],
+      }),
+      { uid: "u1", items }
+    )
+    expect(result.valid && result.lineDiscountsMinor).toEqual([333, 667, 0])
+    expect(
+      result.valid && result.lineDiscountsMinor.reduce((a, b) => a + b, 0)
+    ).toBe(1000)
   })
 })

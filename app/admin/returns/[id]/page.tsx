@@ -10,6 +10,8 @@ import { AdminSidebar } from "@/components/layout/admin-sidebar"
 import { ReturnStatusBadge } from "@/features/returns/components/return-status-badge"
 import { ReturnStatusControl } from "@/features/returns/components/return-status-control"
 import { OrderTimeline } from "@/features/orders/components/order-timeline"
+import { RefundList } from "@/features/refunds/components/refund-list"
+import { listRefundsForReturn } from "@/services/firestore/refunds"
 
 export const metadata: Metadata = { title: "Détail du retour" }
 export const dynamic = "force-dynamic"
@@ -27,7 +29,10 @@ export default async function AdminReturnDetailPage({
   const returnRequest = await getReturn(id)
   if (!returnRequest) notFound()
 
-  const order = await getOrder(returnRequest.orderId)
+  const [order, refunds] = await Promise.all([
+    getOrder(returnRequest.orderId),
+    listRefundsForReturn(id),
+  ])
 
   return (
     <div className="flex flex-1">
@@ -103,7 +108,21 @@ export default async function AdminReturnDetailPage({
                 id: returnRequest.id,
                 status: returnRequest.status,
               }}
+              tracksRefunds={refunds.length > 0}
             />
+            {refunds.length > 0 ? (
+              <section className="flex flex-col gap-3 rounded-xl border p-4">
+                <h2 className="font-heading text-base font-medium">
+                  Remboursements
+                </h2>
+                <p className="text-muted-foreground text-xs">
+                  Les articles des boutiques sont réceptionnés par chaque
+                  boutique. « Remboursé » enregistre comme effectués tous les
+                  remboursements en attente de ce retour.
+                </p>
+                <RefundList refunds={refunds} canComplete />
+              </section>
+            ) : null}
             <div className="flex flex-col gap-4 rounded-xl border p-4">
               <h2 className="font-heading text-base font-medium">Suivi</h2>
               <OrderTimeline history={returnRequest.statusHistory} />

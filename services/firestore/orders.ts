@@ -31,7 +31,7 @@ import { decodeCursor, encodeCursor } from "@/utils/pagination"
 import { isMissingIndexError } from "@/utils/firestore-errors"
 import { HOUSE_SELLER_ID } from "@/config/seller"
 import { resolveSellerId } from "@/lib/seller-access"
-import { allocateProRata, computeSellerOrderAmounts } from "@/lib/seller-orders"
+import { computeSellerOrderAmounts } from "@/lib/seller-orders"
 import {
   applyStockChange,
   cancelSubOrders,
@@ -43,6 +43,12 @@ import {
   sellerOrderId,
   subOrdersQuery,
 } from "@/services/firestore/seller/orders"
+import {
+  createRefundOnce,
+  refundRef,
+  refundsOfOrderQuery,
+} from "@/services/firestore/refunds"
+import { refundId } from "@/lib/refunds"
 import type { SellerDocument } from "@/types/seller"
 import type { SellerOrderDocument } from "@/types/seller-order"
 import type { Address } from "@/types/user"
@@ -319,6 +325,11 @@ export async function createOrderFromCart(
         throw new Error(result.reason)
       }
       discountMinor = result.discountMinor
+      // Each line keeps its own share of the discount (eligible lines
+      // only): stores' figures and refunds are computed from it.
+      result.lineDiscountsMinor.forEach((share, index) => {
+        if (share > 0) items[index] = { ...items[index], discountMinor: share }
+      })
       if (result.freeShipping) {
         effectiveShippingFeeMinor = 0
       }
@@ -436,13 +447,10 @@ async function commitOrderWithSubOrders(
   const sellerIds = [...new Set(storeItems.map((item) => item.sellerId!))]
   const grossOf = (lines: OrderItem[]) =>
     lines.reduce((sum, item) => sum + item.lineTotalMinor, 0)
-  // The house part comes first and keeps its share of the discount.
-  const [, ...discountShares] = allocateProRata(doc.discountMinor, [
-    grossOf(doc.items.filter((item) => !isStoreLine(item))),
-    ...sellerIds.map((id) =>
-      grossOf(storeItems.filter((item) => item.sellerId === id))
-    ),
-  ])
+  // A store's share of the discount is what its own lines received, so a
+  // coupon limited to other products never reduces its sales.
+  const discountOf = (lines: OrderItem[]) =>
+    lines.reduce((sum, item) => sum + (item.discountMinor ?? 0), 0)
 
   return adminDb.runTransaction(async (tx) => {
     const [products, sellerSnaps] = await Promise.all([
@@ -519,12 +527,12 @@ async function commitOrderWithSubOrders(
     tx.create(orderRef, written)
 
     const address = doc.delivery.addressSnapshot
-    sellerIds.forEach((sellerId, index) => {
+    sellerIds.forEach((sellerId) => {
       const seller = sellers.get(sellerId)!
       const lines = items.filter((item) => item.sellerId === sellerId)
       const amounts = computeSellerOrderAmounts(
         grossOf(lines),
-        discountShares[index],
+        discountOf(lines),
         seller.commissionBps
       )
       const subOrder: SellerOrderDocument = {
@@ -802,12 +810,40 @@ export async function refundOrder(
     ) {
       return null
     }
-    const products = await readProducts(tx, productIdsOf(subOrders.docs))
+    const [products, refunds, ownRefund] = await Promise.all([
+      readProducts(tx, productIdsOf(subOrders.docs)),
+      tx.get(refundsOfOrderQuery(orderId)),
+      tx.get(refundRef(refundId("order_refund", orderId))),
+    ])
     cancelSubOrders(tx, subOrders.docs, products, ["to_prepare", "preparing"], {
       actorUid: "system",
       note: reason,
       reference: orderId,
     })
+    // The whole order is owed back, less what other refunds (a store's
+    // cancellation, a return) already cover.
+    const current = toOrder(snap.id, snap.data()!)
+    const alreadyOwed = refunds.docs
+      .filter((doc) => doc.id !== ownRefund.id && doc.get("status") !== "void")
+      .reduce((sum, doc) => sum + (doc.get("amountMinor") as number), 0)
+    createRefundOnce(
+      tx,
+      ownRefund,
+      {
+        orderId,
+        orderNumber: current.orderNumber,
+        userId: current.userId,
+        sellerId: null,
+        sellerName: null,
+        source: "order_refund",
+        sourceId: orderId,
+        amountMinor: Math.max(0, current.totalMinor - alreadyOwed),
+        currency: current.currency,
+        status: "pending",
+        lines: [],
+      },
+      "system"
+    )
     tx.update(orderRef, {
       status: "refunded",
       statusHistory: FieldValue.arrayUnion({

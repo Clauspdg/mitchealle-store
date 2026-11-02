@@ -208,6 +208,9 @@ service cloud.firestore {
     // Phase 4: `sellerOrders` (one store's part of an order, with the
     // shipping address) and `sellerReturns` are server-only: a store reads
     // its own part through the Seller Center, never from the client.
+    //
+    // Phase 4.1: `refunds` (amounts owed back to customers) is server-only:
+    // customers and admins read it through server-rendered pages.
 
     match /{document=**} {
       allow read, write: if false;

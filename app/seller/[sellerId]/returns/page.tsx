@@ -3,6 +3,8 @@ import { Undo2Icon } from "lucide-react"
 
 import { requireSellerCenterPage } from "@/lib/seller-center.server"
 import { listSellerReturns } from "@/services/firestore/seller/orders"
+import { getRefunds } from "@/services/firestore/refunds"
+import { REFUND_STATUS_LABELS, refundId } from "@/lib/refunds"
 import { EmptyState } from "@/components/shared/empty-state"
 import { Badge } from "@/components/ui/badge"
 import { SellerReturnActions } from "@/features/sellers/components/seller-return-actions"
@@ -23,6 +25,11 @@ export default async function SellerReturnsPage({
   const { sellerId } = await params
   const context = await requireSellerCenterPage(sellerId, "returns.manage")
   const returns = await listSellerReturns(context)
+  const refunds = await getRefunds(
+    returns.map((item) => refundId("store_return", item.returnId, sellerId))
+  )
+  const refundStatusOf = (returnId: string) =>
+    refunds.get(refundId("store_return", returnId, sellerId))?.status
 
   return (
     <>
@@ -66,9 +73,12 @@ export default async function SellerReturnsPage({
                 ))}
               </ul>
               <p className="text-muted-foreground text-xs">
-                Demandé le {formatDateTime(item.createdAt.toMillis())} · à
-                rembourser{" "}
-                {formatPriceMinor(item.refundDueMinor, item.currency)}
+                Demandé le {formatDateTime(item.createdAt.toMillis())} ·{" "}
+                {formatPriceMinor(item.refundDueMinor, item.currency)} après
+                remise
+                {refundStatusOf(item.returnId)
+                  ? ` · ${REFUND_STATUS_LABELS[refundStatusOf(item.returnId)!]}`
+                  : ""}
               </p>
               {item.status === "requested" ? (
                 <SellerReturnActions
