@@ -1,3 +1,4 @@
+import { STORE_TIME } from "@/config/region"
 import "server-only"
 
 import {
@@ -49,7 +50,9 @@ export async function getStockAlerts(): Promise<StockAlert[]> {
 
   // 🟡 Arrivage en retard — données réelles.
   for (const shipment of overdueShipments) {
-    const eta = shipment.expectedAt?.toDate().toLocaleDateString("fr-FR")
+    const eta = shipment.expectedAt
+      ?.toDate()
+      .toLocaleDateString("fr-FR", STORE_TIME)
     alerts.push({
       id: `shipmentOverdue-${shipment.id}`,
       type: "shipmentOverdue",

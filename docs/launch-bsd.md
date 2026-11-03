@@ -22,8 +22,35 @@ Ces étapes touchent les données de production : elles demandent une autorisati
 4. Recréer les coupons à montant fixe ou à minimum d'achat, ou les enregistrer à nouveau : ils prennent alors la devise de la boutique. Les pourcentages sans minimum restent valables.
 5. Fixer le taux de taxe (`settings/shipping.taxRatePercent`).
 
+6. Passer aussi `settings/store` aux valeurs Bahamas dans la même page : langue `en`, fuseau `America/Nassau`, pays `Bahamas`. Ces valeurs par défaut ne s'appliquent qu'à une boutique sans document enregistré.
+7. Renseigner la devise du coût sur les produits qui ont un coût (fiche produit, Tarification). Sans elle, le coût reste hors de la valeur du stock.
+
+## Région Bahamas
+
+- Les valeurs de lancement sont dans `config/region.ts` : pays `BS`, fuseau `America/Nassau`, langue `en`, indicatif `+1 242`.
+- Dates : toutes les dates affichées et les jours du tableau de bord suivent le fuseau de Nassau. Le champ « Fuseau horaire » de l'administration est enregistré, mais l'affichage ne le lit pas.
+- Adresses : le pays par défaut est `BS`. Le formulaire demande alors l'île, la localité, la rue et un repère, et une boîte postale facultative. Les autres pays restent disponibles et gardent leurs libellés. Les adresses enregistrées ne changent pas.
+- Comptes : les nouveaux comptes reçoivent la préférence `en-BS`. Les comptes existants gardent la leur.
+
+## Limite importante : la langue
+
+L'interface n'a aucun système de traduction : tout le texte est écrit en français dans le code. La valeur `en` est enregistrée, mais le site reste affiché en français, et `<html lang="fr">` reste en place parce qu'il décrit le contenu réel. L'anglais par défaut, le français au choix et le créole demandent un chantier de traduction séparé.
+
+## Valeur du stock
+
+- Elle est calculée à partir du coût des produits, plus du prix de vente.
+- Chaque coût a sa propre devise (`costCurrency`). La devise de vente d'un produit ne dit rien de celle de son coût.
+- La carte affiche uniquement les coûts dans la devise de la boutique. Les autres devises sont listées à part, ni converties ni additionnées. Les coûts sans devise et les produits sans coût sont comptés dans un avertissement.
+
+## Remboursements
+
+- Un retour rembourse uniquement les unités retournées, y compris sur une commande uniquement maison.
+- Quand toutes les unités d'une commande maison sont revenues, la commande passe à `refunded` et le dernier retour rend aussi ce que les lignes ne portent pas : livraison et taxe des anciennes commandes.
+- Le total des remboursements dus ou effectués ne dépasse jamais `totalMinor`.
+- Commandes anciennes : leur remise est répartie sur les lignes au moment du calcul, sans rien enregistrer. Leur taxe n'est pas répartie : un retour partiel ne la rend pas, seule la clôture de la commande la rend.
+- Les retours déjà en cours au moment de la mise en production reçoivent leur remboursement à la réception.
+
 ## À décider ou vérifier avant le lancement
 
 - Paiement réel : confirmer auprès de Stripe et PayPal que le compte accepte le BSD. Le BSD ne semble pas faire partie des devises prises en charge par PayPal : à confirmer. Les flux de paiement réels n'ont pas été modifiés.
-- Valeurs par défaut hors devise, inchangées : langue `fr`, fuseau `America/Port-au-Prince`, pays `Haïti`, exemple de téléphone `+509`.
-- Valeur du stock de l'administration (`/admin/stock`) : toujours affichée en USD, à partir des coûts d'achat.
+- Précommandes : `createOrderFromCart` n'en crée pas, mais une ancienne commande de type `preorder` dont seul l'acompte a été payé n'est pas distinguée : le plafond reste `totalMinor`.

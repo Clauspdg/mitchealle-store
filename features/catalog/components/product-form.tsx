@@ -1,5 +1,6 @@
 "use client"
 
+import { STORE_TIME } from "@/config/region"
 import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -420,6 +421,23 @@ export function ProductForm({
                   onChangeMinor={(minor) => setValue("costMinor", minor)}
                 />
               </div>
+              <div className={isSeller ? "hidden" : "flex flex-col gap-1.5"}>
+                <Label htmlFor="costCurrency">Devise du coût</Label>
+                <Input
+                  id="costCurrency"
+                  value={watch("costCurrency") ?? ""}
+                  onChange={(event) =>
+                    setValue("costCurrency", event.target.value || null)
+                  }
+                  placeholder="BSD"
+                  aria-invalid={!!errors.costCurrency}
+                />
+                {errors.costCurrency && (
+                  <p className="text-destructive text-sm">
+                    {errors.costCurrency.message}
+                  </p>
+                )}
+              </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="basePriceMinor">Prix</Label>
                 <MoneyInput
@@ -614,7 +632,7 @@ export function ProductForm({
           {product && (
             <Badge variant="secondary" className="ml-2">
               Dernière modification :{" "}
-              {new Date(product.updatedAt).toLocaleString("fr-FR")}
+              {new Date(product.updatedAt).toLocaleString("fr-FR", STORE_TIME)}
             </Badge>
           )}
         </div>

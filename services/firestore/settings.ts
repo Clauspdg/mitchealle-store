@@ -4,6 +4,7 @@ import { FieldValue, Timestamp } from "firebase-admin/firestore"
 import { adminDb } from "@/firebase/admin"
 import { applyBrandDefaults } from "@/config/brand"
 import { REFERENCE_CURRENCY } from "@/config/currency"
+import { LAUNCH_REGION } from "@/config/region"
 import { siteConfig } from "@/config/site"
 import type {
   NotificationSettings,
@@ -36,8 +37,8 @@ const DEFAULT_STORE_SETTINGS: Omit<StoreSettingsDocument, "updatedAt"> = {
   slogan: siteConfig.tagline,
   description: siteConfig.description,
   currency: REFERENCE_CURRENCY,
-  language: "fr",
-  timezone: "America/Port-au-Prince",
+  language: LAUNCH_REGION.language,
+  timezone: LAUNCH_REGION.timezone,
   contactEmail: "",
   contactPhone: "",
   whatsapp: null,
@@ -47,7 +48,7 @@ const DEFAULT_STORE_SETTINGS: Omit<StoreSettingsDocument, "updatedAt"> = {
     city: "",
     region: "",
     postalCode: null,
-    country: "Haïti",
+    country: LAUNCH_REGION.countryName,
   },
   socialLinks: {
     instagram: null,

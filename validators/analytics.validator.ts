@@ -1,3 +1,4 @@
+import { storeDay } from "@/config/region"
 export interface OrdersByDayPoint {
   date: string
   orderCount: number
@@ -24,7 +25,7 @@ export function computeOrdersByDay(
 ): OrdersByDayPoint[] {
   const byDay = new Map<string, { orderCount: number; revenueMinor: number }>()
   for (const order of orders) {
-    const date = order.createdAt.toDate().toISOString().slice(0, 10)
+    const date = storeDay(order.createdAt.toDate())
     const entry = byDay.get(date) ?? { orderCount: 0, revenueMinor: 0 }
     entry.orderCount += 1
     entry.revenueMinor += order.totalMinor

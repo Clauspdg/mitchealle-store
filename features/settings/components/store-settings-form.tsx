@@ -250,7 +250,7 @@ export function StoreSettingsForm({
             <Input
               id="store-timezone"
               {...register("timezone")}
-              placeholder="America/Port-au-Prince"
+              placeholder="America/Nassau"
             />
           </div>
         </div>

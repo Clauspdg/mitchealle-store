@@ -14,6 +14,7 @@ import {
   addressFormSchema,
   type AddressFormInput,
 } from "@/schemas/address.schema"
+import { BAHAMAS_ISLANDS, LAUNCH_REGION } from "@/config/region"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -38,13 +39,13 @@ function addressToFormDefaults(address?: AddressWithId): AddressFormInput {
   return {
     label: address?.label ?? "",
     recipientName: address?.recipientName ?? "",
-    phone: address?.phone ?? "",
+    phone: address?.phone ?? `${LAUNCH_REGION.phonePrefix} `,
     line1: address?.line1 ?? "",
     line2: address?.line2 ?? null,
     city: address?.city ?? "",
     region: address?.region ?? "",
     postalCode: address?.postalCode ?? null,
-    country: address?.country ?? "HT",
+    country: address?.country ?? LAUNCH_REGION.country,
     isDefault: address?.isDefault ?? false,
   }
 }
@@ -73,6 +74,9 @@ export function AddressFormDialog({
     setOpen(next)
     if (next) reset(addressToFormDefaults(address))
   }
+
+  const inBahamas =
+    watch("country").trim().toUpperCase() === LAUNCH_REGION.country
 
   async function onSubmit(data: AddressFormInput) {
     setSubmitting(true)
@@ -154,10 +158,15 @@ export function AddressFormDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="addr-line1">Adresse</Label>
+            <Label htmlFor="addr-line1">
+              {inBahamas ? "Rue et repère" : "Adresse"}
+            </Label>
             <Input
               id="addr-line1"
               {...register("line1")}
+              placeholder={
+                inBahamas ? "Rue, quartier, maison ou repère proche" : undefined
+              }
               aria-invalid={!!errors.line1}
             />
             {errors.line1 ? (
@@ -178,7 +187,9 @@ export function AddressFormDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="addr-city">Ville</Label>
+              <Label htmlFor="addr-city">
+                {inBahamas ? "Localité" : "Ville"}
+              </Label>
               <Input
                 id="addr-city"
                 {...register("city")}
@@ -186,20 +197,38 @@ export function AddressFormDialog({
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="addr-region">Département</Label>
+              <Label htmlFor="addr-region">
+                {inBahamas ? "Île" : "Région"}
+              </Label>
               <Input
                 id="addr-region"
+                list={inBahamas ? "addr-islands" : undefined}
                 {...register("region")}
                 aria-invalid={!!errors.region}
               />
+              <datalist id="addr-islands">
+                {BAHAMAS_ISLANDS.map((island) => (
+                  <option key={island} value={island} />
+                ))}
+              </datalist>
+              {errors.region ? (
+                <p className="text-destructive text-sm">
+                  {errors.region.message}
+                </p>
+              ) : null}
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="addr-postal">Code postal (optionnel)</Label>
+              <Label htmlFor="addr-postal">
+                {inBahamas
+                  ? "Boîte postale (optionnel)"
+                  : "Code postal (optionnel)"}
+              </Label>
               <Input
                 id="addr-postal"
+                placeholder={inBahamas ? "P.O. Box N-1234" : undefined}
                 value={watch("postalCode") ?? ""}
                 onChange={(event) =>
                   setValue("postalCode", event.target.value || null)
@@ -211,7 +240,7 @@ export function AddressFormDialog({
               <Input
                 id="addr-country"
                 {...register("country")}
-                placeholder="HT"
+                placeholder={LAUNCH_REGION.country}
                 aria-invalid={!!errors.country}
               />
             </div>

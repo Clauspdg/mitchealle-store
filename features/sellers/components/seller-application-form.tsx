@@ -1,5 +1,6 @@
 "use client"
 
+import { LAUNCH_REGION } from "@/config/region"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
@@ -151,7 +152,7 @@ export function SellerApplicationForm({
               name="contactPhone"
               type="tel"
               required
-              placeholder="+509 3700 0000"
+              defaultValue={`${LAUNCH_REGION.phonePrefix} `}
             />
           </div>
         </div>

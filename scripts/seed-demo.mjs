@@ -162,7 +162,9 @@ async function seedProducts() {
       brand: "Marque démo",
       brandId: null,
       upc: null,
-      costMinor: null,
+      // Cost cases for the stock value: BSD, unknown currency, none.
+      costMinor: index % 9 === 6 ? null : 1000,
+      costCurrency: index % 9 === 3 ? null : "BSD",
       categoryId: `demo-${(index % CATEGORIES.length) + 1}`,
       collectionIds: [],
       images: [
@@ -285,7 +287,7 @@ async function seedApplication() {
     contact: {
       legalName: "Atelier démo",
       contactEmail: "atelier@demo.clag.test",
-      contactPhone: "+509 3700 0000",
+      contactPhone: "+1 242 555 0100",
       city: "Jacmel",
     },
     status: "pending",
@@ -496,6 +498,8 @@ async function seedLegacyHtg() {
       nameLower: "produit historique htg",
       sku: "DEMO-HTG",
       basePriceMinor: 125000,
+      costMinor: 80000,
+      costCurrency: "HTG",
       salePriceMinor: null,
       currency: "HTG",
       variants: source.variants.map((variant) => ({
@@ -503,6 +507,24 @@ async function seedLegacyHtg() {
         id: "demo-produit-htg-standard",
         sku: "DEMO-HTG-STD",
       })),
+    })
+  await db
+    .collection("inventory")
+    .doc("demo-produit-htg_demo-produit-htg-standard")
+    .set({
+      productId: "demo-produit-htg",
+      variantId: "demo-produit-htg-standard",
+      sku: "DEMO-HTG-STD",
+      warehouseLocation: "main",
+      quantityOnHand: 5,
+      quantityReserved: 0,
+      quantityInTransit: 0,
+      quantityDamaged: 0,
+      quantityAvailable: 5,
+      reorderThreshold: 0,
+      isLowStock: false,
+      lastRestockedAt: null,
+      updatedAt: now,
     })
   const buyer = await auth.getUserByEmail("acheteur1@demo.clag.test")
   const items = [

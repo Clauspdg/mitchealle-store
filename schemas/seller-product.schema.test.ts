@@ -42,6 +42,7 @@ describe("sellerProductSchema", () => {
     "sellerId",
     "sellerName",
     "costMinor",
+    "costCurrency",
     "brandId",
     "collectionIds",
     "isPreorderable",

@@ -35,6 +35,13 @@ const productFormObject = z.object({
   brandId: z.string().nullable(),
   upc: z.string().nullable(),
   costMinor: z.number().int().min(0).nullable(),
+  costCurrency: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(/^[A-Z]{3}$/, "Code devise ISO 4217 (3 lettres, ex. BSD).")
+    .nullable()
+    .optional(),
   material: z.string().nullable(),
   weightGrams: z.number().int().min(0).nullable(),
   dimensionsCm: z.string().nullable(),

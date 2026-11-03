@@ -9,12 +9,8 @@ import type { Return } from "@/types/return"
 
 export function ReturnStatusControl({
   returnRequest,
-  tracksRefunds = false,
 }: {
   returnRequest: Pick<Return, "id" | "status">
-  /** Orders with store lines: stock comes back at reception and the last
-   * step only records the refunds as done. */
-  tracksRefunds?: boolean
 }) {
   const router = useRouter()
 
@@ -50,16 +46,12 @@ export function ReturnStatusControl({
         ) : null}
         {returnRequest.status === "approved" ? (
           <Button size="sm" onClick={() => handleTransition("received")}>
-            {tracksRefunds
-              ? "Marquer comme reçu (remet en stock)"
-              : "Marquer comme reçu"}
+            Marquer comme reçu (remet en stock)
           </Button>
         ) : null}
         {returnRequest.status === "received" ? (
           <Button size="sm" onClick={() => handleTransition("refunded")}>
-            {tracksRefunds
-              ? "Enregistrer le remboursement comme effectué"
-              : "Rembourser (restaure le stock)"}
+            Enregistrer le remboursement comme effectué
           </Button>
         ) : null}
       </div>

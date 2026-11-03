@@ -1,3 +1,4 @@
+import { STORE_TIME } from "@/config/region"
 import { Badge } from "@/components/ui/badge"
 import {
   Table,
@@ -80,7 +81,7 @@ export function ActivityLogTable({ entries }: { entries: ActivityLogEntry[] }) {
                 {entry.userAgent ? ` · ${entry.userAgent}` : ""}
               </TableCell>
               <TableCell className="text-muted-foreground whitespace-nowrap">
-                {entry.createdAt.toDate().toLocaleString("fr-FR")}
+                {entry.createdAt.toDate().toLocaleString("fr-FR", STORE_TIME)}
               </TableCell>
             </TableRow>
           ))}

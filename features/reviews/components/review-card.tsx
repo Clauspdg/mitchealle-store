@@ -1,3 +1,4 @@
+import { STORE_TIME } from "@/config/region"
 import Image from "next/image"
 import { BadgeCheckIcon, StarIcon } from "lucide-react"
 
@@ -7,6 +8,7 @@ import type { Review } from "@/types/review"
 
 function formatReviewDate(review: Review): string {
   return review.createdAt.toDate().toLocaleDateString("fr-FR", {
+    ...STORE_TIME,
     year: "numeric",
     month: "long",
     day: "numeric",

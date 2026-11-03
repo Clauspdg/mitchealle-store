@@ -1,3 +1,4 @@
+import { STORE_TIME } from "@/config/region"
 import Link from "next/link"
 
 import { ReturnStatusBadge } from "@/features/returns/components/return-status-badge"
@@ -49,7 +50,9 @@ export function ReturnsTable({ returns }: { returns: Return[] }) {
                 <ReturnStatusBadge status={returnRequest.status} />
               </TableCell>
               <TableCell className="text-muted-foreground">
-                {returnRequest.createdAt.toDate().toLocaleDateString("fr-FR")}
+                {returnRequest.createdAt
+                  .toDate()
+                  .toLocaleDateString("fr-FR", STORE_TIME)}
               </TableCell>
             </TableRow>
           ))}

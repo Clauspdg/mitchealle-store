@@ -37,7 +37,31 @@ export default async function StockDashboardPage({
     createdAt: createdAt.toMillis(),
   }))
 
-  const statCards = [
+  const { stockValue } = stats
+  const stockValueNotes = [
+    stockValue.otherCurrencies.length > 0
+      ? `Autres devises, ni converties ni additionnées : ${stockValue.otherCurrencies
+          .map(({ currency, valueMinor }) =>
+            formatPriceMinor(valueMinor, currency)
+          )
+          .join(" · ")}`
+      : null,
+    stockValue.unknownCurrencyCount > 0
+      ? `Devise du coût inconnue : ${stockValue.unknownCurrencyCount} produit(s) non compté(s)`
+      : null,
+    stockValue.missingCostCount > 0
+      ? `Coût non renseigné : ${stockValue.missingCostCount} produit(s) non compté(s)`
+      : null,
+    stats.stockValueTruncated
+      ? "Estimation partielle (catalogue volumineux, voir §9)"
+      : null,
+  ].filter((note) => note !== null)
+
+  const statCards: {
+    label: string
+    value: string | number
+    notes?: string[]
+  }[] = [
     {
       label: "Stock total (unités)",
       value: stats.totalOnHand.toLocaleString("fr-FR"),
@@ -47,11 +71,12 @@ export default async function StockDashboardPage({
     { label: "Produits en transit", value: stats.productsInTransitCount },
     { label: "Arrivages à venir", value: stats.upcomingShipmentsCount },
     {
-      label: "Valeur estimée du stock",
-      value: formatPriceMinor(stats.estimatedValueMinor, "USD"),
-      note: stats.estimatedValueTruncated
-        ? "Estimation partielle (catalogue volumineux, voir §9)"
-        : undefined,
+      label: `Valeur du stock au coût (${stockValue.currency})`,
+      value:
+        stockValue.valueMinor === null
+          ? "Non disponible"
+          : formatPriceMinor(stockValue.valueMinor, stockValue.currency),
+      notes: stockValueNotes,
     },
   ]
 
@@ -75,11 +100,14 @@ export default async function StockDashboardPage({
                 <p className="text-2xl font-semibold tabular-nums">
                   {stat.value}
                 </p>
-                {stat.note && (
-                  <p className="text-muted-foreground mt-1 text-xs">
-                    {stat.note}
+                {stat.notes?.map((note) => (
+                  <p
+                    key={note}
+                    className="mt-1 text-xs text-amber-700 dark:text-amber-500"
+                  >
+                    {note}
                   </p>
-                )}
+                ))}
               </CardContent>
             </Card>
           ))}

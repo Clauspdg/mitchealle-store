@@ -1,3 +1,4 @@
+import { STORE_TIME } from "@/config/region"
 import type { OrderStatusHistoryEntry } from "@/types/order"
 
 export function OrderTimeline({
@@ -13,7 +14,7 @@ export function OrderTimeline({
           <div className="flex flex-col">
             <span className="font-medium capitalize">{entry.status}</span>
             <span className="text-muted-foreground text-xs">
-              {entry.at.toDate().toLocaleString("fr-FR")}
+              {entry.at.toDate().toLocaleString("fr-FR", STORE_TIME)}
             </span>
             {entry.note ? (
               <span className="text-muted-foreground text-xs">

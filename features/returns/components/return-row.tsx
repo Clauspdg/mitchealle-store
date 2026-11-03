@@ -1,3 +1,4 @@
+import { STORE_TIME } from "@/config/region"
 import Link from "next/link"
 
 import { ReturnStatusBadge } from "@/features/returns/components/return-status-badge"
@@ -16,6 +17,7 @@ export function ReturnRow({ returnRequest }: { returnRequest: Return }) {
         </span>
         <span className="text-muted-foreground text-xs">
           {returnRequest.createdAt.toDate().toLocaleDateString("fr-FR", {
+            ...STORE_TIME,
             day: "numeric",
             month: "long",
             year: "numeric",

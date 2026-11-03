@@ -1,5 +1,7 @@
 import { z } from "zod"
 
+import { isPhoneNumber } from "@/config/region"
+
 /**
  * Text fields of the seller application form. `.strict()` rejects anything
  * else, so a forged `status`, `sellerId` or `commissionBps` fails the whole
@@ -16,7 +18,8 @@ export const sellerApplicationSchema = z
     contactPhone: z
       .string()
       .trim()
-      .regex(/^\+?[0-9 ().-]{6,25}$/),
+      .regex(/^\+?[0-9 ().-]{6,25}$/)
+      .refine(isPhoneNumber),
     city: z.string().trim().min(2).max(80),
   })
   .strict()

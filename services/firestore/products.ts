@@ -135,6 +135,8 @@ function buildDocData(input: ProductFormInput) {
     brandId: input.brandId,
     upc: input.upc,
     costMinor: input.costMinor,
+    costCurrency:
+      input.costMinor === null ? null : (input.costCurrency ?? null),
     material: input.material,
     weightGrams: input.weightGrams,
     dimensionsCm: input.dimensionsCm,
@@ -233,6 +235,7 @@ export async function duplicateProduct(
     brandId: source.brandId ?? null,
     upc: null,
     costMinor: source.costMinor ?? null,
+    costCurrency: source.costCurrency ?? null,
     material: source.material ?? null,
     weightGrams: source.weightGrams ?? null,
     dimensionsCm: source.dimensionsCm ?? null,

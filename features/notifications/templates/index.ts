@@ -146,6 +146,22 @@ export function renderReturnRejectedEmail(
   }
 }
 
+export function renderReturnRefundedEmail(
+  returnRequest: Return,
+  amountMinor: number,
+  currency: string
+): EmailTemplate {
+  return {
+    subject: "Votre retour a été remboursé",
+    html: emailLayout(`
+      <p>Bonjour,</p>
+      <p>Votre retour a été remboursé pour un montant de
+      <strong>${formatPriceMinor(amountMinor, currency)}</strong>.</p>
+      ${emailButton(`${APP_URL}/account/returns/${returnRequest.id}`, "Voir ma demande")}
+    `),
+  }
+}
+
 /**
  * Built, tested, ready — deliberately NOT wired into the live password-reset
  * flow. That flow already uses Firebase's own hosted reset email

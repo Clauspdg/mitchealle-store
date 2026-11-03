@@ -1,3 +1,4 @@
+import { STORE_TIME } from "@/config/region"
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 
@@ -116,8 +117,9 @@ export default async function ShipmentDetailPage({
             <div>
               <p className="text-muted-foreground">ETA</p>
               <p>
-                {shipment.expectedAt?.toDate().toLocaleDateString("fr-FR") ??
-                  "—"}
+                {shipment.expectedAt
+                  ?.toDate()
+                  .toLocaleDateString("fr-FR", STORE_TIME) ?? "—"}
               </p>
             </div>
             <div>
@@ -130,13 +132,18 @@ export default async function ShipmentDetailPage({
             </div>
             <div>
               <p className="text-muted-foreground">Date de commande</p>
-              <p>{shipment.orderedAt.toDate().toLocaleDateString("fr-FR")}</p>
+              <p>
+                {shipment.orderedAt
+                  .toDate()
+                  .toLocaleDateString("fr-FR", STORE_TIME)}
+              </p>
             </div>
             <div>
               <p className="text-muted-foreground">Date de réception</p>
               <p>
-                {shipment.receivedAt?.toDate().toLocaleDateString("fr-FR") ??
-                  "—"}
+                {shipment.receivedAt
+                  ?.toDate()
+                  .toLocaleDateString("fr-FR", STORE_TIME) ?? "—"}
               </p>
             </div>
             <div>

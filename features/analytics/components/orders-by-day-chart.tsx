@@ -17,6 +17,8 @@ const LINE_COLOR = "#2a78d6"
 
 function formatDateLabel(date: string): string {
   return new Date(date).toLocaleDateString("fr-FR", {
+    // `date` is already the store's calendar day.
+    timeZone: "UTC",
     day: "numeric",
     month: "short",
   })

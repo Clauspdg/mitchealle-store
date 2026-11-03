@@ -1,3 +1,4 @@
+import { STORE_TIME } from "@/config/region"
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 
@@ -178,7 +179,7 @@ export default async function AdminOrderDetailPage({
                         order.currency
                       )}
                       {order.preorder.depositPaidAt
-                        ? ` (${order.preorder.depositPaidAt.toDate().toLocaleDateString("fr-FR")})`
+                        ? ` (${order.preorder.depositPaidAt.toDate().toLocaleDateString("fr-FR", STORE_TIME)})`
                         : ""}
                     </span>
                   </div>
@@ -190,7 +191,7 @@ export default async function AdminOrderDetailPage({
                         order.currency
                       )}
                       {order.preorder.balanceDueAt
-                        ? ` (dû le ${order.preorder.balanceDueAt.toDate().toLocaleDateString("fr-FR")})`
+                        ? ` (dû le ${order.preorder.balanceDueAt.toDate().toLocaleDateString("fr-FR", STORE_TIME)})`
                         : ""}
                     </span>
                   </div>
@@ -202,7 +203,7 @@ export default async function AdminOrderDetailPage({
                       <span>
                         {order.preorder.estimatedReadyAt
                           .toDate()
-                          .toLocaleDateString("fr-FR")}
+                          .toLocaleDateString("fr-FR", STORE_TIME)}
                       </span>
                     </div>
                   ) : null}

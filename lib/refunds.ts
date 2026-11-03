@@ -1,5 +1,7 @@
-import type { OrderItem } from "@/types/order"
+import { allocateProRata } from "@/lib/seller-orders"
+import type { OrderDocument, OrderItem } from "@/types/order"
 import type { RefundLine, RefundSource, RefundStatus } from "@/types/refund"
+import type { ReturnItem } from "@/types/return"
 
 export const REFUND_STATUS_LABELS: Record<RefundStatus, string> = {
   requested: "Remboursement demandé",
@@ -103,6 +105,108 @@ export function refundForUnits(
   const amountLeft = Math.max(0, lineNetMinor(item) - already.amountMinor)
   if (quantity >= unitsLeft) return amountLeft
   return Math.round((amountLeft * quantity) / unitsLeft)
+}
+
+type RefundableOrder = Pick<
+  OrderDocument,
+  "items" | "discountMinor" | "totalMinor"
+>
+
+/**
+ * The order's lines carrying its whole discount. Older orders have a discount
+ * no line holds: it is spread over their lines here, never saved, so a
+ * partial refund can't give back money the customer didn't pay. Their tax is
+ * left alone: it has no line share, and only a whole-order refund returns it.
+ */
+export function refundableLines(
+  order: Pick<OrderDocument, "items" | "discountMinor">
+): OrderItem[] {
+  const shared = order.items.reduce(
+    (sum, item) => sum + (item.discountMinor ?? 0),
+    0
+  )
+  const unshared = (order.discountMinor ?? 0) - shared
+  if (unshared <= 0) return order.items
+  const shares = allocateProRata(unshared, order.items.map(lineNetMinor))
+  return order.items.map((item, index) =>
+    shares[index] > 0
+      ? { ...item, discountMinor: (item.discountMinor ?? 0) + shares[index] }
+      : item
+  )
+}
+
+/** What an order has given back so far, and what it can still give back. */
+export interface RefundTally {
+  lines: Map<string, LineRefunded>
+  paidLeftMinor: number
+}
+
+/**
+ * Refund lines for returned items, each worth its share of what its line has
+ * left, and never more than what is left of the order's total. The tally
+ * moves on with each item.
+ */
+export function takeRefundLines(
+  order: RefundableOrder,
+  items: Pick<ReturnItem, "productId" | "variantId" | "quantity">[],
+  tally: RefundTally
+): RefundLine[] {
+  const lines = refundableLines(order)
+  const taken: RefundLine[] = []
+  for (const item of items) {
+    const key = lineKey(item)
+    const line = lines.find((candidate) => lineKey(candidate) === key)
+    if (!line) continue
+    const before = tally.lines.get(key) ?? { units: 0, amountMinor: 0 }
+    const amountMinor = Math.min(
+      refundForUnits(line, before, item.quantity),
+      tally.paidLeftMinor
+    )
+    tally.lines.set(key, {
+      units: before.units + item.quantity,
+      amountMinor: before.amountMinor + amountMinor,
+    })
+    tally.paidLeftMinor -= amountMinor
+    taken.push({
+      productId: item.productId,
+      variantId: item.variantId,
+      nameSnapshot: line.nameSnapshot,
+      quantity: item.quantity,
+      amountMinor,
+    })
+  }
+  return taken
+}
+
+/** `waitingReturns` are returns from before house orders tracked refunds:
+ * they have no refund yet, but their units are taken. */
+export function tallyRefunds(
+  order: RefundableOrder,
+  refunds: { status: RefundStatus; amountMinor: number; lines: RefundLine[] }[],
+  waitingReturns: { items: ReturnItem[] }[] = []
+): RefundTally {
+  const given = refunds
+    .filter((refund) => refund.status !== "void")
+    .reduce((sum, refund) => sum + refund.amountMinor, 0)
+  const tally: RefundTally = {
+    lines: refundedByLine(refunds),
+    paidLeftMinor: Math.max(0, order.totalMinor - given),
+  }
+  for (const { items } of waitingReturns) takeRefundLines(order, items, tally)
+  return tally
+}
+
+/** True once refunds owed or paid cover every unit of the order. */
+export function everyUnitRefunded(
+  order: Pick<OrderDocument, "items">,
+  refunds: { status: RefundStatus; lines: RefundLine[] }[]
+): boolean {
+  const covered = refundedByLine(
+    refunds.filter((refund) => refund.status !== "requested")
+  )
+  return order.items.every(
+    (item) => (covered.get(lineKey(item))?.units ?? 0) >= item.quantity
+  )
 }
 
 export function refundId(

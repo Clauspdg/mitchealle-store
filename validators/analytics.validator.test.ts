@@ -54,14 +54,30 @@ describe("computeOrdersByDay", () => {
 
   it("returns dates sorted chronologically regardless of input order", () => {
     const result = computeOrdersByDay([
-      { createdAt: timestamp(new Date("2026-01-05")), totalMinor: 100 },
-      { createdAt: timestamp(new Date("2026-01-01")), totalMinor: 100 },
+      {
+        createdAt: timestamp(new Date("2026-01-05T12:00:00Z")),
+        totalMinor: 100,
+      },
+      {
+        createdAt: timestamp(new Date("2026-01-01T12:00:00Z")),
+        totalMinor: 100,
+      },
     ])
 
     expect(result.map((point) => point.date)).toEqual([
       "2026-01-01",
       "2026-01-05",
     ])
+  })
+
+  it("counts a late evening sale on that day at the store", () => {
+    const result = computeOrdersByDay([
+      {
+        createdAt: timestamp(new Date("2026-01-02T03:00:00Z")),
+        totalMinor: 100,
+      },
+    ])
+    expect(result[0].date).toBe("2026-01-01")
   })
 
   it("returns an empty array for no orders", () => {

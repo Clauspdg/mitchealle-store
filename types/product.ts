@@ -52,6 +52,9 @@ export interface ProductDocument {
   brandId: string | null
   upc: string | null
   costMinor: number | null
+  /** What `costMinor` is in, set when the cost is entered. Absent on older
+   * products: `currency` is the selling currency and says nothing of it. */
+  costCurrency?: string | null
   categoryId: string
   collectionIds: string[]
   images: ProductImage[]

@@ -1,5 +1,6 @@
 "use client"
 
+import { STORE_TIME } from "@/config/region"
 import { useMemo } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { DownloadIcon } from "lucide-react"
@@ -151,7 +152,10 @@ export function RecentMovementsTable({
                     {movement.reference ?? "—"}
                   </TableCell>
                   <TableCell className="text-muted-foreground text-xs">
-                    {new Date(movement.createdAt).toLocaleString("fr-FR")}
+                    {new Date(movement.createdAt).toLocaleString(
+                      "fr-FR",
+                      STORE_TIME
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

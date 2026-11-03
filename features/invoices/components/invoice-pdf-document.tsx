@@ -1,3 +1,4 @@
+import { STORE_TIME } from "@/config/region"
 import path from "node:path"
 import {
   Document,
@@ -101,7 +102,9 @@ export function InvoicePdfDocument({ invoice }: { invoice: Invoice }) {
             <Text style={styles.invoiceTitle}>FACTURE</Text>
             <Text style={styles.metaText}>{invoice.invoiceNumber}</Text>
             <Text style={styles.metaText}>
-              {invoice.createdAt.toDate().toLocaleDateString("fr-FR")}
+              {invoice.createdAt
+                .toDate()
+                .toLocaleDateString("fr-FR", STORE_TIME)}
             </Text>
           </View>
         </View>

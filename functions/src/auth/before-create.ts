@@ -52,7 +52,7 @@ export const beforeCreate = beforeUserCreated(async (event) => {
             phone: user.phoneNumber ?? null,
             photoURL: user.photoURL ?? null,
             role: "customer",
-            locale: "fr-HT",
+            locale: "en-BS",
             defaultAddressId: null,
             marketingOptIn: false,
             adminNotes: null,

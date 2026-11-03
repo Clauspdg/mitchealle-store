@@ -1,3 +1,8 @@
+import {
+  computeStockValue,
+  type StockValue,
+} from "@/validators/stock-value.validator"
+import type { ProductDocument } from "@/types/product"
 import "server-only"
 import { AggregateField, Timestamp } from "firebase-admin/firestore"
 
@@ -165,13 +170,10 @@ export async function countProductsInTransit(): Promise<number> {
  * `analytics`) is the documented upgrade path if this ever matters at
  * scale.
  */
-export async function estimateStockValueMinor(
+export async function estimateStockValue(
+  storeCurrency: string,
   limit = 500
-): Promise<{
-  estimatedValueMinor: number
-  scanned: number
-  truncated: boolean
-}> {
+): Promise<StockValue & { scanned: number; truncated: boolean }> {
   const snapshot = await adminDb
     .collection(INVENTORY_COLLECTION)
     .limit(limit + 1)
@@ -185,19 +187,27 @@ export async function estimateStockValueMinor(
   const productDocs = await Promise.all(
     productIds.map((id) => adminDb.collection("products").doc(id).get())
   )
-  const priceByProductId = new Map(
+  const costByProductId = new Map(
     productDocs
       .filter((doc) => doc.exists)
-      .map((doc) => [doc.id, doc.data()!.basePriceMinor as number])
+      .map((doc) => [doc.id, doc.data() as ProductDocument])
   )
 
-  const estimatedValueMinor = docs.reduce((sum, doc) => {
-    const data = doc.data() as InventoryDocument
-    const price = priceByProductId.get(data.productId) ?? 0
-    return sum + price * data.quantityOnHand
-  }, 0)
+  const value = computeStockValue(
+    docs.map((doc) => {
+      const data = doc.data() as InventoryDocument
+      const product = costByProductId.get(data.productId)
+      return {
+        productId: data.productId,
+        quantityOnHand: data.quantityOnHand,
+        costMinor: product?.costMinor,
+        costCurrency: product?.costCurrency,
+      }
+    }),
+    storeCurrency
+  )
 
-  return { estimatedValueMinor, scanned: docs.length, truncated }
+  return { ...value, scanned: docs.length, truncated }
 }
 
 interface MovementParams {

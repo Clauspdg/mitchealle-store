@@ -34,6 +34,7 @@ export function RequestReturnDialog({
   const [submitting, setSubmitting] = useState(false)
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set())
   const [reasons, setReasons] = useState<Record<string, string>>({})
+  const [quantities, setQuantities] = useState<Record<string, number>>({})
   const [comment, setComment] = useState("")
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
@@ -81,7 +82,8 @@ export function RequestReturnDialog({
       .map((item) => ({
         productId: item.productId,
         variantId: item.variantId,
-        quantity: item.quantity,
+        quantity:
+          quantities[itemKey(item.productId, item.variantId)] ?? item.quantity,
         reason: reasons[itemKey(item.productId, item.variantId)] ?? "",
       }))
 
@@ -141,6 +143,33 @@ export function RequestReturnDialog({
                     {item.nameSnapshot} × {item.quantity}
                   </Label>
                 </div>
+                {checked && item.quantity > 1 ? (
+                  <div className="flex items-center gap-2">
+                    <Label
+                      htmlFor={`return-quantity-${key}`}
+                      className="text-sm"
+                    >
+                      Quantité à retourner
+                    </Label>
+                    <Input
+                      id={`return-quantity-${key}`}
+                      type="number"
+                      min={1}
+                      max={item.quantity}
+                      className="w-20"
+                      value={quantities[key] ?? item.quantity}
+                      onChange={(event) =>
+                        setQuantities((current) => ({
+                          ...current,
+                          [key]: Math.min(
+                            item.quantity,
+                            Math.max(1, Number(event.target.value) || 1)
+                          ),
+                        }))
+                      }
+                    />
+                  </div>
+                ) : null}
                 {checked ? (
                   <Input
                     placeholder="Motif du retour"

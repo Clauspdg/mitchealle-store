@@ -1,3 +1,4 @@
+import { STORE_TIME } from "@/config/region"
 import type {
   ProductModerationStatus,
   SellerApplicationStatus,
@@ -112,6 +113,7 @@ export const PRODUCT_STATUS_LABELS: Record<string, string> = {
 export function formatDateTime(millis: number | null): string {
   return millis
     ? new Intl.DateTimeFormat("fr-FR", {
+        ...STORE_TIME,
         dateStyle: "medium",
         timeStyle: "short",
       }).format(millis)

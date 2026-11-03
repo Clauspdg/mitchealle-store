@@ -1,3 +1,4 @@
+import { STORE_TIME } from "@/config/region"
 import Link from "next/link"
 
 import { formatPriceMinor } from "@/utils/currency"
@@ -14,6 +15,7 @@ export function OrderRow({ order }: { order: Order }) {
         <span className="font-medium">{order.orderNumber}</span>
         <span className="text-muted-foreground text-xs">
           {order.createdAt.toDate().toLocaleDateString("fr-FR", {
+            ...STORE_TIME,
             day: "numeric",
             month: "long",
             year: "numeric",

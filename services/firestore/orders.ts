@@ -859,24 +859,27 @@ export async function refundOrder(
         )
       }
     }
-    createRefundOnce(
-      tx,
-      ownRefund,
-      {
-        orderId,
-        orderNumber: current.orderNumber,
-        userId: current.userId,
-        sellerId: null,
-        sellerName: null,
-        source: "order_refund",
-        sourceId: orderId,
-        amountMinor: Math.max(0, current.totalMinor - alreadyOwed),
-        currency: current.currency,
-        status: "pending",
-        lines: [],
-      },
-      "system"
-    )
+    const amountMinor = Math.max(0, current.totalMinor - alreadyOwed)
+    if (amountMinor > 0) {
+      createRefundOnce(
+        tx,
+        ownRefund,
+        {
+          orderId,
+          orderNumber: current.orderNumber,
+          userId: current.userId,
+          sellerId: null,
+          sellerName: null,
+          source: "order_refund",
+          sourceId: orderId,
+          amountMinor,
+          currency: current.currency,
+          status: "pending",
+          lines: [],
+        },
+        "system"
+      )
+    }
     tx.update(orderRef, {
       status: "refunded",
       statusHistory: FieldValue.arrayUnion({
@@ -887,16 +890,16 @@ export async function refundOrder(
       }),
       updatedAt: FieldValue.serverTimestamp(),
     })
-    // On an order with store lines, a received return already put its
-    // house units back.
+    // A received return already put its house units back, unless it dates
+    // from before returns had their own refund.
+    const refunded = new Set(refunds.docs.map((doc) => doc.get("sourceId")))
     const restocked = new Map<string, number>()
-    if (current.items.some(isStoreLine)) {
-      for (const doc of returns.docs) {
-        if (!["received", "refunded"].includes(doc.get("status"))) continue
-        for (const item of doc.get("items") as ReturnItem[]) {
-          const key = lineKey(item)
-          restocked.set(key, (restocked.get(key) ?? 0) + item.quantity)
-        }
+    for (const doc of returns.docs) {
+      if (!["received", "refunded"].includes(doc.get("status"))) continue
+      if (!refunded.has(doc.id)) continue
+      for (const item of doc.get("items") as ReturnItem[]) {
+        const key = lineKey(item)
+        restocked.set(key, (restocked.get(key) ?? 0) + item.quantity)
       }
     }
     return { order: current, restocked }

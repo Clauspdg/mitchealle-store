@@ -1,3 +1,4 @@
+import { STORE_TIME } from "@/config/region"
 import Link from "next/link"
 import type { Metadata } from "next"
 import { PlusIcon } from "lucide-react"
@@ -70,7 +71,9 @@ export default async function ProductsListPage({
     void updatedAt // stripped — only `createdAt` is displayed
     return {
       ...rest,
-      createdAtLabel: createdAt.toDate().toLocaleDateString("fr-FR"),
+      createdAtLabel: createdAt
+        .toDate()
+        .toLocaleDateString("fr-FR", STORE_TIME),
     }
   })
 

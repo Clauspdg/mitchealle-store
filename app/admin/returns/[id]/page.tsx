@@ -108,7 +108,6 @@ export default async function AdminReturnDetailPage({
                 id: returnRequest.id,
                 status: returnRequest.status,
               }}
-              tracksRefunds={refunds.length > 0}
             />
             {refunds.length > 0 ? (
               <section className="flex flex-col gap-3 rounded-xl border p-4">

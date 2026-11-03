@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import {
   canMoveRefund,
+  everyUnitRefunded,
   lineKey,
   lineNetMinor,
   paidForLines,
@@ -9,6 +10,9 @@ import {
   refundedByLine,
   refundForUnits,
   refundId,
+  refundableLines,
+  tallyRefunds,
+  takeRefundLines,
 } from "@/lib/refunds"
 import { REFUND_STATUSES } from "@/types/refund"
 
@@ -107,5 +111,111 @@ describe("refund statuses", () => {
     expect(refundId("store_return", "r1", "s1")).toBe("return_r1_s1")
     expect(refundId("house_return", "r1")).toBe("return_r1_house")
     expect(refundId("order_refund", "o1")).toBe("order_o1")
+  })
+})
+
+describe("refunds never exceed what was paid", () => {
+  const item = (quantity: number, lineTotalMinor: number) => ({
+    productId: "p",
+    variantId: "v",
+    nameSnapshot: "Produit",
+    imageSnapshot: "",
+    unitPriceMinor: lineTotalMinor / quantity,
+    quantity,
+    lineTotalMinor,
+  })
+  const items = [item(3, 30_000)]
+
+  it("spreads an older order's discount over its lines, without changing them", () => {
+    const order = { items, discountMinor: 5_000 }
+    expect(refundableLines(order)[0].discountMinor).toBe(5_000)
+    expect(items[0]).not.toHaveProperty("discountMinor")
+  })
+
+  it("leaves lines alone when they already hold the discount", () => {
+    const shared = [{ ...items[0], discountMinor: 1_001 }]
+    expect(refundableLines({ items: shared, discountMinor: 1_001 })).toBe(
+      shared
+    )
+  })
+
+  it("adds no tax to a line that holds none", () => {
+    const order = { items, discountMinor: 0, taxMinor: 900 }
+    expect(refundableLines(order)[0]).not.toHaveProperty("taxMinor")
+  })
+
+  it("stops at the order's total, whatever the lines say", () => {
+    const order = { items, discountMinor: 0, totalMinor: 12_000 }
+    const tally = tallyRefunds(order, [])
+    const lines = takeRefundLines(
+      order,
+      [{ productId: "p", variantId: "v", quantity: 2 }],
+      tally
+    )
+    expect(lines[0].amountMinor).toBe(12_000)
+    expect(tally.paidLeftMinor).toBe(0)
+    expect(
+      takeRefundLines(
+        order,
+        [{ productId: "p", variantId: "v", quantity: 1 }],
+        tally
+      )[0].amountMinor
+    ).toBe(0)
+  })
+
+  it("doesn't count a void refund as given back", () => {
+    const order = { items, discountMinor: 0, totalMinor: 30_000 }
+    const refunds = [
+      { status: "void" as const, amountMinor: 10_000, lines: [] },
+      { status: "pending" as const, amountMinor: 4_000, lines: [] },
+    ]
+    expect(tallyRefunds(order, refunds).paidLeftMinor).toBe(26_000)
+  })
+
+  it("holds a return with no refund of its own to its share", () => {
+    const order = { items, discountMinor: 1_001, totalMinor: 28_999 }
+    const waiting = [
+      {
+        items: [
+          { productId: "p", variantId: "v", quantity: 1, reason: "Taille" },
+        ],
+      },
+    ]
+    const tally = tallyRefunds(order, [], waiting)
+    expect(tally.lines.get("p_v")).toEqual({ units: 1, amountMinor: 9_666 })
+    expect(tally.paidLeftMinor).toBe(19_333)
+  })
+
+  it("adds up to exactly what was paid over any split", () => {
+    const order = { items, discountMinor: 1_001, totalMinor: 28_999 }
+    for (const split of [[3], [1, 2], [2, 1], [1, 1, 1]]) {
+      const tally = tallyRefunds(order, [])
+      for (const quantity of split) {
+        takeRefundLines(
+          order,
+          [{ productId: "p", variantId: "v", quantity }],
+          tally
+        )
+      }
+      expect(tally.paidLeftMinor).toBe(0)
+    }
+  })
+
+  it("waits for refunds owed or paid before saying every unit is back", () => {
+    const refund = (status: "requested" | "pending" | "void") => ({
+      status,
+      lines: [
+        {
+          productId: "p",
+          variantId: "v",
+          nameSnapshot: "",
+          quantity: 3,
+          amountMinor: 1,
+        },
+      ],
+    })
+    expect(everyUnitRefunded({ items }, [refund("requested")])).toBe(false)
+    expect(everyUnitRefunded({ items }, [refund("void")])).toBe(false)
+    expect(everyUnitRefunded({ items }, [refund("pending")])).toBe(true)
   })
 })

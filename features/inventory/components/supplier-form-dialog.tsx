@@ -150,7 +150,7 @@ export function SupplierFormDialog({
               <Input
                 id="sup-country"
                 {...register("country")}
-                placeholder="HT"
+                placeholder="BS"
               />
             </div>
           </div>

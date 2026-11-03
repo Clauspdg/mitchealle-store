@@ -1,5 +1,6 @@
 "use client"
 
+import { STORE_TIME } from "@/config/region"
 import { useState, type ReactElement } from "react"
 import { toast } from "sonner"
 
@@ -107,7 +108,10 @@ export function MovementHistoryDialog({
                     {movement.reason ?? "—"}
                   </TableCell>
                   <TableCell className="text-muted-foreground text-xs">
-                    {new Date(movement.createdAt).toLocaleString("fr-FR")}
+                    {new Date(movement.createdAt).toLocaleString(
+                      "fr-FR",
+                      STORE_TIME
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

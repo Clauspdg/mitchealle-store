@@ -1,5 +1,6 @@
 "use client"
 
+import { STORE_TIME } from "@/config/region"
 import Link from "next/link"
 
 import {
@@ -72,7 +73,10 @@ export function ShipmentsTable({
               </TableCell>
               <TableCell className="text-muted-foreground">
                 {shipment.expectedAt
-                  ? new Date(shipment.expectedAt).toLocaleDateString("fr-FR")
+                  ? new Date(shipment.expectedAt).toLocaleDateString(
+                      "fr-FR",
+                      STORE_TIME
+                    )
                   : "—"}
               </TableCell>
               <TableCell className="text-muted-foreground">

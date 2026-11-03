@@ -1,5 +1,6 @@
 "use server"
 
+import { LAUNCH_REGION } from "@/config/region"
 import { FieldValue } from "firebase-admin/firestore"
 
 import { requirePermission } from "@/lib/session.server"
@@ -59,7 +60,7 @@ export async function createStaffAccountAction(
           phone: user.phoneNumber ?? null,
           photoURL: user.photoURL ?? null,
           role: "customer",
-          locale: "fr-HT",
+          locale: LAUNCH_REGION.locale,
           defaultAddressId: null,
           marketingOptIn: false,
           adminNotes: null,

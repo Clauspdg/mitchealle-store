@@ -1,5 +1,6 @@
 "use client"
 
+import { STORE_TIME } from "@/config/region"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
@@ -82,7 +83,10 @@ export function CouponsTable({
               </TableCell>
               <TableCell className="text-muted-foreground">
                 {coupon.expiresAt
-                  ? new Date(coupon.expiresAt).toLocaleDateString("fr-FR")
+                  ? new Date(coupon.expiresAt).toLocaleDateString(
+                      "fr-FR",
+                      STORE_TIME
+                    )
                   : "—"}
               </TableCell>
               <TableCell>

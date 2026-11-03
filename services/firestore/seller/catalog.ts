@@ -154,6 +154,7 @@ export async function createSellerProduct(
     variants: toVariants(input.variants, () => undefined),
     brandId: null,
     costMinor: null,
+    costCurrency: null,
     collectionIds: [],
     status: "draft",
     isComingSoon: false,

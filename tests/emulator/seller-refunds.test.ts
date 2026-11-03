@@ -14,6 +14,7 @@ import {
   updateReturnStatus,
 } from "@/services/firestore/returns"
 import { completeRefund } from "@/services/firestore/refunds"
+import { getStockDashboardStats } from "@/services/firestore/stock-dashboard"
 import {
   decideSellerReturnAction,
   transitionSellerOrderAction,
@@ -524,31 +525,6 @@ describe("refund stages are explicit and idempotent", () => {
     expect((await refund(`order_${orderId}`))?.amountMinor).toBe(50_000)
     expect(await stockOf((await order(orderId)).items[1].productId)).toBe(5)
   })
-
-  it("keeps the historical refund for a house-only order", async () => {
-    const house = await product(null, 5, 20_000)
-    const created = await buy("rf-buyer", [[house, 1]])
-    await confirmOrderPayment(created.id, "sim")
-    await updateOrderStatus(created.id, "delivered", "rf-admin")
-    const request = await createReturnRequest("rf-buyer", {
-      orderId: created.id,
-      items: [
-        { productId: house, variantId: "v", quantity: 1, reason: "Taille" },
-      ],
-      comment: null,
-      photoUrls: [],
-    })
-    expect(await refundsOf(created.id)).toHaveLength(0)
-    for (const status of ["approved", "received", "refunded"] as const) {
-      await updateReturnStatus(request.id, status, "rf-admin")
-    }
-    expect((await order(created.id)).status).toBe("refunded")
-    expect(await onHandOf(house)).toBe(5)
-    expect(await refund(`order_${created.id}`)).toMatchObject({
-      status: "pending",
-      amountMinor: 20_000,
-    })
-  })
 })
 
 describe("refused returns and rounding", () => {
@@ -875,5 +851,323 @@ describe("the BSD launch never converts anything", () => {
     const created = await buy("rf-buyer", [[item, 1]])
     expect(created.currency).toBe("HTG")
     expect(created.totalMinor).toBe(125_000)
+  })
+})
+
+describe("a house order refunds only what comes back", () => {
+  const delivered = async (lines: [string, number][], code?: string) => {
+    const created = await buy("rf-buyer", lines, code ?? null)
+    await confirmOrderPayment(created.id, "sim")
+    await updateOrderStatus(created.id, "delivered", "rf-admin")
+    return created.id
+  }
+  const ask = (orderId: string, item: string, quantity: number) =>
+    createReturnRequest("rf-buyer", {
+      orderId,
+      items: [{ productId: item, variantId: "v", quantity, reason: "Taille" }],
+      comment: null,
+      photoUrls: [],
+    })
+  const accept = async (id: string) => {
+    for (const status of ["approved", "received", "refunded"] as const) {
+      await updateReturnStatus(id, status, "rf-admin")
+    }
+  }
+  const totalOwed = async (orderId: string) =>
+    (await refundsOf(orderId))
+      .filter((doc) => doc.get("status") !== "void")
+      .reduce((sum, doc) => sum + doc.get("amountMinor"), 0)
+  /** The same order as it was written before lines held their shares. */
+  const asOlderOrder = async (
+    orderId: string,
+    fields: Record<string, unknown>
+  ) => {
+    const { items } = await order(orderId)
+    await adminDb.doc(`orders/${orderId}`).update({
+      items: items.map(({ discountMinor, taxMinor, ...item }) => item),
+      ...fields,
+    })
+  }
+  /** A return as written before house returns had a refund of their own. */
+  const olderReturn = async (
+    orderId: string,
+    item: string,
+    quantity: number,
+    status: string
+  ) => {
+    const ref = adminDb.collection("returns").doc()
+    await ref.set({
+      orderId,
+      userId: "rf-buyer",
+      items: [{ productId: item, variantId: "v", quantity, reason: "Taille" }],
+      comment: null,
+      photoUrls: [],
+      status,
+      statusHistory: [],
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+    })
+    return ref.id
+  }
+
+  it("refunds one unit of three and leaves the order delivered", async () => {
+    const item = await product(null, 5, 20_000)
+    const orderId = await delivered([[item, 3]])
+    const request = await ask(orderId, item, 1)
+    expect(await refund(`return_${request.id}_house`)).toMatchObject({
+      status: "requested",
+      amountMinor: 20_000,
+    })
+
+    await updateReturnStatus(request.id, "approved", "rf-admin")
+    await updateReturnStatus(request.id, "received", "rf-admin")
+    expect(await onHandOf(item)).toBe(3)
+    expect((await refund(`return_${request.id}_house`))?.status).toBe("pending")
+    await updateReturnStatus(request.id, "refunded", "rf-admin")
+
+    expect((await order(orderId)).status).toBe("delivered")
+    expect(await refund(`order_${orderId}`)).toBeUndefined()
+    expect(await refund(`return_${request.id}_house`)).toMatchObject({
+      status: "completed",
+      amountMinor: 20_000,
+    })
+    expect(await totalOwed(orderId)).toBe(20_000)
+    expect(await onHandOf(item)).toBe(3)
+  })
+
+  it("refunds only the returned line of a two-line order", async () => {
+    const kept = await product(null, 5, 30_000)
+    const sent = await product(null, 5, 10_000)
+    const orderId = await delivered([
+      [kept, 1],
+      [sent, 1],
+    ])
+    await accept((await ask(orderId, sent, 1)).id)
+    expect(await totalOwed(orderId)).toBe(10_000)
+    expect(await onHandOf(kept)).toBe(4)
+    expect(await onHandOf(sent)).toBe(5)
+  })
+
+  it("gives back the same total as before when everything comes back at once", async () => {
+    const item = await product(null, 5, 20_000)
+    const orderId = await delivered([[item, 2]])
+    await accept((await ask(orderId, item, 2)).id)
+    expect((await order(orderId)).status).toBe("refunded")
+    expect(await totalOwed(orderId)).toBe(40_000)
+    expect(await onHandOf(item)).toBe(5)
+  })
+
+  it("closes the order with the delivery fee once the last unit is back", async () => {
+    const item = await product(null, 5, 10_000)
+    const orderId = await delivered([[item, 2]])
+    await adminDb
+      .doc(`orders/${orderId}`)
+      .update({ shippingFeeMinor: 500, totalMinor: 20_500 })
+
+    await accept((await ask(orderId, item, 1)).id)
+    expect((await order(orderId)).status).toBe("delivered")
+    expect(await totalOwed(orderId)).toBe(10_000)
+
+    await accept((await ask(orderId, item, 1)).id)
+    expect((await order(orderId)).status).toBe("refunded")
+    expect(await refund(`order_${orderId}`)).toMatchObject({
+      status: "pending",
+      amountMinor: 500,
+    })
+    expect(await totalOwed(orderId)).toBe(20_500)
+    expect(await onHandOf(item)).toBe(5)
+  })
+
+  it("gives refused units back to the customer", async () => {
+    const item = await product(null, 5, 20_000)
+    const orderId = await delivered([[item, 1]])
+    const refused = await ask(orderId, item, 1)
+    await updateReturnStatus(refused.id, "rejected", "rf-admin")
+    expect((await refund(`return_${refused.id}_house`))?.status).toBe("void")
+    expect(await onHandOf(item)).toBe(4)
+    await accept((await ask(orderId, item, 1)).id)
+    expect(await totalOwed(orderId)).toBe(20_000)
+  })
+
+  it("never refunds more units than were bought", async () => {
+    const item = await product(null, 5, 20_000)
+    const orderId = await delivered([[item, 2]])
+    await ask(orderId, item, 2)
+    await expect(ask(orderId, item, 1)).rejects.toThrow(
+      "ne peut pas être retourné"
+    )
+  })
+
+  it("refunds the rest of the order after a partial return, and each unit once", async () => {
+    const item = await product(null, 5, 20_000)
+    const orderId = await delivered([[item, 3]])
+    await accept((await ask(orderId, item, 1)).id)
+    await refundOrder(orderId, "Geste commercial")
+    expect((await refund(`order_${orderId}`))?.amountMinor).toBe(40_000)
+    expect(await totalOwed(orderId)).toBe(60_000)
+    expect(await onHandOf(item)).toBe(5)
+  })
+
+  it("keeps a coupon's discount out of a refund, whatever the split", async () => {
+    const item = await product(null, 5, 10_000)
+    const code = `FIX-${item}`.toUpperCase()
+    await coupon(code, { type: "fixed", value: 1_001, currency: "BSD" })
+    const orderId = await delivered([[item, 3]], code)
+    for (const quantity of [1, 1, 1]) {
+      await accept((await ask(orderId, item, quantity)).id)
+    }
+    expect((await order(orderId)).totalMinor).toBe(28_999)
+    expect(await totalOwed(orderId)).toBe(28_999)
+  })
+
+  it("never refunds an older order's discount, with no share on its lines", async () => {
+    const item = await product(null, 5, 10_000)
+    const orderId = await delivered([[item, 3]])
+    await asOlderOrder(orderId, { discountMinor: 5_000, totalMinor: 25_000 })
+    await accept((await ask(orderId, item, 2)).id)
+    expect(await totalOwed(orderId)).toBe(16_667)
+    await accept((await ask(orderId, item, 1)).id)
+    expect(await totalOwed(orderId)).toBe(25_000)
+  })
+
+  it("leaves an older order's tax whole: only closing the order returns it", async () => {
+    const item = await product(null, 5, 10_000)
+    const orderId = await delivered([[item, 2]])
+    await asOlderOrder(orderId, { taxMinor: 1_001, totalMinor: 21_001 })
+    const before = await order(orderId)
+
+    const first = await ask(orderId, item, 1)
+    await accept(first.id)
+    expect((await refund(`return_${first.id}_house`))?.amountMinor).toBe(10_000)
+    expect(await order(orderId)).toMatchObject({
+      items: before.items,
+      taxMinor: 1_001,
+      totalMinor: 21_001,
+    })
+
+    await accept((await ask(orderId, item, 1)).id)
+    expect((await refund(`order_${orderId}`))?.amountMinor).toBe(1_001)
+    expect(await totalOwed(orderId)).toBe(21_001)
+  })
+
+  it("never owes more than the order's total, even on inconsistent data", async () => {
+    const item = await product(null, 5, 10_000)
+    const orderId = await delivered([[item, 3]])
+    await adminDb.doc(`orders/${orderId}`).update({ totalMinor: 12_000 })
+    await accept((await ask(orderId, item, 2)).id)
+    await accept((await ask(orderId, item, 1)).id)
+    expect(await totalOwed(orderId)).toBe(12_000)
+  })
+
+  it("keeps an older order's currency on a partial return", async () => {
+    const item = await product(null, 5, 125_000)
+    await adminDb.doc("settings/store").set({ currency: "HTG" })
+    await adminDb.doc(`products/${item}`).update({ currency: "HTG" })
+    const orderId = await delivered([[item, 2]])
+    await adminDb.doc("settings/store").delete()
+    const request = await ask(orderId, item, 1)
+    expect(await refund(`return_${request.id}_house`)).toMatchObject({
+      currency: "HTG",
+      amountMinor: 125_000,
+    })
+  })
+
+  it("finishes a return already received without its own refund", async () => {
+    const item = await product(null, 5, 20_000)
+    const orderId = await delivered([[item, 3]])
+    const id = await olderReturn(orderId, item, 1, "received")
+    await updateReturnStatus(id, "refunded", "rf-admin")
+    expect((await order(orderId)).status).toBe("delivered")
+    expect(await refund(`return_${id}_house`)).toMatchObject({
+      status: "completed",
+      amountMinor: 20_000,
+    })
+    expect(await onHandOf(item)).toBe(3)
+  })
+
+  it("gives a waiting older return its refund at reception", async () => {
+    const item = await product(null, 5, 20_000)
+    const orderId = await delivered([[item, 3]])
+    const id = await olderReturn(orderId, item, 1, "approved")
+    await updateReturnStatus(id, "received", "rf-admin")
+    expect((await refund(`return_${id}_house`))?.status).toBe("pending")
+    expect(await onHandOf(item)).toBe(3)
+    await updateReturnStatus(id, "refunded", "rf-admin")
+    expect(await onHandOf(item)).toBe(3)
+    expect(await totalOwed(orderId)).toBe(20_000)
+  })
+
+  it("counts a waiting older return's units and amount in new returns", async () => {
+    const item = await product(null, 5, 10_000)
+    const code = `FIX-${item}`.toUpperCase()
+    await coupon(code, { type: "fixed", value: 1_001, currency: "BSD" })
+    const orderId = await delivered([[item, 3]], code)
+    const id = await olderReturn(orderId, item, 2, "approved")
+    await expect(ask(orderId, item, 2)).rejects.toThrow(
+      "ne peut pas être retourné"
+    )
+    await accept((await ask(orderId, item, 1)).id)
+    await updateReturnStatus(id, "received", "rf-admin")
+    await updateReturnStatus(id, "refunded", "rf-admin")
+    expect(await totalOwed(orderId)).toBe(28_999)
+  })
+
+  it("puts units back once when an older received return meets a whole refund", async () => {
+    const item = await product(null, 5, 20_000)
+    const orderId = await delivered([[item, 3]])
+    await olderReturn(orderId, item, 1, "received")
+    await refundOrder(orderId, "Geste commercial")
+    expect(await onHandOf(item)).toBe(5)
+    expect(await totalOwed(orderId)).toBe(60_000)
+  })
+})
+
+describe("stock value keeps every cost in its own currency", () => {
+  const cost = (
+    id: string,
+    costMinor: number | null,
+    costCurrency: string | null
+  ) => adminDb.doc(`products/${id}`).update({ costMinor, costCurrency })
+  const clear = async () => {
+    const stock = await adminDb.collection("inventory").get()
+    await Promise.all(stock.docs.map((doc) => doc.ref.delete()))
+  }
+  afterEach(() => adminDb.doc("settings/store").delete())
+
+  it("adds BSD costs only, and reports everything else", async () => {
+    await clear()
+    const inBsd = await product(null, 2, 99_999)
+    const inHtg = await product(null, 3, 99_999)
+    const inUsd = await product(null, 1, 99_999)
+    const unknown = await product(null, 1, 99_999)
+    const noCost = await product(null, 1, 99_999)
+    await cost(inBsd, 1_000, "BSD")
+    await cost(inHtg, 50_000, "HTG")
+    await cost(inUsd, 700, "USD")
+    await cost(unknown, 900, null)
+    await cost(noCost, null, null)
+
+    const { stockValue } = await getStockDashboardStats()
+    expect(stockValue).toMatchObject({
+      currency: "BSD",
+      valueMinor: 2_000,
+      otherCurrencies: [
+        { currency: "HTG", valueMinor: 150_000 },
+        { currency: "USD", valueMinor: 700 },
+      ],
+      unknownCurrencyCount: 1,
+      missingCostCount: 1,
+    })
+  })
+
+  it("shows no BSD value when no cost is in BSD, whatever the selling currency", async () => {
+    await clear()
+    const item = await product(null, 2, 99_999)
+    await cost(item, 1_000, "USD")
+    const { stockValue } = await getStockDashboardStats()
+    expect(stockValue.valueMinor).toBeNull()
+    expect(stockValue.otherCurrencies).toEqual([
+      { currency: "USD", valueMinor: 2_000 },
+    ])
   })
 })

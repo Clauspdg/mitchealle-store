@@ -4,8 +4,10 @@ import { countUpcomingShipments } from "@/services/firestore/incoming-shipments"
 import {
   countInventoryStats,
   countProductsInTransit,
-  estimateStockValueMinor,
+  estimateStockValue,
 } from "@/services/firestore/inventory"
+import { getStoreSettings } from "@/services/firestore/settings"
+import type { StockValue } from "@/validators/stock-value.validator"
 
 export interface StockDashboardStats {
   totalOnHand: number
@@ -13,11 +15,12 @@ export interface StockDashboardStats {
   outOfStockCount: number
   productsInTransitCount: number
   upcomingShipmentsCount: number
-  estimatedValueMinor: number
-  estimatedValueTruncated: boolean
+  stockValue: StockValue
+  stockValueTruncated: boolean
 }
 
 export async function getStockDashboardStats(): Promise<StockDashboardStats> {
+  const { currency } = await getStoreSettings()
   const [
     inventoryStats,
     productsInTransitCount,
@@ -27,7 +30,7 @@ export async function getStockDashboardStats(): Promise<StockDashboardStats> {
     countInventoryStats(),
     countProductsInTransit(),
     countUpcomingShipments(),
-    estimateStockValueMinor(),
+    estimateStockValue(currency),
   ])
 
   return {
@@ -36,7 +39,7 @@ export async function getStockDashboardStats(): Promise<StockDashboardStats> {
     outOfStockCount: inventoryStats.outOfStockCount,
     productsInTransitCount,
     upcomingShipmentsCount,
-    estimatedValueMinor: valueEstimate.estimatedValueMinor,
-    estimatedValueTruncated: valueEstimate.truncated,
+    stockValue: valueEstimate,
+    stockValueTruncated: valueEstimate.truncated,
   }
 }

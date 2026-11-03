@@ -1,3 +1,4 @@
+import { STORE_TIME } from "@/config/region"
 import Link from "next/link"
 
 import { formatPriceMinor } from "@/utils/currency"
@@ -61,7 +62,9 @@ export function OrdersTable({ orders }: { orders: Order[] }) {
                 <OrderStatusBadge status={order.status} />
               </TableCell>
               <TableCell className="text-muted-foreground">
-                {order.createdAt.toDate().toLocaleDateString("fr-FR")}
+                {order.createdAt
+                  .toDate()
+                  .toLocaleDateString("fr-FR", STORE_TIME)}
               </TableCell>
             </TableRow>
           ))}

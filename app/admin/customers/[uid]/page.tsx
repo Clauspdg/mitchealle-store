@@ -1,3 +1,4 @@
+import { STORE_TIME } from "@/config/region"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import type { Metadata } from "next"
@@ -131,7 +132,9 @@ export default async function AdminCustomerDetailPage({
                     <div className="flex flex-col">
                       <span className="font-medium">{order.orderNumber}</span>
                       <span className="text-muted-foreground text-xs">
-                        {order.createdAt.toDate().toLocaleDateString("fr-FR")}
+                        {order.createdAt
+                          .toDate()
+                          .toLocaleDateString("fr-FR", STORE_TIME)}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
