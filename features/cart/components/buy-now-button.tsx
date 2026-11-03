@@ -8,6 +8,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { emitCartUpdated } from "@/lib/cart-events.client"
 import { addToCartAction } from "@/features/cart/actions/cart-actions"
+import { useI18n } from "@/i18n/client"
 
 interface BuyNowButtonProps {
   productId: string
@@ -33,6 +34,7 @@ export function BuyNowButton({
   className,
   iconOnly = false,
 }: BuyNowButtonProps) {
+  const { t } = useI18n()
   const router = useRouter()
   const [submitting, setSubmitting] = useState(false)
 
@@ -60,7 +62,7 @@ export function BuyNowButton({
         disabled={disabled || submitting}
         onClick={handleClick}
         className={className}
-        aria-label="Acheter maintenant"
+        aria-label={t("home.shopNow")}
       >
         <ZapIcon className="size-4" />
       </Button>
@@ -76,7 +78,7 @@ export function BuyNowButton({
       onClick={handleClick}
       className={className}
     >
-      {submitting ? "Un instant..." : "Acheter maintenant"}
+      {submitting ? t("cart.oneMoment") : t("home.shopNow")}
     </Button>
   )
 }

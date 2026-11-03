@@ -5,17 +5,21 @@ import type { Collection } from "@/types/collection"
 import { SectionHeading } from "@/components/marketplace/section-heading"
 import { Reveal } from "@/components/shared/reveal"
 import { ReadableOverlay } from "@/components/shared/readable-overlay"
+import { getI18n } from "@/i18n/server"
 
 interface CollectionsShowcaseProps {
   collections: Collection[]
 }
 
-export function CollectionsShowcase({ collections }: CollectionsShowcaseProps) {
+export async function CollectionsShowcase({
+  collections,
+}: CollectionsShowcaseProps) {
+  const { t } = await getI18n()
   if (collections.length === 0) return null
 
   return (
     <section className="mx-auto w-full max-w-7xl px-4 py-4 sm:py-6">
-      <SectionHeading title="Nos collections" href="/collections" />
+      <SectionHeading title={t("home.collections")} href="/collections" />
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
         {collections.map((collection, index) => (
           <Reveal key={collection.id} delay={index * 0.08}>
@@ -38,7 +42,7 @@ export function CollectionsShowcase({ collections }: CollectionsShowcaseProps) {
                   {collection.name}
                 </span>
                 <span className="hidden shrink-0 rounded-full bg-white/90 px-3 py-1.5 text-xs font-medium text-black opacity-0 shadow-md transition-opacity duration-300 group-hover:opacity-100 sm:inline">
-                  Découvrir
+                  {t("home.discover")}
                 </span>
               </div>
             </Link>

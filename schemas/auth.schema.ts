@@ -1,18 +1,19 @@
 import { z } from "zod"
 
+// Messages are dictionary keys: forms show them in the visitor's language.
 const email = z
   .string()
-  .min(1, "L'email est requis.")
-  .email("Adresse email invalide.")
+  .min(1, "validation.emailRequired")
+  .email("validation.emailInvalid")
 
 const password = z
   .string()
-  .min(8, "Le mot de passe doit contenir au moins 8 caractères.")
-  .max(72, "Le mot de passe est trop long.")
+  .min(8, "validation.passwordTooShort")
+  .max(72, "validation.passwordTooLong")
 
 export const loginSchema = z.object({
   email,
-  password: z.string().min(1, "Le mot de passe est requis."),
+  password: z.string().min(1, "validation.passwordRequired"),
 })
 
 export type LoginInput = z.infer<typeof loginSchema>
@@ -21,17 +22,17 @@ export const registerSchema = z
   .object({
     displayName: z
       .string()
-      .min(2, "Le nom doit contenir au moins 2 caractères.")
-      .max(80, "Le nom est trop long."),
+      .min(2, "validation.nameTooShort")
+      .max(80, "validation.nameTooLong"),
     email,
     password,
     confirmPassword: z.string(),
     acceptTerms: z.boolean().refine((value) => value === true, {
-      error: "Vous devez accepter les conditions d'utilisation.",
+      error: "validation.acceptTerms",
     }),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Les mots de passe ne correspondent pas.",
+    message: "validation.passwordsDontMatch",
     path: ["confirmPassword"],
   })
 

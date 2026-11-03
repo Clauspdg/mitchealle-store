@@ -19,14 +19,14 @@ export const createOrderSchema = z
   .refine(
     (data) => data.deliveryMethod !== "delivery" || data.addressId !== null,
     {
-      error: "Sélectionnez une adresse de livraison.",
+      error: "checkout.selectAddress",
       path: ["addressId"],
     }
   )
   .refine(
     (data) => data.deliveryMethod !== "delivery" || data.shippingTier !== null,
     {
-      error: "Sélectionnez un mode de livraison.",
+      error: "checkout.selectDelivery",
       path: ["shippingTier"],
     }
   )

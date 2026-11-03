@@ -6,9 +6,11 @@ import { signOut } from "firebase/auth"
 import { toast } from "sonner"
 
 import { auth } from "@/firebase/client"
+import { useI18n } from "@/i18n/client"
 import { Button } from "@/components/ui/button"
 
 export function SignOutButton() {
+  const { t } = useI18n()
   const router = useRouter()
   const [submitting, setSubmitting] = useState(false)
 
@@ -19,7 +21,7 @@ export function SignOutButton() {
       router.push("/")
       router.refresh()
     } catch {
-      toast.error("La déconnexion a échoué. Réessayez.")
+      toast.error(t("auth.signOutFailed"))
     } finally {
       setSubmitting(false)
     }
@@ -27,7 +29,7 @@ export function SignOutButton() {
 
   return (
     <Button variant="ghost" disabled={submitting} onClick={handleClick}>
-      Déconnexion
+      {t("auth.signOut")}
     </Button>
   )
 }

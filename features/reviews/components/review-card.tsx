@@ -1,21 +1,13 @@
-import { STORE_TIME } from "@/config/region"
 import Image from "next/image"
 import { BadgeCheckIcon, StarIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import type { Review } from "@/types/review"
+import { getI18n } from "@/i18n/server"
 
-function formatReviewDate(review: Review): string {
-  return review.createdAt.toDate().toLocaleDateString("fr-FR", {
-    ...STORE_TIME,
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  })
-}
-
-export function ReviewCard({ review }: { review: Review }) {
+export async function ReviewCard({ review }: { review: Review }) {
+  const { t, date } = await getI18n()
   return (
     <div className="flex flex-col gap-3 border-b pb-6 last:border-b-0">
       <div className="flex items-start justify-between gap-2">
@@ -28,14 +20,14 @@ export function ReviewCard({ review }: { review: Review }) {
           <div className="flex flex-col">
             <span className="text-sm font-medium">{review.authorName}</span>
             <span className="text-muted-foreground text-xs">
-              {review.country} · {formatReviewDate(review)}
+              {review.country} · {date(review.createdAt.toDate(), "long")}
             </span>
           </div>
         </div>
         {review.verifiedPurchase ? (
           <span className="text-accent-gold-text flex shrink-0 items-center gap-1 text-xs">
             <BadgeCheckIcon className="size-3.5" />
-            Achat vérifié
+            {t("catalog.reviews.verified")}
           </span>
         ) : null}
       </div>

@@ -6,8 +6,10 @@ import { ShoppingBagIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { useCartItemCount } from "@/features/cart/hooks/use-cart-item-count"
+import { useI18n } from "@/i18n/client"
 
 export function CartBadge() {
+  const { t, plural } = useI18n()
   const count = useCartItemCount()
   const shouldReduceMotion = useReducedMotion()
 
@@ -17,7 +19,11 @@ export function CartBadge() {
       nativeButton={false}
       variant="ghost"
       size="icon"
-      aria-label={`Panier${count > 0 ? ` (${count} article${count > 1 ? "s" : ""})` : ""}`}
+      aria-label={
+        count > 0
+          ? `${t("cart.title")} (${plural("cart.items", count)})`
+          : t("cart.title")
+      }
       className="relative size-10"
     >
       <ShoppingBagIcon />

@@ -4,6 +4,7 @@ import { useMemo } from "react"
 
 import { cn } from "@/lib/utils"
 import type { ProductVariant } from "@/types/product"
+import { useI18n } from "@/i18n/client"
 
 interface VariantPickerProps {
   variants: ProductVariant[]
@@ -32,6 +33,7 @@ export function VariantPicker({
   selectedVariantId,
   onChange,
 }: VariantPickerProps) {
+  const { t } = useI18n()
   const sizes = useMemo(() => uniqueValues(variants, "size"), [variants])
   const colors = useMemo(() => uniqueValues(variants, "color"), [variants])
   const selectedVariant = variants.find((v) => v.id === selectedVariantId)
@@ -43,7 +45,9 @@ export function VariantPicker({
   if (sizes.length === 0 && colors.length === 0) {
     return (
       <div className="flex flex-col gap-2">
-        <span className="text-sm font-medium">Variante</span>
+        <span className="text-sm font-medium">
+          {t("catalog.variant.variant")}
+        </span>
         <div className="flex flex-wrap gap-2">
           {variants.map((variant) => {
             const outOfStock = variant.stock <= 0
@@ -91,7 +95,9 @@ export function VariantPicker({
     <div className="flex flex-col gap-4">
       {sizes.length > 0 ? (
         <div className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Taille</span>
+          <span className="text-sm font-medium">
+            {t("catalog.variant.size")}
+          </span>
           <div className="flex flex-wrap gap-2">
             {sizes.map((size) => {
               const selected = selectedVariant?.size === size
@@ -122,7 +128,9 @@ export function VariantPicker({
 
       {colors.length > 0 ? (
         <div className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Couleur</span>
+          <span className="text-sm font-medium">
+            {t("catalog.variant.color")}
+          </span>
           <div className="flex flex-wrap gap-2">
             {colors.map((color) => {
               const selected = selectedVariant?.color === color

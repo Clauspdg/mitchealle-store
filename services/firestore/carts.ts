@@ -4,6 +4,7 @@ import { FieldValue, Timestamp } from "firebase-admin/firestore"
 import { adminDb } from "@/firebase/admin"
 import type { Cart, CartDocument, CartItem } from "@/types/cart"
 import type { Product, ProductDocument } from "@/types/product"
+import { UserError } from "@/i18n/user-error"
 
 const CARTS_COLLECTION = "carts"
 const PRODUCTS_COLLECTION = "products"
@@ -63,14 +64,14 @@ export async function addCartItem(
     ])
 
     if (!productSnap.exists) {
-      throw new Error("Ce produit n'existe pas.")
+      throw new UserError("errors.productMissing")
     }
     const product: Product = {
       id: productSnap.id,
       ...(productSnap.data() as ProductDocument),
     }
     if (product.status !== "published") {
-      throw new Error("Ce produit n'est plus disponible.")
+      throw new UserError("errors.productUnavailable")
     }
 
     const existingItems: CartItem[] = cartSnap.exists
@@ -87,7 +88,9 @@ export async function addCartItem(
 
     const availableStock = resolveVariantStock(product, input.variantId)
     if (nextQuantity > availableStock) {
-      throw new Error(`Stock insuffisant (${availableStock} disponible(s)).`)
+      throw new UserError("errors.insufficientStock", {
+        count: availableStock,
+      })
     }
 
     const unitPriceMinorSnapshot = resolveUnitPriceMinor(

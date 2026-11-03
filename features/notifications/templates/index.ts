@@ -8,6 +8,8 @@ import {
 import type { Order } from "@/types/order"
 import type { Coupon } from "@/types/coupon"
 import type { Return } from "@/types/return"
+import { translatorFor } from "@/i18n/dictionaries"
+import type { Translator } from "@/i18n/translate"
 
 export interface EmailTemplate {
   subject: string
@@ -16,13 +18,19 @@ export interface EmailTemplate {
 
 const APP_URL = clientEnv.NEXT_PUBLIC_APP_URL
 
-function itemsListHtml(order: Order): string {
+/** An order's emails are in the language it was placed in; older orders
+ * were placed on the French-only site. */
+function orderI18n(order: Order): Translator {
+  return translatorFor(order.locale, "fr")
+}
+
+function itemsListHtml(order: Order, { price }: Translator): string {
   return order.items
     .map(
       (item) =>
         `<tr>
           <td style="padding:4px 0;">${item.nameSnapshot} × ${item.quantity}</td>
-          <td style="padding:4px 0;text-align:right;">${formatPriceMinor(item.lineTotalMinor, order.currency)}</td>
+          <td style="padding:4px 0;text-align:right;">${price(item.lineTotalMinor, order.currency)}</td>
         </tr>`
     )
     .join("")
@@ -40,66 +48,108 @@ export function renderWelcomeEmail(data: { name: string }): EmailTemplate {
 }
 
 export function renderOrderConfirmationEmail(order: Order): EmailTemplate {
+  const i18n = orderI18n(order)
+  const { t, price } = i18n
+  const number = `<strong>${order.orderNumber}</strong>`
   return {
-    subject: `Commande ${order.orderNumber} reçue`,
-    html: emailLayout(`
-      <p>Bonjour,</p>
-      <p>Nous avons bien reçu votre commande <strong>${order.orderNumber}</strong>.</p>
+    subject: t("emails.confirmation.subject", { number: order.orderNumber }),
+    html: emailLayout(
+      `
+      <p>${t("emails.hello")}</p>
+      <p>${t("emails.confirmation.body", { number })}</p>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;">
-        ${itemsListHtml(order)}
+        ${itemsListHtml(order, i18n)}
       </table>
-      <p><strong>Total : ${formatPriceMinor(order.totalMinor, order.currency)}</strong></p>
-      ${emailButton(`${APP_URL}/account/orders/${order.id}`, "Voir ma commande")}
-    `),
+      <p><strong>${t("emails.total", { amount: price(order.totalMinor, order.currency) })}</strong></p>
+      ${emailButton(`${APP_URL}/account/orders/${order.id}`, t("emails.viewOrder"))}
+    `,
+      i18n
+    ),
   }
 }
 
 export function renderPaymentConfirmedEmail(order: Order): EmailTemplate {
+  const i18n = orderI18n(order)
+  const { t, price } = i18n
+  const number = `<strong>${order.orderNumber}</strong>`
+  const amount = `<strong>${price(order.totalMinor, order.currency)}</strong>`
   return {
-    subject: `Paiement confirmé pour la commande ${order.orderNumber}`,
-    html: emailLayout(`
-      <p>Bonjour,</p>
-      <p>Votre paiement pour la commande <strong>${order.orderNumber}</strong> a bien été confirmé.</p>
-      <p>Total réglé : <strong>${formatPriceMinor(order.totalMinor, order.currency)}</strong></p>
-      ${emailButton(`${APP_URL}/account/orders/${order.id}`, "Voir ma commande")}
-    `),
+    subject: t("emails.payment.subject", { number: order.orderNumber }),
+    html: emailLayout(
+      `
+      <p>${t("emails.hello")}</p>
+      <p>${t("emails.payment.body", { number })}</p>
+      <p>${t("emails.payment.paid", { amount })}</p>
+      ${emailButton(`${APP_URL}/account/orders/${order.id}`, t("emails.viewOrder"))}
+    `,
+      i18n
+    ),
   }
 }
 
 export function renderOrderShippedEmail(order: Order): EmailTemplate {
+  const i18n = orderI18n(order)
+  const { t } = i18n
   const tracking = order.delivery.trackingNumber
+  const number = `<strong>${order.orderNumber}</strong>`
   return {
-    subject: `Votre commande ${order.orderNumber} est en route`,
-    html: emailLayout(`
-      <p>Bonjour,</p>
-      <p>Votre commande <strong>${order.orderNumber}</strong> a été expédiée.</p>
-      ${tracking ? `<p>Numéro de suivi : <strong>${tracking}</strong></p>` : ""}
-      ${emailButton(`${APP_URL}/account/orders/${order.id}`, "Suivre ma commande")}
-    `),
+    subject: t("emails.shipped.subject", { number: order.orderNumber }),
+    html: emailLayout(
+      `
+      <p>${t("emails.hello")}</p>
+      <p>${t("emails.shipped.body", { number })}</p>
+      ${tracking ? `<p>${t("emails.shipped.tracking", { tracking: `<strong>${tracking}</strong>` })}</p>` : ""}
+      ${emailButton(`${APP_URL}/account/orders/${order.id}`, t("emails.trackOrder"))}
+    `,
+      i18n
+    ),
   }
 }
 
 export function renderOrderDeliveredEmail(order: Order): EmailTemplate {
+  const i18n = orderI18n(order)
+  const { t } = i18n
+  const number = `<strong>${order.orderNumber}</strong>`
   return {
-    subject: `Votre commande ${order.orderNumber} a été livrée`,
-    html: emailLayout(`
-      <p>Bonjour,</p>
-      <p>Votre commande <strong>${order.orderNumber}</strong> a été livrée. Nous espérons qu'elle vous plaira !</p>
-      ${emailButton(`${APP_URL}/account/orders/${order.id}`, "Voir ma commande")}
-    `),
+    subject: t("emails.delivered.subject", { number: order.orderNumber }),
+    html: emailLayout(
+      `
+      <p>${t("emails.hello")}</p>
+      <p>${t("emails.delivered.body", { number })}</p>
+      ${emailButton(`${APP_URL}/account/orders/${order.id}`, t("emails.viewOrder"))}
+    `,
+      i18n
+    ),
   }
 }
 
 export function renderOrderRefundedEmail(order: Order): EmailTemplate {
+  const i18n = orderI18n(order)
+  const { t, price } = i18n
+  const number = `<strong>${order.orderNumber}</strong>`
+  const amount = `<strong>${price(order.totalMinor, order.currency)}</strong>`
   return {
-    subject: `Commande ${order.orderNumber} remboursée`,
-    html: emailLayout(`
-      <p>Bonjour,</p>
-      <p>Votre commande <strong>${order.orderNumber}</strong> a été remboursée pour un montant de
-      <strong>${formatPriceMinor(order.totalMinor, order.currency)}</strong>.</p>
-      ${emailButton(`${APP_URL}/account/orders/${order.id}`, "Voir ma commande")}
-    `),
+    subject: t("emails.refunded.subject", { number: order.orderNumber }),
+    html: emailLayout(
+      `
+      <p>${t("emails.hello")}</p>
+      <p>${t("emails.refunded.body", { number, amount })}</p>
+      ${emailButton(`${APP_URL}/account/orders/${order.id}`, t("emails.viewOrder"))}
+    `,
+      i18n
+    ),
   }
+}
+
+/** The text of the two order SMS, in the order's language. */
+export function renderOrderSms(
+  order: Order,
+  type: "order_shipped" | "order_delivered"
+): string {
+  const { t } = orderI18n(order)
+  return type === "order_shipped"
+    ? t("emails.shipped.sms", { number: order.orderNumber })
+    : t("emails.delivered.sms", { number: order.orderNumber })
 }
 
 export function renderCouponEmail(coupon: Coupon): EmailTemplate {

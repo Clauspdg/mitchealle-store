@@ -4,6 +4,7 @@ import { listPublishedProductsForSearch } from "@/services/firestore/products"
 import { listCategories } from "@/services/firestore/categories"
 import { brands } from "@/lib/demo-content"
 import type { ActionResult } from "@/types/action-result"
+import { getI18n } from "@/i18n/server"
 
 export interface SearchIndexEntry {
   id: string
@@ -67,7 +68,7 @@ export async function getSearchIndexAction(): Promise<
   } catch {
     return {
       success: false,
-      error: "Impossible de charger l'index de recherche.",
+      error: (await getI18n()).t("search.indexFailed"),
     }
   }
 }

@@ -4,6 +4,7 @@ import { MinusIcon, PlusIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { useI18n } from "@/i18n/client"
 
 interface QuantityStepperProps {
   value: number
@@ -22,6 +23,7 @@ export function QuantityStepper({
   disabled = false,
   className,
 }: QuantityStepperProps) {
+  const { t } = useI18n()
   return (
     <div
       className={cn(
@@ -35,7 +37,7 @@ export function QuantityStepper({
         size="icon"
         disabled={disabled || value <= min}
         onClick={() => onChange(Math.max(min, value - 1))}
-        aria-label="Diminuer la quantité"
+        aria-label={t("cart.decrease")}
       >
         <MinusIcon className="size-3.5" />
       </Button>
@@ -48,7 +50,7 @@ export function QuantityStepper({
         size="icon"
         disabled={disabled || value >= max}
         onClick={() => onChange(Math.min(max, value + 1))}
-        aria-label="Augmenter la quantité"
+        aria-label={t("cart.increase")}
       >
         <PlusIcon className="size-3.5" />
       </Button>

@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { emitCartUpdated } from "@/lib/cart-events.client"
 import { addToCartAction } from "@/features/cart/actions/cart-actions"
+import { useI18n } from "@/i18n/client"
 
 /** How long the success pulse (icon swap + scale bump) stays visible. */
 const SUCCESS_PULSE_MS = 900
@@ -31,6 +32,7 @@ export function AddToCartButton({
   className,
   iconOnly = false,
 }: AddToCartButtonProps) {
+  const { t } = useI18n()
   const router = useRouter()
   const [submitting, setSubmitting] = useState(false)
   const [justAdded, setJustAdded] = useState(false)
@@ -40,7 +42,7 @@ export function AddToCartButton({
     try {
       const result = await addToCartAction({ productId, variantId, quantity })
       if (result.success) {
-        toast.success("Ajouté au panier.")
+        toast.success(t("cart.added"))
         emitCartUpdated()
         setJustAdded(true)
         setTimeout(() => setJustAdded(false), SUCCESS_PULSE_MS)
@@ -65,7 +67,7 @@ export function AddToCartButton({
           justAdded && "scale-110",
           className
         )}
-        aria-label={disabled ? "Rupture de stock" : "Ajouter au panier"}
+        aria-label={disabled ? t("cart.outOfStock") : t("cart.add")}
       >
         {justAdded ? (
           <CheckIcon className="size-4" />
@@ -91,14 +93,14 @@ export function AddToCartButton({
       {justAdded ? (
         <span className="flex items-center gap-2">
           <CheckIcon className="size-4" />
-          Ajouté
+          {t("cart.justAdded")}
         </span>
       ) : submitting ? (
-        "Ajout..."
+        t("cart.adding")
       ) : disabled ? (
-        "Rupture de stock"
+        t("cart.outOfStock")
       ) : (
-        "Ajouter au panier"
+        t("cart.add")
       )}
     </Button>
   )

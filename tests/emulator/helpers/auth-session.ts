@@ -8,7 +8,11 @@ import type { Role } from "@/types/roles"
  * code under test through a mocked `next/headers`. The production session
  * checks (`getSession`, `requireSession`, `requirePermission`) run unchanged.
  */
-const jar: { cookie: string | null } = { cookie: null }
+/** `locale` is the browser's language cookie: unset until a choice. */
+const jar: { cookie: string | null; locale: string | null } = {
+  cookie: null,
+  locale: null,
+}
 const cookiesByUid = new Map<string, string>()
 const PASSWORD = "Emulator-only-1"
 
@@ -17,7 +21,12 @@ vi.mock("next/headers", () => ({
     get: (name: string) =>
       name === "session" && jar.cookie
         ? { name, value: jar.cookie }
-        : undefined,
+        : name === "clag_locale" && jar.locale
+          ? { name, value: jar.locale }
+          : undefined,
+    set: (name: string, value: string) => {
+      if (name === "clag_locale") jar.locale = value
+    },
   }),
   headers: async () => new Headers(),
 }))
@@ -57,4 +66,13 @@ export async function signInAs(uid: string | null) {
     cookiesByUid.set(uid, cookie)
   }
   jar.cookie = cookie
+}
+
+/** The browser's language cookie, as the language switcher sets it. */
+export function browserLanguage(locale: string | null): void {
+  jar.locale = locale
+}
+
+export function currentBrowserLanguage(): string | null {
+  return jar.locale
 }

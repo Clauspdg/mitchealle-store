@@ -10,6 +10,8 @@ export interface UserProfile {
   photoURL: string | null
   role: Role
   locale: string
+  /** Set only when the customer picks a language: restored at sign-in. */
+  preferredLanguage?: "en" | "fr" | "ht"
   defaultAddressId: string | null
   marketingOptIn: boolean
   /** Internal, staff-only note about this customer — never shown to the

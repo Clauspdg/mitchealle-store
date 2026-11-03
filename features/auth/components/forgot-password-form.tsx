@@ -12,11 +12,14 @@ import {
   type ForgotPasswordInput,
 } from "@/schemas/auth.schema"
 import { getAuthErrorMessage } from "@/features/auth/lib/auth-error-messages"
+import { authEmailsIn } from "@/features/auth/lib/auth-language"
+import { useI18n } from "@/i18n/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
 export function ForgotPasswordForm() {
+  const { t, message, locale } = useI18n()
   const [submitting, setSubmitting] = useState(false)
   const [sent, setSent] = useState(false)
 
@@ -31,24 +34,20 @@ export function ForgotPasswordForm() {
   async function onSubmit(data: ForgotPasswordInput) {
     setSubmitting(true)
     try {
+      authEmailsIn(locale)
       await sendPasswordResetEmail(auth, data.email)
       setSent(true)
     } catch (error) {
       // Firebase intentionally reports "user-not-found" here; we still show
       // the generic success state to avoid leaking which emails are registered.
-      toast.error(getAuthErrorMessage(error))
+      toast.error(t(getAuthErrorMessage(error)))
     } finally {
       setSubmitting(false)
     }
   }
 
   if (sent) {
-    return (
-      <p className="text-sm">
-        Si un compte existe pour cet email, un lien de réinitialisation vient
-        d&apos;être envoyé.
-      </p>
-    )
+    return <p className="text-sm">{t("auth.forgot.sent")}</p>
   }
 
   return (
@@ -58,7 +57,7 @@ export function ForgotPasswordForm() {
       noValidate
     >
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">{t("auth.login.email")}</Label>
         <Input
           id="email"
           type="email"
@@ -67,12 +66,14 @@ export function ForgotPasswordForm() {
           {...register("email")}
         />
         {errors.email ? (
-          <p className="text-destructive text-sm">{errors.email.message}</p>
+          <p className="text-destructive text-sm">
+            {message(errors.email.message)}
+          </p>
         ) : null}
       </div>
 
       <Button type="submit" disabled={submitting} className="mt-2">
-        {submitting ? "Envoi..." : "Envoyer le lien de réinitialisation"}
+        {submitting ? t("common.sending") : t("auth.forgot.submit")}
       </Button>
     </form>
   )

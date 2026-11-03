@@ -9,6 +9,8 @@ import {
 } from "@/services/firestore/wishlists"
 import { addToWishlistSchema } from "@/schemas/wishlist.schema"
 import type { ActionResult } from "@/types/action-result"
+import { getI18n } from "@/i18n/server"
+import { userMessage } from "@/i18n/user-error"
 
 export async function addToWishlistAction(
   input: unknown
@@ -17,7 +19,10 @@ export async function addToWishlistAction(
 
   const parsed = addToWishlistSchema.safeParse(input)
   if (!parsed.success) {
-    return { success: false, error: "Produit invalide." }
+    return {
+      success: false,
+      error: (await getI18n()).t("errors.invalidProduct"),
+    }
   }
 
   try {
@@ -27,8 +32,7 @@ export async function addToWishlistAction(
   } catch (error) {
     return {
       success: false,
-      error:
-        error instanceof Error ? error.message : "Une erreur est survenue.",
+      error: userMessage(error, await getI18n()),
     }
   }
 }
@@ -45,8 +49,7 @@ export async function removeFromWishlistAction(
   } catch (error) {
     return {
       success: false,
-      error:
-        error instanceof Error ? error.message : "Une erreur est survenue.",
+      error: userMessage(error, await getI18n()),
     }
   }
 }

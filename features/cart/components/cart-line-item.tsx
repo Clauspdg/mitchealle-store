@@ -7,13 +7,13 @@ import { XIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
-import { formatPriceMinor } from "@/utils/currency"
 import { emitCartUpdated } from "@/lib/cart-events.client"
 import { QuantityStepper } from "@/features/cart/components/quantity-stepper"
 import {
   removeCartItemAction,
   updateCartItemQuantityAction,
 } from "@/features/cart/actions/cart-actions"
+import { useI18n } from "@/i18n/client"
 
 interface CartLineItemProps {
   productId: string
@@ -40,6 +40,7 @@ export function CartLineItem({
   currency,
   maxQuantity,
 }: CartLineItemProps) {
+  const { t, price } = useI18n()
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [localQuantity, setLocalQuantity] = useState(quantity)
@@ -105,9 +106,7 @@ export function CartLineItem({
               {variantLabel}
             </span>
           ) : null}
-          <span className="text-sm">
-            {formatPriceMinor(unitPriceMinor, currency)}
-          </span>
+          <span className="text-sm">{price(unitPriceMinor, currency)}</span>
         </div>
 
         <div className="flex items-center justify-between gap-3 sm:gap-4">
@@ -118,7 +117,7 @@ export function CartLineItem({
             disabled={isPending}
           />
           <span className="text-right text-sm font-medium whitespace-nowrap sm:w-24">
-            {formatPriceMinor(unitPriceMinor * localQuantity, currency)}
+            {price(unitPriceMinor * localQuantity, currency)}
           </span>
         </div>
       </div>
@@ -130,7 +129,7 @@ export function CartLineItem({
         className="shrink-0"
         disabled={isPending}
         onClick={handleRemove}
-        aria-label="Retirer du panier"
+        aria-label={t("cart.remove")}
       >
         <XIcon className="size-4" />
       </Button>

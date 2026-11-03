@@ -29,6 +29,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import type { AddressWithId } from "@/types/user"
+import { useI18n } from "@/i18n/client"
 
 interface AddressFormDialogProps {
   trigger: ReactElement
@@ -75,6 +76,7 @@ export function AddressFormDialog({
     if (next) reset(addressToFormDefaults(address))
   }
 
+  const { t, message } = useI18n()
   const inBahamas =
     watch("country").trim().toUpperCase() === LAUNCH_REGION.country
 
@@ -90,7 +92,9 @@ export function AddressFormDialog({
         return
       }
 
-      toast.success(address ? "Adresse mise à jour." : "Adresse ajoutée.")
+      toast.success(
+        address ? t("account.addresses.updated") : t("account.addresses.added")
+      )
       setOpen(false)
       router.refresh()
     } finally {
@@ -104,12 +108,12 @@ export function AddressFormDialog({
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
-            {address ? "Modifier l'adresse" : "Ajouter une adresse"}
+            {address ? t("account.addresses.edit") : t("account.addresses.add")}
           </DialogTitle>
           <DialogDescription>
             {address
-              ? "Mettez à jour cette adresse de livraison."
-              : "Ajoutez une nouvelle adresse de livraison."}
+              ? t("account.addresses.editText")
+              : t("account.addresses.addText")}
           </DialogDescription>
         </DialogHeader>
 
@@ -119,20 +123,24 @@ export function AddressFormDialog({
           noValidate
         >
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="addr-label">Libellé</Label>
+            <Label htmlFor="addr-label">{t("account.addresses.label")}</Label>
             <Input
               id="addr-label"
               {...register("label")}
-              placeholder="Maison, Bureau..."
+              placeholder={t("account.addresses.labelPlaceholder")}
               aria-invalid={!!errors.label}
             />
             {errors.label ? (
-              <p className="text-destructive text-sm">{errors.label.message}</p>
+              <p className="text-destructive text-sm">
+                {message(errors.label.message)}
+              </p>
             ) : null}
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="addr-recipient">Destinataire</Label>
+            <Label htmlFor="addr-recipient">
+              {t("account.addresses.recipient")}
+            </Label>
             <Input
               id="addr-recipient"
               {...register("recipientName")}
@@ -140,42 +148,48 @@ export function AddressFormDialog({
             />
             {errors.recipientName ? (
               <p className="text-destructive text-sm">
-                {errors.recipientName.message}
+                {message(errors.recipientName.message)}
               </p>
             ) : null}
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="addr-phone">Téléphone</Label>
+            <Label htmlFor="addr-phone">{t("account.addresses.phone")}</Label>
             <Input
               id="addr-phone"
               {...register("phone")}
               aria-invalid={!!errors.phone}
             />
             {errors.phone ? (
-              <p className="text-destructive text-sm">{errors.phone.message}</p>
+              <p className="text-destructive text-sm">
+                {message(errors.phone.message)}
+              </p>
             ) : null}
           </div>
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="addr-line1">
-              {inBahamas ? "Rue et repère" : "Adresse"}
+              {inBahamas
+                ? t("account.addresses.streetLandmark")
+                : t("account.addresses.address")}
             </Label>
             <Input
               id="addr-line1"
               {...register("line1")}
               placeholder={
-                inBahamas ? "Rue, quartier, maison ou repère proche" : undefined
+                inBahamas ? t("account.addresses.streetPlaceholder") : undefined
               }
               aria-invalid={!!errors.line1}
             />
             {errors.line1 ? (
-              <p className="text-destructive text-sm">{errors.line1.message}</p>
+              <p className="text-destructive text-sm">
+                {message(errors.line1.message)}
+              </p>
             ) : null}
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="addr-line2">Complément (optionnel)</Label>
+            <Label htmlFor="addr-line2">{t("account.addresses.line2")}</Label>
             <Input
               id="addr-line2"
               value={watch("line2") ?? ""}
@@ -188,7 +202,9 @@ export function AddressFormDialog({
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="addr-city">
-                {inBahamas ? "Localité" : "Ville"}
+                {inBahamas
+                  ? t("account.addresses.settlement")
+                  : t("account.addresses.city")}
               </Label>
               <Input
                 id="addr-city"
@@ -198,7 +214,9 @@ export function AddressFormDialog({
             </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="addr-region">
-                {inBahamas ? "Île" : "Région"}
+                {inBahamas
+                  ? t("account.addresses.island")
+                  : t("account.addresses.region")}
               </Label>
               <Input
                 id="addr-region"
@@ -213,7 +231,7 @@ export function AddressFormDialog({
               </datalist>
               {errors.region ? (
                 <p className="text-destructive text-sm">
-                  {errors.region.message}
+                  {message(errors.region.message)}
                 </p>
               ) : null}
             </div>
@@ -223,8 +241,8 @@ export function AddressFormDialog({
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="addr-postal">
                 {inBahamas
-                  ? "Boîte postale (optionnel)"
-                  : "Code postal (optionnel)"}
+                  ? t("account.addresses.poBox")
+                  : t("account.addresses.postalCode")}
               </Label>
               <Input
                 id="addr-postal"
@@ -236,7 +254,9 @@ export function AddressFormDialog({
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="addr-country">Pays (code ISO)</Label>
+              <Label htmlFor="addr-country">
+                {t("account.addresses.country")}
+              </Label>
               <Input
                 id="addr-country"
                 {...register("country")}
@@ -253,17 +273,17 @@ export function AddressFormDialog({
               onCheckedChange={(checked) => setValue("isDefault", checked)}
             />
             <Label htmlFor="addr-default" className="font-normal">
-              Adresse par défaut
+              {t("account.addresses.defaultSwitch")}
             </Label>
           </div>
 
           <DialogFooter>
             <Button type="submit" disabled={submitting}>
               {submitting
-                ? "Enregistrement..."
+                ? t("common.saving")
                 : address
-                  ? "Enregistrer"
-                  : "Ajouter"}
+                  ? t("common.save")
+                  : t("common.add")}
             </Button>
           </DialogFooter>
         </form>

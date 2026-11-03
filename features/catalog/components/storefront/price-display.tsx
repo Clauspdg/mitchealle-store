@@ -1,5 +1,7 @@
+"use client"
+
 import { cn } from "@/lib/utils"
-import { formatPriceMinor } from "@/utils/currency"
+import { useI18n } from "@/i18n/client"
 
 interface PriceDisplayProps {
   basePriceMinor: number
@@ -16,6 +18,7 @@ export function PriceDisplay({
   size = "sm",
   className,
 }: PriceDisplayProps) {
+  const { price } = useI18n()
   const onSale = salePriceMinor !== null
   const priceClass = size === "lg" ? "text-2xl" : "text-base"
 
@@ -28,11 +31,11 @@ export function PriceDisplay({
           onSale && "text-accent-gold-text"
         )}
       >
-        {formatPriceMinor(onSale ? salePriceMinor : basePriceMinor, currency)}
+        {price(onSale ? salePriceMinor : basePriceMinor, currency)}
       </span>
       {onSale ? (
         <span className="text-muted-foreground text-sm line-through">
-          {formatPriceMinor(basePriceMinor, currency)}
+          {price(basePriceMinor, currency)}
         </span>
       ) : null}
     </div>

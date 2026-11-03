@@ -2,14 +2,16 @@ import { StarIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import type { ReviewStats } from "@/types/review"
+import { getI18n } from "@/i18n/server"
 
 const STAR_LEVELS = [5, 4, 3, 2, 1] as const
 
-export function ReviewSummary({ stats }: { stats: ReviewStats }) {
+export async function ReviewSummary({ stats }: { stats: ReviewStats }) {
+  const { t, plural, number } = await getI18n()
   if (stats.count === 0) {
     return (
       <p className="text-muted-foreground text-sm">
-        Aucun avis pour ce produit pour le moment.
+        {t("catalog.reviews.none")}
       </p>
     )
   }
@@ -20,7 +22,10 @@ export function ReviewSummary({ stats }: { stats: ReviewStats }) {
     <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-10">
       <div className="flex shrink-0 flex-col items-center gap-1">
         <span className="font-heading text-4xl font-medium">
-          {stats.average.toFixed(1)}
+          {number(stats.average, {
+            minimumFractionDigits: 1,
+            maximumFractionDigits: 1,
+          })}
         </span>
         <div className="flex items-center gap-0.5">
           {Array.from({ length: 5 }, (_, index) => (
@@ -36,7 +41,7 @@ export function ReviewSummary({ stats }: { stats: ReviewStats }) {
           ))}
         </div>
         <span className="text-muted-foreground text-xs">
-          {stats.count} avis
+          {plural("catalog.reviews.count", stats.count)}
         </span>
       </div>
 

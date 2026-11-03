@@ -7,6 +7,7 @@ import { useReducedMotion } from "framer-motion"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { useI18n } from "@/i18n/client"
 
 const AUTO_ADVANCE_MS = 6000
 const MAX_MOSAIC_IMAGES = 4
@@ -43,6 +44,7 @@ export function MarketplaceHero({
   productVisuals,
 }: MarketplaceHeroProps) {
   const shouldReduceMotion = useReducedMotion()
+  const { t } = useI18n()
   const [index, setIndex] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
 
@@ -129,7 +131,7 @@ export function MarketplaceHero({
                   key={slide.id}
                   type="button"
                   onClick={() => setIndex(slideIndex)}
-                  aria-label={`Aller à la diapositive ${slideIndex + 1}`}
+                  aria-label={t("home.goToSlide", { number: slideIndex + 1 })}
                   aria-current={slideIndex === index}
                   className="flex h-6 items-center pr-2"
                 >

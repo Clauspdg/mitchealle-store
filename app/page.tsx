@@ -31,10 +31,13 @@ import {
 import { MarketplaceProductCard } from "@/components/marketplace/marketplace-product-card"
 import { PromotionalSection } from "@/components/marketplace/promotional-section"
 import { SectionHeading } from "@/components/marketplace/section-heading"
+import { getI18n } from "@/i18n/server"
+import { localizeStoreSettings } from "@/i18n/store-content"
 
 const NEW_ARRIVALS_COUNT = 10
 
 export default async function Home() {
+  const { t } = await getI18n()
   const session = await getSession()
 
   const [
@@ -59,7 +62,9 @@ export default async function Home() {
     session ? listWishlistItems(session.uid) : Promise.resolve([]),
     listActiveBanners("homepageHero"),
     listHomepageSections(),
-    getStoreSettings(),
+    getStoreSettings().then((settings) =>
+      localizeStoreSettings(settings, { t })
+    ),
   ])
 
   // If no admin-configured hero banner exists yet, fall back to the
@@ -72,12 +77,20 @@ export default async function Home() {
           eyebrow: banner.eyebrow ?? "",
           title: banner.title,
           subtitle: banner.subtitle ?? "",
-          primaryButtonLabel: banner.primaryButtonLabel ?? "Acheter maintenant",
+          primaryButtonLabel: banner.primaryButtonLabel ?? t("home.shopNow"),
           primaryButtonHref: banner.primaryButtonHref ?? "/products",
           secondaryButtonLabel: banner.secondaryButtonLabel,
           secondaryButtonHref: banner.secondaryButtonHref,
         }))
-      : heroSlides.map((slide) => ({ ...slide, imageUrl: null }))
+      : heroSlides.map((slide) => ({
+          ...slide,
+          eyebrow: t(slide.eyebrow),
+          title: t(slide.title),
+          subtitle: t(slide.subtitle),
+          primaryButtonLabel: t(slide.primaryButtonLabel),
+          secondaryButtonLabel: t(slide.secondaryButtonLabel),
+          imageUrl: null,
+        }))
 
   const wishlistProductIds = new Set(wishlist.map((item) => item.id))
 
@@ -176,17 +189,17 @@ export default async function Home() {
       case "popularProducts":
         return renderProductRail(
           "populaires",
-          config?.heading || "Produits populaires",
+          config?.heading || t("home.popular"),
           popularProducts
         )
       case "newArrivals":
         return newArrivals.length > 0
-          ? renderNewArrivals(config?.heading || "Nouveautés")
+          ? renderNewArrivals(config?.heading || t("home.newArrivals"))
           : null
       case "promotionBanner":
         return (
           <PromotionalSection
-            heading={config?.heading || "Promotions et bonnes affaires"}
+            heading={config?.heading || t("home.deals")}
             products={promoProducts}
             wishlistProductIds={wishlistProductIds}
           />

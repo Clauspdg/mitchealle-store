@@ -5,14 +5,19 @@ import { LoginForm } from "@/features/auth/components/login-form"
 import { GoogleSignInButton } from "@/features/auth/components/google-sign-in-button"
 import { Separator } from "@/components/ui/separator"
 import { safeRedirectPath } from "@/lib/safe-redirect"
+import { getI18n } from "@/i18n/server"
 
-export const metadata: Metadata = { title: "Connexion" }
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n()
+  return { title: t("auth.login.metaTitle") }
+}
 
 export default async function LoginPage({
   searchParams,
 }: {
   searchParams: Promise<{ redirect?: string | string[] }>
 }) {
+  const { t } = await getI18n()
   const redirectTo = safeRedirectPath((await searchParams).redirect)
   const keep =
     redirectTo === "/" ? "" : `?redirect=${encodeURIComponent(redirectTo)}`
@@ -20,9 +25,11 @@ export default async function LoginPage({
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1 text-center">
-        <h1 className="text-xl font-semibold tracking-tight">Connexion</h1>
+        <h1 className="text-xl font-semibold tracking-tight">
+          {t("auth.login.title")}
+        </h1>
         <p className="text-muted-foreground text-sm">
-          Accédez à votre compte C.L.A.G.
+          {t("auth.login.subtitle")}
         </p>
       </div>
 
@@ -30,7 +37,7 @@ export default async function LoginPage({
 
       <div className="flex items-center gap-3">
         <Separator className="flex-1" />
-        <span className="text-muted-foreground text-xs">ou</span>
+        <span className="text-muted-foreground text-xs">{t("common.or")}</span>
         <Separator className="flex-1" />
       </div>
 
@@ -38,18 +45,18 @@ export default async function LoginPage({
 
       <div className="text-muted-foreground flex flex-col items-center gap-1 text-sm">
         <Link
-          href="/forgot-password"
+          href={`/forgot-password${keep}`}
           className="hover:text-foreground underline underline-offset-4"
         >
-          Mot de passe oublié ?
+          {t("auth.login.forgot")}
         </Link>
         <p>
-          Pas encore de compte ?{" "}
+          {t("auth.login.noAccount")}{" "}
           <Link
             href={`/register${keep}`}
             className="text-foreground underline underline-offset-4"
           >
-            Créer un compte
+            {t("auth.login.createAccount")}
           </Link>
         </p>
       </div>

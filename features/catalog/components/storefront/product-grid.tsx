@@ -3,6 +3,7 @@ import { PackageSearchIcon } from "lucide-react"
 import type { Product } from "@/types/product"
 import { EmptyState } from "@/components/shared/empty-state"
 import { MarketplaceProductCard } from "@/components/marketplace/marketplace-product-card"
+import { getI18n } from "@/i18n/server"
 
 interface ProductGridProps {
   products: Product[]
@@ -14,16 +15,17 @@ interface ProductGridProps {
 // only they get an LCP priority image load.
 const ABOVE_FOLD_COUNT = 6
 
-export function ProductGrid({
+export async function ProductGrid({
   products,
   wishlistProductIds,
 }: ProductGridProps) {
+  const { t } = await getI18n()
   if (products.length === 0) {
     return (
       <EmptyState
         icon={PackageSearchIcon}
-        title="Aucun produit trouvé"
-        description="Essayez d'ajuster vos filtres ou votre recherche."
+        title={t("catalog.empty.title")}
+        description={t("catalog.empty.text")}
       />
     )
   }

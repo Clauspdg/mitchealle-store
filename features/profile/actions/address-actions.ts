@@ -12,9 +12,16 @@ import {
 } from "@/services/firestore/addresses"
 import type { ActionResult } from "@/types/action-result"
 import type { AddressWithId } from "@/types/user"
+import { getI18n } from "@/i18n/server"
+import { userMessage } from "@/i18n/user-error"
 
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "Une erreur est survenue."
+async function errorMessage(error: unknown): Promise<string> {
+  return userMessage(error, await getI18n())
+}
+
+/** Schema messages are dictionary keys. */
+async function invalidMessage(key: string | undefined): Promise<string> {
+  return (await getI18n()).message(key ?? "common.genericError")
 }
 
 export async function createAddressAction(
@@ -25,7 +32,7 @@ export async function createAddressAction(
   if (!parsed.success) {
     return {
       success: false,
-      error: parsed.error.issues[0]?.message ?? "Données invalides.",
+      error: await invalidMessage(parsed.error.issues[0]?.message),
     }
   }
 
@@ -34,7 +41,7 @@ export async function createAddressAction(
     revalidatePath("/account/addresses")
     return { success: true, data: address }
   } catch (error) {
-    return { success: false, error: errorMessage(error) }
+    return { success: false, error: await errorMessage(error) }
   }
 }
 
@@ -47,7 +54,7 @@ export async function updateAddressAction(
   if (!parsed.success) {
     return {
       success: false,
-      error: parsed.error.issues[0]?.message ?? "Données invalides.",
+      error: await invalidMessage(parsed.error.issues[0]?.message),
     }
   }
 
@@ -56,7 +63,7 @@ export async function updateAddressAction(
     revalidatePath("/account/addresses")
     return { success: true, data: address }
   } catch (error) {
-    return { success: false, error: errorMessage(error) }
+    return { success: false, error: await errorMessage(error) }
   }
 }
 
@@ -69,7 +76,7 @@ export async function deleteAddressAction(
     revalidatePath("/account/addresses")
     return { success: true, data: undefined }
   } catch (error) {
-    return { success: false, error: errorMessage(error) }
+    return { success: false, error: await errorMessage(error) }
   }
 }
 
@@ -82,6 +89,6 @@ export async function setDefaultAddressAction(
     revalidatePath("/account/addresses")
     return { success: true, data: undefined }
   } catch (error) {
-    return { success: false, error: errorMessage(error) }
+    return { success: false, error: await errorMessage(error) }
   }
 }

@@ -10,14 +10,16 @@ import { Input } from "@/components/ui/input"
 import { BrandLogo } from "@/components/marketplace/brand-logo"
 import type { StoreSettings } from "@/types/settings"
 import type { MenuItem } from "@/types/menu"
+import { useI18n } from "@/i18n/client"
+import type { MessageKey } from "@/i18n/translate"
 
 const PAYMENT_METHODS = ["Visa", "Mastercard", "American Express"]
 
-const MARKETPLACE_LINKS = [
-  { label: "Boutiques", href: "/#boutiques" },
-  { label: "Promotions", href: "/products?onSale=1" },
+const MARKETPLACE_LINKS: Array<{ key: MessageKey; href: string }> = [
+  { key: "shell.nav.stores", href: "/#boutiques" },
+  { key: "shell.nav.deals", href: "/products?onSale=1" },
   // The application itself, not an anchor at the bottom of the home page.
-  { label: "Vendre sur C.L.A.G", href: "/account/seller-application" },
+  { key: "shell.header.sell", href: "/account/seller-application" },
 ]
 
 const SOCIAL_LABELS: Record<keyof StoreSettings["socialLinks"], string> = {
@@ -34,6 +36,7 @@ export function Footer({
   storeSettings: Omit<StoreSettings, "id" | "updatedAt">
   footerMenu: MenuItem[]
 }) {
+  const { t } = useI18n()
   const [email, setEmail] = useState("")
   const footerGroups = footerMenu
     .filter((item) => !item.parentId)
@@ -56,7 +59,7 @@ export function Footer({
     event.preventDefault()
     if (!email.trim()) return
     // Presentation-only — no email-capture service exists yet this sprint.
-    toast.success("Merci de votre inscription à notre newsletter.")
+    toast.success(t("shell.footer.newsletterThanks"))
     setEmail("")
   }
 
@@ -78,7 +81,7 @@ export function Footer({
 
         <div className="flex flex-col gap-3">
           <span className="text-sm font-medium tracking-wide uppercase">
-            Marketplace
+            {t("shell.footer.marketplace")}
           </span>
           <nav className="flex flex-col gap-2">
             {MARKETPLACE_LINKS.map((link) => (
@@ -87,7 +90,7 @@ export function Footer({
                 href={link.href}
                 className="text-sm text-white/70 transition-colors hover:text-white"
               >
-                {link.label}
+                {t(link.key)}
               </Link>
             ))}
           </nav>
@@ -114,7 +117,7 @@ export function Footer({
 
         <div className="flex flex-col gap-3">
           <span className="text-sm font-medium tracking-wide uppercase">
-            Réseaux sociaux
+            {t("shell.footer.social")}
           </span>
           <div className="flex flex-col gap-2">
             {socialEntries.length === 0 ? (
@@ -137,10 +140,10 @@ export function Footer({
 
         <div className="col-span-2 flex flex-col gap-3 lg:col-span-1">
           <span className="text-sm font-medium tracking-wide uppercase">
-            Newsletter
+            {t("shell.footer.newsletter")}
           </span>
           <p className="text-sm text-white/70">
-            Recevez nos nouveautés et offres exclusives.
+            {t("shell.footer.newsletterText")}
           </p>
           <form onSubmit={handleNewsletterSubmit} className="flex gap-2">
             <Input
@@ -148,14 +151,14 @@ export function Footer({
               required
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              placeholder="Votre e-mail"
+              placeholder={t("shell.footer.newsletterPlaceholder")}
               className="border-white/25 bg-white/5 text-white placeholder:text-white/50"
             />
             <Button
               type="submit"
               size="icon"
               className="bg-accent-gold text-accent-gold-foreground hover:bg-accent-gold/90 shrink-0"
-              aria-label="S'inscrire"
+              aria-label={t("shell.footer.newsletterSubmit")}
             >
               <SendIcon className="size-4" />
             </Button>
@@ -166,8 +169,10 @@ export function Footer({
       <div className="border-t border-white/10">
         <div className="mx-auto flex w-full max-w-7xl flex-col-reverse items-center gap-3 px-4 py-6 text-xs text-white/65 sm:flex-row sm:justify-between">
           <p>
-            © {new Date().getFullYear()} {storeSettings.storeName}. Tous droits
-            réservés.
+            {t("shell.footer.rights", {
+              year: new Date().getFullYear(),
+              store: storeSettings.storeName,
+            })}
           </p>
           <div className="flex items-center gap-2">
             <CreditCardIcon className="size-4" />

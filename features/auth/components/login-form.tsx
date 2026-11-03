@@ -9,6 +9,7 @@ import { toast } from "sonner"
 import { auth } from "@/firebase/client"
 import { loginSchema, type LoginInput } from "@/schemas/auth.schema"
 import { getAuthErrorMessage } from "@/features/auth/lib/auth-error-messages"
+import { useI18n } from "@/i18n/client"
 import { syncSessionCookie } from "@/lib/session-client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,6 +18,7 @@ import { Label } from "@/components/ui/label"
 /** `redirectTo` is already checked by `safeRedirectPath` on the page:
  * the visitor goes back to what they were doing, not to their account. */
 export function LoginForm({ redirectTo = "/" }: { redirectTo?: string }) {
+  const { t, message } = useI18n()
   const [submitting, setSubmitting] = useState(false)
 
   const {
@@ -36,12 +38,13 @@ export function LoginForm({ redirectTo = "/" }: { redirectTo?: string }) {
       const idToken = await credential.user.getIdToken()
       await syncSessionCookie(idToken)
 
-      toast.success("Connexion réussie.")
+      toast.success(t("auth.login.success"))
       // A full navigation: the next page is rendered with the new session
-      // cookie, and the auth page can't redirect in between.
+      // cookie (and the language saved on the account), and the auth page
+      // can't redirect in between.
       window.location.assign(redirectTo)
     } catch (error) {
-      toast.error(getAuthErrorMessage(error))
+      toast.error(t(getAuthErrorMessage(error)))
     } finally {
       setSubmitting(false)
     }
@@ -54,7 +57,7 @@ export function LoginForm({ redirectTo = "/" }: { redirectTo?: string }) {
       noValidate
     >
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">{t("auth.login.email")}</Label>
         <Input
           id="email"
           type="email"
@@ -63,12 +66,14 @@ export function LoginForm({ redirectTo = "/" }: { redirectTo?: string }) {
           {...register("email")}
         />
         {errors.email ? (
-          <p className="text-destructive text-sm">{errors.email.message}</p>
+          <p className="text-destructive text-sm">
+            {message(errors.email.message)}
+          </p>
         ) : null}
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="password">Mot de passe</Label>
+        <Label htmlFor="password">{t("auth.login.password")}</Label>
         <Input
           id="password"
           type="password"
@@ -77,12 +82,14 @@ export function LoginForm({ redirectTo = "/" }: { redirectTo?: string }) {
           {...register("password")}
         />
         {errors.password ? (
-          <p className="text-destructive text-sm">{errors.password.message}</p>
+          <p className="text-destructive text-sm">
+            {message(errors.password.message)}
+          </p>
         ) : null}
       </div>
 
       <Button type="submit" disabled={submitting} className="mt-2">
-        {submitting ? "Connexion..." : "Se connecter"}
+        {submitting ? t("auth.login.submitting") : t("auth.login.submit")}
       </Button>
     </form>
   )

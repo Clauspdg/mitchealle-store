@@ -10,24 +10,29 @@ import { EmptyState } from "@/components/shared/empty-state"
 import { CartLineItem } from "@/features/cart/components/cart-line-item"
 import { CartSummary } from "@/features/cart/components/cart-summary"
 import { Button } from "@/components/ui/button"
+import { getI18n } from "@/i18n/server"
 
-export const metadata: Metadata = { title: "Panier" }
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n()
+  return { title: t("cart.title") }
+}
 
 export default async function CartPage() {
+  const { t } = await getI18n()
   const session = await requireSession("customer")
   const cart = await getCart(session.uid)
 
   if (cart.items.length === 0) {
     return (
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-12 sm:px-6">
-        <h1 className="font-heading text-3xl font-medium">Panier</h1>
+        <h1 className="font-heading text-3xl font-medium">{t("cart.title")}</h1>
         <EmptyState
           icon={ShoppingBagIcon}
-          title="Votre panier est vide"
-          description="Parcourez nos produits pour trouver votre bonheur."
+          title={t("cart.emptyTitle")}
+          description={t("cart.emptyText")}
           action={
             <Button render={<Link href="/products" />} nativeButton={false}>
-              Voir les produits
+              {t("cart.browse")}
             </Button>
           }
         />
@@ -48,7 +53,7 @@ export default async function CartPage() {
       key: `${item.productId}_${item.variantId}`,
       productId: item.productId,
       productSlug: product?.slug ?? "",
-      productName: product?.name ?? "Produit indisponible",
+      productName: product?.name ?? t("cart.unavailable"),
       imageUrl: product?.images[0]?.url ?? null,
       variantId: item.variantId,
       variantLabel:
@@ -70,7 +75,7 @@ export default async function CartPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-12 sm:px-6">
-      <h1 className="font-heading text-3xl font-medium">Panier</h1>
+      <h1 className="font-heading text-3xl font-medium">{t("cart.title")}</h1>
 
       <div className="grid gap-8 lg:grid-cols-3 [&>*]:min-w-0">
         <div className="divide-y lg:col-span-2">

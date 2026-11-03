@@ -69,6 +69,9 @@ import type {
   PaymentDocument,
   ShippingTier,
 } from "@/types/order"
+import { UserError } from "@/i18n/user-error"
+import { COUPON_ERRORS } from "@/i18n/coupon-errors"
+import type { Locale } from "@/i18n/config"
 
 const ORDERS_COLLECTION = "orders"
 const PRODUCTS_COLLECTION = "products"
@@ -198,11 +201,13 @@ export async function createOrderFromCart(
      * discount amount, only the code itself (see `apply-coupon-action.ts`,
      * which is a UX preview, not the source of truth). */
     couponCode?: string | null
+    /** The customer's language: the order's emails are written in it. */
+    locale?: Locale
   }
 ): Promise<Order> {
   const cart = await getCart(uid)
   if (cart.items.length === 0) {
-    throw new Error("Votre panier est vide.")
+    throw new UserError("errors.cartEmpty")
   }
 
   const orderRef = adminDb.collection(ORDERS_COLLECTION).doc()
@@ -228,7 +233,7 @@ export async function createOrderFromCart(
         .get()
 
       if (!productSnap.exists) {
-        throw new Error("Un des produits de votre panier n'existe plus.")
+        throw new UserError("errors.productGone")
       }
       const product: Product = {
         id: productSnap.id,
@@ -236,14 +241,16 @@ export async function createOrderFromCart(
       }
 
       if (product.currency !== currency) {
-        throw new Error(
-          `« ${product.name} » est affiché en ${product.currency} et n'est pas vendu en ${currency} pour le moment.`
-        )
+        throw new UserError("errors.wrongCurrency", {
+          product: product.name,
+          currency: product.currency,
+          storeCurrency: currency,
+        })
       }
 
       const unitPriceMinor = resolveUnitPriceMinor(product, cartItem.variantId)
       if (!Number.isSafeInteger(unitPriceMinor) || unitPriceMinor < 0) {
-        throw new Error(`Le prix de « ${product.name} » n'est pas valide.`)
+        throw new UserError("errors.invalidPrice", { product: product.name })
       }
       const sellerId = resolveSellerId(product)
 
@@ -318,7 +325,7 @@ export async function createOrderFromCart(
     if (input.couponCode) {
       const coupon = await getCouponByCode(input.couponCode)
       if (!coupon) {
-        throw new Error("Ce code promo n'existe pas.")
+        throw new UserError("checkout.coupon.notFound")
       }
       const result = validateCoupon(coupon, {
         uid,
@@ -334,7 +341,7 @@ export async function createOrderFromCart(
             channelsSent: [],
           })
         }
-        throw new Error(result.reason)
+        throw new UserError(COUPON_ERRORS[result.code], { currency })
       }
       discountMinor = result.discountMinor
       // Each line keeps its own share of the discount (eligible lines
@@ -398,6 +405,7 @@ export async function createOrderFromCart(
       },
       preorder: null,
       notes: input.notes,
+      ...(input.locale ? { locale: input.locale } : {}),
       createdAt: now,
       updatedAt: now,
     }
@@ -489,9 +497,9 @@ async function commitOrderWithSubOrders(
 
     for (const item of storeItems) {
       if (sellers.get(item.sellerId!)?.status !== "active") {
-        throw new Error(
-          `La boutique « ${item.sellerName} » n'accepte pas de commande pour le moment.`
-        )
+        throw new UserError("errors.storeClosed", {
+          store: item.sellerName ?? "",
+        })
       }
       const product = products.get(item.productId)
       if (
@@ -500,16 +508,18 @@ async function commitOrderWithSubOrders(
         product.moderation !== "approved" ||
         product.sellerId !== item.sellerId
       ) {
-        throw new Error(`« ${item.nameSnapshot} » n'est plus disponible.`)
+        throw new UserError("errors.itemUnavailable", {
+          product: item.nameSnapshot,
+        })
       }
       const price = resolveUnitPriceMinor(
         { id: item.productId, ...product },
         item.variantId
       )
       if (price !== item.unitPriceMinor) {
-        throw new Error(
-          `Le prix de « ${item.nameSnapshot} » a changé. Vérifiez votre panier.`
-        )
+        throw new UserError("errors.priceChanged", {
+          product: item.nameSnapshot,
+        })
       }
     }
 
@@ -530,7 +540,7 @@ async function commitOrderWithSubOrders(
       }
     )
     if (skipped.length > 0) {
-      throw new Error("Un article de votre panier n'est plus disponible.")
+      throw new UserError("errors.someItemUnavailable")
     }
 
     const items = doc.items.map((item) =>

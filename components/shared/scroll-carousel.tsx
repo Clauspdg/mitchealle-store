@@ -5,6 +5,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { useI18n } from "@/i18n/client"
 
 interface ScrollCarouselProps {
   children: React.ReactNode
@@ -29,6 +30,7 @@ export function ScrollCarousel({
   itemClassName = DEFAULT_ITEM_CLASSNAME,
   scrollAmount = DEFAULT_SCROLL_AMOUNT,
 }: ScrollCarouselProps) {
+  const { t } = useI18n()
   const scrollRef = useRef<HTMLDivElement>(null)
 
   function scrollBy(amount: number) {
@@ -59,7 +61,7 @@ export function ScrollCarousel({
         size="icon"
         onClick={() => scrollBy(-scrollAmount)}
         className="absolute top-1/3 -left-3 hidden rounded-full shadow-md md:flex"
-        aria-label="Précédent"
+        aria-label={t("shell.carousel.previous")}
       >
         <ChevronLeftIcon className="size-4" />
       </Button>
@@ -69,7 +71,7 @@ export function ScrollCarousel({
         size="icon"
         onClick={() => scrollBy(scrollAmount)}
         className="absolute top-1/3 -right-3 hidden rounded-full shadow-md md:flex"
-        aria-label="Suivant"
+        aria-label={t("shell.carousel.next")}
       >
         <ChevronRightIcon className="size-4" />
       </Button>

@@ -10,6 +10,8 @@ import { dispatchNotification } from "@/services/notifications/dispatch"
 import { validateCoupon } from "@/validators/coupon.validator"
 import { applyCouponSchema } from "@/schemas/coupon.schema"
 import type { ActionResult } from "@/types/action-result"
+import { getI18n } from "@/i18n/server"
+import { COUPON_ERRORS } from "@/i18n/coupon-errors"
 
 /**
  * Previews a coupon's discount against the caller's live cart. Never trusts
@@ -24,19 +26,20 @@ export async function applyCouponAction(
 > {
   const session = await requireSession("customer")
 
+  const { t } = await getI18n()
   const parsed = applyCouponSchema.safeParse(input)
   if (!parsed.success) {
-    return { success: false, error: "Code promo invalide." }
+    return { success: false, error: t("checkout.coupon.invalid") }
   }
 
   const coupon = await getCouponByCode(parsed.data.code)
   if (!coupon) {
-    return { success: false, error: "Ce code promo n'existe pas." }
+    return { success: false, error: t("checkout.coupon.notFound") }
   }
 
   const items = await resolveCouponValidationLines(session.uid)
   if (items.length === 0) {
-    return { success: false, error: "Votre panier est vide." }
+    return { success: false, error: t("errors.cartEmpty") }
   }
 
   const { currency } = await getStoreSettings()
@@ -50,7 +53,10 @@ export async function applyCouponAction(
         channelsSent: [],
       })
     }
-    return { success: false, error: result.reason }
+    return {
+      success: false,
+      error: t(COUPON_ERRORS[result.code], { currency }),
+    }
   }
 
   return {

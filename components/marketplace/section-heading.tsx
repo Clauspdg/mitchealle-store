@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { ChevronRightIcon } from "lucide-react"
+import { getI18n } from "@/i18n/server"
 
 interface SectionHeadingProps {
   title: string
@@ -7,11 +8,12 @@ interface SectionHeadingProps {
   linkLabel?: string
 }
 
-export function SectionHeading({
+export async function SectionHeading({
   title,
   href,
-  linkLabel = "Voir tout",
+  linkLabel,
 }: SectionHeadingProps) {
+  const { t } = await getI18n()
   return (
     <div className="mb-3 flex items-center justify-between gap-4 sm:mb-4">
       <h2 className="font-heading text-lg font-bold tracking-tight sm:text-2xl">
@@ -22,7 +24,7 @@ export function SectionHeading({
           href={href}
           className="text-brand-blue dark:text-primary flex shrink-0 items-center gap-0.5 py-1 text-sm font-medium hover:underline"
         >
-          {linkLabel}
+          {linkLabel ?? t("common.seeAll")}
           <ChevronRightIcon className="size-4" />
         </Link>
       ) : null}

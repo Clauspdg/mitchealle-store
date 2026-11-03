@@ -16,6 +16,7 @@ import {
 import { PriceDisplay } from "@/features/catalog/components/storefront/price-display"
 import { PreorderBadge } from "@/features/catalog/components/storefront/preorder-badge"
 import { ProductPurchasePanel } from "@/features/catalog/components/storefront/product-purchase-panel"
+import { useI18n } from "@/i18n/client"
 
 // Only plain-serializable fields are accepted here (never the full `Product`
 // object) — `Product.createdAt`/`updatedAt` are Firestore `Timestamp` class
@@ -44,6 +45,7 @@ interface QuickViewDialogProps {
 }
 
 export function QuickViewDialog({ product }: QuickViewDialogProps) {
+  const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const image = product.images[0]
 
@@ -59,7 +61,7 @@ export function QuickViewDialog({ product }: QuickViewDialogProps) {
           setOpen(true)
         }}
         className="bg-background/80 backdrop-blur"
-        aria-label="Aperçu rapide"
+        aria-label={t("catalog.quickView")}
       >
         <EyeIcon className="size-4" />
       </Button>
@@ -127,7 +129,7 @@ export function QuickViewDialog({ product }: QuickViewDialogProps) {
               className="text-sm underline underline-offset-4"
               onClick={() => setOpen(false)}
             >
-              Voir tous les détails
+              {t("catalog.seeDetails")}
             </Link>
           </div>
         </div>

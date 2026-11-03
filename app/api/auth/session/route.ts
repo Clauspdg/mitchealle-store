@@ -2,6 +2,7 @@ import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 
 import { adminAuth } from "@/firebase/admin"
+import { syncLanguageWithAccount } from "@/i18n/account-language"
 import {
   SESSION_COOKIE_NAME,
   SESSION_EXPIRES_IN_MS,
@@ -25,7 +26,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    await adminAuth.verifyIdToken(idToken)
+    const { uid } = await adminAuth.verifyIdToken(idToken)
     const sessionCookie = await adminAuth.createSessionCookie(idToken, {
       expiresIn: SESSION_EXPIRES_IN_MS,
     })
@@ -38,6 +39,8 @@ export async function POST(request: Request) {
       path: "/",
       maxAge: SESSION_EXPIRES_IN_MS / 1000,
     })
+
+    await syncLanguageWithAccount(uid)
 
     return NextResponse.json({ status: "ok" })
   } catch (error) {

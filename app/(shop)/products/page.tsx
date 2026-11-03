@@ -12,8 +12,12 @@ import { catalogSearchParamsSchema } from "@/schemas/storefront.schema"
 import { CatalogFilters } from "@/features/catalog/components/storefront/catalog-filters"
 import { ProductGrid } from "@/features/catalog/components/storefront/product-grid"
 import { CursorPagination } from "@/components/shared/cursor-pagination"
+import { getI18n } from "@/i18n/server"
 
-export const metadata: Metadata = { title: "Produits" }
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n()
+  return { title: t("catalog.productsMetaTitle") }
+}
 // Live catalog data must never be baked into the build output.
 export const dynamic = "force-dynamic"
 
@@ -24,6 +28,7 @@ interface ProductsPageProps {
 export default async function ProductsPage({
   searchParams,
 }: ProductsPageProps) {
+  const { t } = await getI18n()
   const rawParams = await searchParams
   const parsed = catalogSearchParamsSchema.parse({
     q: rawParams.q,
@@ -61,7 +66,9 @@ export default async function ProductsPage({
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-6 py-12">
-      <h1 className="font-heading text-3xl font-medium">Nos produits</h1>
+      <h1 className="font-heading text-3xl font-medium">
+        {t("catalog.productsTitle")}
+      </h1>
 
       <CatalogFilters
         categories={categories.map(({ id, name }) => ({ id, name }))}

@@ -20,6 +20,7 @@ import { ProductGrid } from "@/features/catalog/components/storefront/product-gr
 import { ProductList } from "@/features/catalog/components/storefront/product-list"
 import { LoadMoreButton } from "@/features/catalog/components/storefront/load-more-button"
 import { JsonLd } from "@/features/seo/components/json-ld"
+import { getI18n } from "@/i18n/server"
 
 // Live catalog data must never be baked into the build output.
 export const dynamic = "force-dynamic"
@@ -123,7 +124,7 @@ export default async function CategoryPage({
 
   const wishlistProductIds = new Set(wishlist.map((item) => item.id))
   const breadcrumbItems = [
-    { title: "Catégories", href: "/categories" },
+    { title: (await getI18n()).t("shell.nav.categories"), href: "/categories" },
     { title: category.name },
   ]
 

@@ -1,8 +1,11 @@
 import type { Product } from "@/types/product"
+import type { MessageKey, Params } from "@/i18n/translate"
 
 export interface ProductBadge {
   key: string
-  label: string
+  /** A dictionary key: callers show it in the visitor's language. */
+  label: MessageKey
+  params?: Params
   className: string
 }
 
@@ -43,7 +46,7 @@ export function computeProductBadges(product: Product): ProductBadge[] {
   if (soldOut) {
     badges.push({
       key: "sold-out",
-      label: "Épuisé",
+      label: "catalog.badges.soldOut",
       // `text-muted-foreground` on `bg-muted` measures ~4.34:1 — just under
       // WCAG AA's 4.5:1 for this badge's small text. `text-foreground` keeps
       // the same neutral/understated background but reads clearly.
@@ -53,45 +56,47 @@ export function computeProductBadges(product: Product): ProductBadge[] {
   if (isNew) {
     badges.push({
       key: "new",
-      label: "Nouveau",
+      label: "catalog.badges.new",
       className: "bg-surface-ink text-surface-ink-foreground shadow-sm",
     })
   }
   if (isOnSale) {
     badges.push({
       key: "sale",
-      label:
-        discountPercent && discountPercent > 0
-          ? `-${discountPercent}%`
-          : "Promo",
+      ...(discountPercent && discountPercent > 0
+        ? {
+            label: "catalog.badges.discount",
+            params: { percent: discountPercent },
+          }
+        : { label: "catalog.badges.sale" }),
       className: "bg-accent-gold text-accent-gold-foreground shadow-sm",
     })
   }
   if (product.tags.includes("bestseller")) {
     badges.push({
       key: "bestseller",
-      label: "Best Seller",
+      label: "catalog.badges.bestSeller",
       className: "bg-brand-blue text-white shadow-sm",
     })
   }
   if (product.tags.includes("limited-edition")) {
     badges.push({
       key: "limited-edition",
-      label: "Limited Edition",
+      label: "catalog.badges.limited",
       className: "bg-surface-ink text-surface-ink-foreground shadow-sm",
     })
   }
   if (product.tags.includes("online-exclusive")) {
     badges.push({
       key: "online-exclusive",
-      label: "Online Exclusive",
+      label: "catalog.badges.onlineExclusive",
       className: "bg-accent-gold-muted text-accent-gold-foreground shadow-sm",
     })
   }
   if (lowStock) {
     badges.push({
       key: "low-stock",
-      label: "Low Stock",
+      label: "catalog.badges.lowStock",
       className: "bg-destructive/10 text-destructive shadow-sm",
     })
   }

@@ -1,5 +1,6 @@
 import type { Role } from "@/types/roles"
 import type { PermissionKey } from "@/lib/permissions"
+import type { MessageKey } from "@/i18n/translate"
 
 export interface NavItem {
   title: string
@@ -16,12 +17,12 @@ export const mainNav: NavItem[] = [
  * Fixed marketplace rail. Items from the admin-managed header menu are
  * appended after these — see `MarketplaceHeader`.
  */
-export const marketplaceNav: NavItem[] = [
-  { title: "Catégories", href: "/categories" },
-  { title: "Boutiques", href: "/#boutiques" },
-  { title: "Promotions", href: "/products?onSale=1" },
-  { title: "Nouveautés", href: "/products?sort=createdAt_desc" },
-  { title: "Meilleures ventes", href: "/products?sort=popularity_desc" },
+export const marketplaceNav: Array<{ key: MessageKey; href: string }> = [
+  { key: "shell.nav.categories", href: "/categories" },
+  { key: "shell.nav.stores", href: "/#boutiques" },
+  { key: "shell.nav.deals", href: "/products?onSale=1" },
+  { key: "shell.nav.newArrivals", href: "/products?sort=createdAt_desc" },
+  { key: "shell.nav.bestSellers", href: "/products?sort=popularity_desc" },
 ]
 
 export const adminNav: Array<

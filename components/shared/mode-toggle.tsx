@@ -11,8 +11,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useI18n } from "@/i18n/client"
 
 export function ModeToggle() {
+  const { t } = useI18n()
   const { setTheme } = useTheme()
   // Avoids a hydration mismatch: the resolved theme is only known client-side.
   const mounted = useMounted()
@@ -21,7 +23,11 @@ export function ModeToggle() {
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <Button variant="ghost" size="icon" aria-label="Changer de thème" />
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={t("shell.theme.change")}
+          />
         }
       >
         {mounted ? (
@@ -35,13 +41,13 @@ export function ModeToggle() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={() => setTheme("light")}>
-          Clair
+          {t("shell.theme.light")}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setTheme("dark")}>
-          Sombre
+          {t("shell.theme.dark")}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setTheme("system")}>
-          Système
+          {t("shell.theme.system")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

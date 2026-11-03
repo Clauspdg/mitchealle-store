@@ -19,6 +19,8 @@ import { ModeToggle } from "@/components/shared/mode-toggle"
 import { CartBadge } from "@/features/cart/components/cart-badge"
 import { SignOutButton } from "@/features/auth/components/sign-out-button"
 import { SearchCommand } from "@/features/search/components/search-command"
+import { useI18n } from "@/i18n/client"
+import { LanguageSwitcher } from "@/i18n/language-switcher"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -52,6 +54,7 @@ export function MarketplaceHeader({
   storeSettings: Omit<StoreSettings, "id" | "updatedAt">
   mainNav: MenuItem[]
 }) {
+  const { t } = useI18n()
   const { user, loading } = useAuth()
   const pathname = usePathname()
   const [isScrolled, setIsScrolled] = useState(false)
@@ -81,7 +84,7 @@ export function MarketplaceHeader({
 
   const fixedHrefs = new Set(marketplaceNav.map((item) => item.href))
   const navLinks = [
-    ...marketplaceNav,
+    ...marketplaceNav.map((item) => ({ title: t(item.key), href: item.href })),
     ...mainNav
       .filter((item) => item.href !== "/" && !fixedHrefs.has(item.href))
       .map((item) => ({ title: item.label, href: item.href })),
@@ -103,7 +106,7 @@ export function MarketplaceHeader({
                   variant="ghost"
                   size="icon"
                   className="-ml-2 size-10 md:hidden"
-                  aria-label="Ouvrir le menu"
+                  aria-label={t("shell.header.openMenu")}
                 />
               }
             >
@@ -137,7 +140,7 @@ export function MarketplaceHeader({
                   href="/account/wishlist"
                   className="hover:bg-muted rounded-md px-3 py-2.5 text-sm"
                 >
-                  Liste de souhaits
+                  {t("shell.header.wishlist")}
                 </Link>
                 {!loading && !user ? (
                   <>
@@ -145,13 +148,13 @@ export function MarketplaceHeader({
                       href={loginLink}
                       className="hover:bg-muted rounded-md px-3 py-2.5 text-sm"
                     >
-                      Connexion
+                      {t("shell.header.signIn")}
                     </Link>
                     <Link
                       href={registerLink}
                       className="hover:bg-muted rounded-md px-3 py-2.5 text-sm"
                     >
-                      Inscription
+                      {t("shell.header.register")}
                     </Link>
                   </>
                 ) : null}
@@ -160,8 +163,15 @@ export function MarketplaceHeader({
                   href={SELL_HREF}
                   className="hover:bg-muted text-muted-foreground rounded-md px-3 py-2.5 text-sm"
                 >
-                  Vendre sur C.L.A.G
+                  {t("shell.header.sell")}
                 </Link>
+                <div className="my-2 border-t" />
+                <div className="flex items-center justify-between px-3">
+                  <span className="text-muted-foreground text-sm">
+                    {t("language.label")}
+                  </span>
+                  <LanguageSwitcher onChange={() => setMenuOpen(false)} />
+                </div>
               </nav>
             </SheetContent>
           </Sheet>
@@ -177,6 +187,7 @@ export function MarketplaceHeader({
         />
 
         <div className="col-span-2 flex items-center justify-end gap-0.5 md:col-span-1">
+          <LanguageSwitcher className="hidden md:inline-flex" />
           <div className="hidden md:block">
             <ModeToggle />
           </div>
@@ -187,7 +198,7 @@ export function MarketplaceHeader({
             variant="ghost"
             size="icon"
             className="hidden size-10 sm:inline-flex"
-            aria-label="Liste de souhaits"
+            aria-label={t("shell.header.wishlist")}
           >
             <HeartIcon />
           </Button>
@@ -202,7 +213,7 @@ export function MarketplaceHeader({
                     variant="ghost"
                     size="icon"
                     className="size-10 rounded-full"
-                    aria-label="Mon compte"
+                    aria-label={t("shell.header.myAccount")}
                   />
                 }
               >
@@ -212,20 +223,20 @@ export function MarketplaceHeader({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem render={<Link href="/account" />}>
-                  Mon compte
+                  {t("shell.header.myAccount")}
                 </DropdownMenuItem>
                 <DropdownMenuItem render={<Link href="/account/orders" />}>
-                  Mes commandes
+                  {t("shell.header.myOrders")}
                 </DropdownMenuItem>
                 <DropdownMenuItem render={<Link href="/account/wishlist" />}>
-                  Ma liste de souhaits
+                  {t("shell.header.myWishlist")}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem render={<Link href={SELL_HREF} />}>
-                  Vendre sur C.L.A.G
+                  {t("shell.header.sell")}
                 </DropdownMenuItem>
                 <DropdownMenuItem render={<Link href="/seller" />}>
-                  Espace vendeur
+                  {t("shell.header.sellerCenter")}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <div className="px-1.5 py-1">
@@ -241,7 +252,7 @@ export function MarketplaceHeader({
                 variant="ghost"
                 size="icon"
                 className="size-10 lg:hidden"
-                aria-label="Connexion"
+                aria-label={t("shell.header.signIn")}
               >
                 <UserIcon />
               </Button>
@@ -251,14 +262,14 @@ export function MarketplaceHeader({
                 variant="ghost"
                 className="hidden lg:inline-flex"
               >
-                Connexion
+                {t("shell.header.signIn")}
               </Button>
               <Button
                 render={<Link href={registerLink} />}
                 nativeButton={false}
                 className="hidden lg:inline-flex"
               >
-                Inscription
+                {t("shell.header.register")}
               </Button>
             </>
           )}
@@ -269,7 +280,7 @@ export function MarketplaceHeader({
 
       {isAdmin ? null : (
         <nav
-          aria-label="Navigation marketplace"
+          aria-label={t("shell.header.marketplaceNav")}
           className="hidden border-t md:block"
         >
           <div className="mx-auto flex max-w-7xl [scrollbar-width:none] items-center gap-6 overflow-x-auto px-4 [&::-webkit-scrollbar]:hidden">
@@ -286,7 +297,7 @@ export function MarketplaceHeader({
               href={SELL_HREF}
               className="text-muted-foreground hover:text-foreground ml-auto py-2.5 text-sm whitespace-nowrap underline-offset-4 transition-colors hover:underline"
             >
-              Vendre sur C.L.A.G
+              {t("shell.header.sell")}
             </Link>
           </div>
         </nav>

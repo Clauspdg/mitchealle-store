@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { formatPriceMinor } from "@/utils/currency"
 import { createCheckoutSessionAction } from "@/features/payment/actions/checkout-actions"
 import { applyCouponAction } from "@/features/checkout/actions/apply-coupon-action"
 import {
@@ -17,14 +16,16 @@ import {
 } from "@/schemas/order.schema"
 import type { DeliveryMethod, ShippingTier } from "@/types/order"
 import type { AddressWithId } from "@/types/user"
+import { useI18n } from "@/i18n/client"
+import type { MessageKey } from "@/i18n/translate"
 
 type PaymentMethod =
   (typeof PAYMENT_METHODS)[number] | typeof SIMULATED_PAYMENT_METHOD
 
-const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
-  stripe: "Carte bancaire",
-  paypal: "PayPal",
-  simulation: "Paiement simulé (émulateurs locaux)",
+const PAYMENT_METHOD_LABELS: Record<PaymentMethod, MessageKey> = {
+  stripe: "checkout.methods.card",
+  paypal: "checkout.methods.paypal",
+  simulation: "checkout.methods.simulation",
 }
 
 interface CheckoutFormProps {
@@ -49,6 +50,7 @@ export function CheckoutForm({
   defaultPaymentMethod = "stripe",
   simulationEnabled = false,
 }: CheckoutFormProps) {
+  const { t, price } = useI18n()
   const paymentMethods: PaymentMethod[] = simulationEnabled
     ? [...PAYMENT_METHODS, SIMULATED_PAYMENT_METHOD]
     : [...PAYMENT_METHODS]
@@ -80,7 +82,7 @@ export function CheckoutForm({
         return
       }
       setAppliedCoupon(result.data)
-      toast.success("Code promo appliqué.")
+      toast.success(t("checkout.coupon.applied"))
     } finally {
       setApplyingCoupon(false)
     }
@@ -88,7 +90,7 @@ export function CheckoutForm({
 
   async function handleSubmit() {
     if (deliveryMethod === "delivery" && !addressId) {
-      toast.error("Sélectionnez une adresse de livraison.")
+      toast.error(t("checkout.selectAddress"))
       return
     }
 
@@ -117,7 +119,7 @@ export function CheckoutForm({
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
-        <Label>Mode de livraison</Label>
+        <Label>{t("checkout.deliveryMethod")}</Label>
         <div className="grid gap-3 sm:grid-cols-2">
           <button
             type="button"
@@ -129,9 +131,9 @@ export function CheckoutForm({
                 : "border-input hover:bg-muted"
             )}
           >
-            <span className="block font-medium">Retrait en boutique</span>
+            <span className="block font-medium">{t("checkout.pickup")}</span>
             <span className="text-muted-foreground text-sm">
-              {formatPriceMinor(pickupFeeMinor, currency)}
+              {price(pickupFeeMinor, currency)}
             </span>
           </button>
           <button
@@ -144,9 +146,11 @@ export function CheckoutForm({
                 : "border-input hover:bg-muted"
             )}
           >
-            <span className="block font-medium">Livraison à domicile</span>
+            <span className="block font-medium">
+              {t("checkout.homeDelivery")}
+            </span>
             <span className="text-muted-foreground text-sm">
-              dès {formatPriceMinor(standardFeeMinor, currency)}
+              {t("checkout.from", { price: price(standardFeeMinor, currency) })}
             </span>
           </button>
         </div>
@@ -154,7 +158,7 @@ export function CheckoutForm({
 
       {deliveryMethod === "delivery" ? (
         <div className="flex flex-col gap-2">
-          <Label>Formule de livraison</Label>
+          <Label>{t("checkout.deliveryTier")}</Label>
           <div className="grid gap-3 sm:grid-cols-2">
             <button
               type="button"
@@ -166,9 +170,11 @@ export function CheckoutForm({
                   : "border-input hover:bg-muted"
               )}
             >
-              <span className="block font-medium">Standard</span>
+              <span className="block font-medium">
+                {t("checkout.standard")}
+              </span>
               <span className="text-muted-foreground">
-                {formatPriceMinor(standardFeeMinor, currency)}
+                {price(standardFeeMinor, currency)}
               </span>
             </button>
             <button
@@ -181,9 +187,9 @@ export function CheckoutForm({
                   : "border-input hover:bg-muted"
               )}
             >
-              <span className="block font-medium">Express</span>
+              <span className="block font-medium">{t("checkout.express")}</span>
               <span className="text-muted-foreground">
-                {formatPriceMinor(expressFeeMinor, currency)}
+                {price(expressFeeMinor, currency)}
               </span>
             </button>
           </div>
@@ -192,17 +198,16 @@ export function CheckoutForm({
 
       {deliveryMethod === "delivery" ? (
         <div className="flex flex-col gap-2">
-          <Label>Adresse de livraison</Label>
+          <Label>{t("checkout.deliveryAddress")}</Label>
           {addresses.length === 0 ? (
             <p className="text-muted-foreground text-sm">
-              Aucune adresse enregistrée.{" "}
+              {t("checkout.noAddress")}{" "}
               <a
                 href="/account/addresses"
                 className="underline underline-offset-4"
               >
-                Ajoutez-en une
-              </a>{" "}
-              avant de continuer.
+                {t("checkout.addAddress")}
+              </a>
             </p>
           ) : (
             <div className="flex flex-col gap-2">
@@ -230,7 +235,7 @@ export function CheckoutForm({
       ) : null}
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="coupon">Code promo (optionnel)</Label>
+        <Label htmlFor="coupon">{t("checkout.coupon.label")}</Label>
         <div className="flex gap-2">
           <Input
             id="coupon"
@@ -248,20 +253,23 @@ export function CheckoutForm({
             disabled={applyingCoupon || !couponInput.trim()}
             onClick={handleApplyCoupon}
           >
-            {applyingCoupon ? "..." : "Appliquer"}
+            {applyingCoupon ? "…" : t("catalog.filters.apply")}
           </Button>
         </div>
         {appliedCoupon ? (
           <p className="text-sm text-green-600 dark:text-green-500">
             {appliedCoupon.freeShipping
-              ? `Livraison gratuite appliquée avec le code ${appliedCoupon.code}.`
-              : `Réduction de ${formatPriceMinor(appliedCoupon.discountMinor, currency)} appliquée avec le code ${appliedCoupon.code}.`}
+              ? t("checkout.coupon.freeShipping", { code: appliedCoupon.code })
+              : t("checkout.coupon.discount", {
+                  amount: price(appliedCoupon.discountMinor, currency),
+                  code: appliedCoupon.code,
+                })}
           </p>
         ) : null}
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label>Mode de paiement</Label>
+        <Label>{t("checkout.paymentMethod")}</Label>
         <div className="grid gap-3 sm:grid-cols-2">
           {paymentMethods.map((method) => (
             <button
@@ -276,7 +284,7 @@ export function CheckoutForm({
               )}
             >
               <span className="block font-medium">
-                {PAYMENT_METHOD_LABELS[method]}
+                {t(PAYMENT_METHOD_LABELS[method])}
               </span>
             </button>
           ))}
@@ -284,12 +292,12 @@ export function CheckoutForm({
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="notes">Notes (optionnel)</Label>
+        <Label htmlFor="notes">{t("checkout.notes")}</Label>
         <Textarea
           id="notes"
           value={notes}
           onChange={(event) => setNotes(event.target.value)}
-          placeholder="Instructions particulières..."
+          placeholder={t("checkout.notesPlaceholder")}
         />
       </div>
 
@@ -300,7 +308,7 @@ export function CheckoutForm({
         onClick={handleSubmit}
         className="w-full"
       >
-        {submitting ? "Redirection vers le paiement..." : "Payer maintenant"}
+        {submitting ? t("checkout.redirecting") : t("checkout.payNow")}
       </Button>
     </div>
   )

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 
 import { getOrderStatusAction } from "@/features/payment/actions/checkout-actions"
+import { useI18n } from "@/i18n/client"
 
 interface OrderStatusPollerProps {
   orderId: string
@@ -21,6 +22,7 @@ export function OrderStatusPoller({
   orderId,
   intervalMs = 2000,
 }: OrderStatusPollerProps) {
+  const { t } = useI18n()
   const router = useRouter()
   const [attempts, setAttempts] = useState(0)
 
@@ -41,7 +43,7 @@ export function OrderStatusPoller({
 
   return (
     <p className="text-muted-foreground text-sm">
-      Confirmation du paiement en cours...
+      {t("checkout.confirmingPayment")}
     </p>
   )
 }

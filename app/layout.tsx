@@ -13,6 +13,10 @@ import { Footer } from "@/components/layout/footer"
 import { RegisterServiceWorker } from "@/components/shared/register-service-worker"
 import { CompareBar } from "@/features/compare/components/compare-bar"
 import { JsonLd } from "@/features/seo/components/json-ld"
+import { I18nProvider } from "@/i18n/client"
+import { OPEN_GRAPH_LOCALE } from "@/i18n/config"
+import { getI18n, messagesFor } from "@/i18n/server"
+import { localizeMenu, localizeStoreSettings } from "@/i18n/store-content"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,8 +45,9 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 })
 
 export async function generateMetadata(): Promise<Metadata> {
+  const i18n = await getI18n()
   const { storeName, slogan, description, defaultOgImageUrl } =
-    await getStoreSettings()
+    localizeStoreSettings(await getStoreSettings(), i18n)
   const ogImage = defaultOgImageUrl ?? brandAssets.ogImage.src
   const ogImageSize = defaultOgImageUrl
     ? {}
@@ -64,7 +69,7 @@ export async function generateMetadata(): Promise<Metadata> {
       siteName: storeName,
       title: pageTitle,
       description,
-      locale: "fr_FR",
+      locale: OPEN_GRAPH_LOCALE[i18n.locale],
       images: [{ url: ogImage, ...ogImageSize }],
     },
     twitter: {
@@ -108,18 +113,20 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const [storeSettings, headerMenu, footerMenu] = await Promise.all([
+  const i18n = await getI18n()
+  const [settings, headerMenu, footerMenu] = await Promise.all([
     getStoreSettings(),
     getMenu("header"),
     getMenu("footer"),
   ])
+  const storeSettings = localizeStoreSettings(settings, i18n)
   const { updatedAt, id, ...storeSettingsForClient } = storeSettings
   void updatedAt // stripped — see comment below on why it can't cross to a Client Component
   void id
 
   return (
     <html
-      lang="fr"
+      lang={i18n.locale}
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} ${plusJakartaSans.variable} ${inter.variable} h-full antialiased`}
     >
@@ -128,7 +135,7 @@ export default async function RootLayout({
           href="#main-content"
           className="bg-background text-foreground focus-visible:ring-ring sr-only rounded-md border px-4 py-2 text-sm font-medium focus-visible:not-sr-only focus-visible:fixed focus-visible:top-4 focus-visible:left-4 focus-visible:z-[100] focus-visible:ring-3"
         >
-          Aller au contenu principal
+          {i18n.t("common.skipToContent")}
         </a>
         <JsonLd
           data={{
@@ -139,26 +146,28 @@ export default async function RootLayout({
             logo: `${clientEnv.NEXT_PUBLIC_APP_URL}${brandAssets.logo.src}`,
           }}
         />
-        <AppProviders>
-          {/* `storeSettings.updatedAt` is a Firestore Timestamp (real or the
+        <I18nProvider locale={i18n.locale} messages={messagesFor(i18n.locale)}>
+          <AppProviders>
+            {/* `storeSettings.updatedAt` is a Firestore Timestamp (real or the
               in-memory fallback stub) — both carry methods, and React
               rejects passing non-plain objects from a Server Component to a
               Client Component. Header/Footer never need it, so it's
               stripped here rather than widening their prop types to accept it. */}
-          <MarketplaceHeader
-            storeSettings={storeSettingsForClient}
-            mainNav={headerMenu.items}
-          />
-          <main id="main-content" className="flex flex-1 flex-col">
-            {children}
-          </main>
-          <Footer
-            storeSettings={storeSettingsForClient}
-            footerMenu={footerMenu.items}
-          />
-          <CompareBar />
-          <MobileBottomNavigation />
-        </AppProviders>
+            <MarketplaceHeader
+              storeSettings={storeSettingsForClient}
+              mainNav={localizeMenu(headerMenu.items, i18n)}
+            />
+            <main id="main-content" className="flex flex-1 flex-col">
+              {children}
+            </main>
+            <Footer
+              storeSettings={storeSettingsForClient}
+              footerMenu={localizeMenu(footerMenu.items, i18n)}
+            />
+            <CompareBar />
+            <MobileBottomNavigation />
+          </AppProviders>
+        </I18nProvider>
         <RegisterServiceWorker />
       </body>
     </html>

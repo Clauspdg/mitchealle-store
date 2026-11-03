@@ -1,3 +1,4 @@
+import type { MessageKey } from "@/i18n/translate"
 /**
  * Sprints 4-5.5 were presentation-only for these sections. Sprint 10A adds
  * real `banners` (hero slides) and `brands` collections in Firestore —
@@ -285,58 +286,57 @@ export const brands: Brand[] = [
 
 export const brandNames: string[] = brands.map((brand) => brand.name)
 
+/** Text fields hold dictionary keys (`home.hero.*`). */
 export interface HeroSlide {
   id: string
-  eyebrow: string
-  title: string
-  subtitle: string
-  primaryButtonLabel: string
+  eyebrow: MessageKey
+  title: MessageKey
+  subtitle: MessageKey
+  primaryButtonLabel: MessageKey
   primaryButtonHref: string
-  secondaryButtonLabel: string
+  secondaryButtonLabel: MessageKey
   secondaryButtonHref: string
 }
 
 export const heroSlides: HeroSlide[] = [
   {
     id: "local-marketplace",
-    eyebrow: "Your Local Marketplace",
-    title: "Vos commerces locaux, réunis au même endroit",
-    subtitle:
-      "Découvrez les produits de petits commerçants, de vendeurs indépendants et de boutiques de proximité.",
-    primaryButtonLabel: "Explorer les produits",
+    eyebrow: "home.hero.local.eyebrow",
+    title: "home.hero.local.title",
+    subtitle: "home.hero.local.subtitle",
+    primaryButtonLabel: "home.hero.local.primary",
     primaryButtonHref: "/products",
-    secondaryButtonLabel: "Voir les catégories",
+    secondaryButtonLabel: "home.hero.local.secondary",
     secondaryButtonHref: "/categories",
   },
   {
     id: "small-sellers",
-    eyebrow: "Petits vendeurs, grande visibilité",
-    title: "Donnez à votre boutique la vitrine qu'elle mérite",
-    subtitle:
-      "C.L.A.G aide les boutiques locales à présenter leurs produits et à toucher de nouveaux clients.",
-    primaryButtonLabel: "Devenir vendeur",
+    eyebrow: "home.hero.sellers.eyebrow",
+    title: "home.hero.sellers.title",
+    subtitle: "home.hero.sellers.subtitle",
+    primaryButtonLabel: "home.hero.sellers.primary",
     primaryButtonHref: "/#devenir-vendeur",
-    secondaryButtonLabel: "Boutiques en vedette",
+    secondaryButtonLabel: "home.hero.sellers.secondary",
     secondaryButtonHref: "/#boutiques",
   },
   {
     id: "good-deals",
-    eyebrow: "Bonnes affaires",
-    title: "Les promotions du moment, en un coup d'œil",
-    subtitle:
-      "Parcourez les offres en cours et trouvez le bon produit au bon prix.",
-    primaryButtonLabel: "Voir les promotions",
+    eyebrow: "home.hero.deals.eyebrow",
+    title: "home.hero.deals.title",
+    subtitle: "home.hero.deals.subtitle",
+    primaryButtonLabel: "home.hero.deals.primary",
     primaryButtonHref: "/products?onSale=1",
-    secondaryButtonLabel: "Nouveautés",
+    secondaryButtonLabel: "home.hero.deals.secondary",
     secondaryButtonHref: "/products?sort=createdAt_desc",
   },
 ]
 
+/** Text fields hold dictionary keys (`home.demoStores.*`). */
 export interface DemoStore {
   id: string
-  name: string
-  specialty: string
-  description: string
+  name: MessageKey
+  specialty: MessageKey
+  description: MessageKey
   /** Key for `getCategoryIcon`. */
   icon: string
 }
@@ -344,30 +344,30 @@ export interface DemoStore {
 export const demoStores: DemoStore[] = [
   {
     id: "demo-mode",
-    name: "Boutique démo Mode",
-    specialty: "Vêtements",
-    description: "Exemple de vitrine pour un vendeur de prêt-à-porter.",
+    name: "home.demoStores.fashion.name",
+    specialty: "home.demoStores.fashion.specialty",
+    description: "home.demoStores.fashion.description",
     icon: "shirt",
   },
   {
     id: "demo-beaute",
-    name: "Boutique démo Beauté",
-    specialty: "Soins et cosmétiques",
-    description: "Exemple de vitrine pour un commerce de beauté.",
+    name: "home.demoStores.beauty.name",
+    specialty: "home.demoStores.beauty.specialty",
+    description: "home.demoStores.beauty.description",
     icon: "beauty",
   },
   {
     id: "demo-maison",
-    name: "Boutique démo Maison",
-    specialty: "Décoration",
-    description: "Exemple de vitrine pour une boutique d'intérieur.",
+    name: "home.demoStores.home.name",
+    specialty: "home.demoStores.home.specialty",
+    description: "home.demoStores.home.description",
     icon: "home",
   },
   {
     id: "demo-artisanat",
-    name: "Boutique démo Artisanat",
-    specialty: "Créations locales",
-    description: "Exemple de vitrine pour un artisan indépendant.",
+    name: "home.demoStores.crafts.name",
+    specialty: "home.demoStores.crafts.specialty",
+    description: "home.demoStores.crafts.description",
     icon: "art",
   },
 ]

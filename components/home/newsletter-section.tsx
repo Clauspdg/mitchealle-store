@@ -6,15 +6,17 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Reveal } from "@/components/shared/reveal"
+import { useI18n } from "@/i18n/client"
 
 export function NewsletterSection() {
+  const { t } = useI18n()
   const [email, setEmail] = useState("")
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
     if (!email.trim()) return
     // Presentation-only — no email-capture service exists yet this sprint.
-    toast.success("Merci de votre inscription à notre newsletter.")
+    toast.success(t("shell.footer.newsletterThanks"))
     setEmail("")
   }
 
@@ -23,11 +25,10 @@ export function NewsletterSection() {
       <Reveal>
         <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-4 px-6 py-16 text-center">
           <h2 className="font-heading text-2xl font-medium sm:text-3xl">
-            Restez informé·e
+            {t("home.newsletter.title")}
           </h2>
           <p className="text-sm opacity-80 sm:text-base">
-            Inscrivez-vous pour recevoir en avant-première nos nouveautés et
-            offres exclusives.
+            {t("home.newsletter.text")}
           </p>
           <form
             onSubmit={handleSubmit}
@@ -38,14 +39,14 @@ export function NewsletterSection() {
               required
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              placeholder="Votre e-mail"
+              placeholder={t("shell.footer.newsletterPlaceholder")}
               className="bg-white/70"
             />
             <Button
               type="submit"
               className="bg-accent-rose text-accent-rose-foreground hover:bg-accent-rose/90 shrink-0"
             >
-              S&apos;inscrire
+              {t("shell.footer.newsletterSubmit")}
             </Button>
           </form>
         </div>

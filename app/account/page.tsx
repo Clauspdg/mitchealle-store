@@ -9,10 +9,15 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { listSellerCenterStores } from "@/lib/seller-center.server"
 import { listApplicationsForApplicant } from "@/services/firestore/seller/applications"
+import { getI18n } from "@/i18n/server"
 
-export const metadata: Metadata = { title: "Mon compte" }
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n()
+  return { title: t("shell.header.myAccount") }
+}
 
 export default async function AccountPage() {
+  const { t, plural } = await getI18n()
   const session = await requireSession()
   const [profile, stores, applications] = await Promise.all([
     getUserProfile(session.uid),
@@ -24,76 +29,74 @@ export default async function AccountPage() {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="font-heading text-xl font-semibold tracking-tight">
-        Mon compte
+        {t("shell.header.myAccount")}
       </h1>
 
       <Card>
         <CardHeader>
-          <CardTitle>Profil</CardTitle>
+          <CardTitle>{t("account.nav.profile")}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-2 text-sm">
           <p>
-            <span className="text-muted-foreground">Email : </span>
+            <span className="text-muted-foreground">{t("account.email")} </span>
             {session.email}
           </p>
           <p className="flex items-center gap-2">
-            <span className="text-muted-foreground">Rôle : </span>
-            <Badge variant="secondary">{session.role}</Badge>
+            <span className="text-muted-foreground">{t("account.role")} </span>
+            <Badge variant="secondary">
+              {t(`account.roles.${session.role}`)}
+            </Badge>
           </p>
           {profile ? (
             <p>
-              <span className="text-muted-foreground">Nom : </span>
+              <span className="text-muted-foreground">
+                {t("account.name")}{" "}
+              </span>
               {profile.displayName}
             </p>
           ) : (
-            <p className="text-muted-foreground">
-              Profil Firestore en cours de synchronisation...
-            </p>
+            <p className="text-muted-foreground">{t("account.syncing")}</p>
           )}
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Vendre sur C.L.A.G</CardTitle>
+          <CardTitle>{t("shell.header.sell")}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col items-start gap-3 text-sm">
           {stores.length > 0 ? (
             <>
               <p>
                 {stores.length === 1
-                  ? `Votre boutique ${stores[0].name} est ouverte.`
-                  : `Vous gérez ${stores.length} boutiques.`}
+                  ? t("account.storeOpen", { store: stores[0].name })
+                  : plural("account.storesManaged", stores.length)}
               </p>
               <Button render={<Link href="/seller" />} nativeButton={false}>
-                Ouvrir l&apos;espace vendeur
+                {t("account.openSellerCenter")}
               </Button>
             </>
           ) : pending ? (
             <>
               <p>
-                Votre candidature « {pending.storeName} » est en cours
-                d&apos;examen.
+                {t("account.applicationPending", { store: pending.storeName })}
               </p>
               <Link
                 href="/account/seller-application"
                 className="underline underline-offset-4"
               >
-                Suivre ma candidature
+                {t("account.followApplication")}
               </Link>
             </>
           ) : (
             <>
-              <p className="text-muted-foreground">
-                Ouvrez votre boutique et vendez vos produits sur la marketplace.
-                Votre compte client reste inchangé.
-              </p>
+              <p className="text-muted-foreground">{t("account.sellPitch")}</p>
               <Button
                 render={<Link href="/account/seller-application" />}
                 nativeButton={false}
                 variant="outline"
               >
-                Déposer une candidature
+                {t("account.apply")}
               </Button>
             </>
           )}

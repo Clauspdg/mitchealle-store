@@ -146,6 +146,28 @@ describe("email templates", () => {
     expect(template.html).not.toContain("Numéro de suivi")
   })
 
+  it("writes an order's emails in the language it was placed in", () => {
+    const english = renderOrderConfirmationEmail(baseOrder({ locale: "en" }))
+    expect(english.subject).toBe("Order MS-2026-000001 received")
+    expect(english.html).toContain('<html lang="en">')
+    expect(english.html).toContain("View my order")
+
+    const creole = renderOrderShippedEmail(baseOrder({ locale: "ht" }))
+    expect(creole.subject).toBe("Kòmand ou MS-2026-000001 sou wout")
+    expect(creole.html).toContain("Nimewo swivi")
+    expect(creole.html).not.toMatch(/Votre|Your order/)
+  })
+
+  it("keeps an older order's emails in French, as they always were", () => {
+    const legacy = renderPaymentConfirmedEmail(baseOrder())
+    expect(legacy.subject).toBe(
+      "Paiement confirmé pour la commande MS-2026-000001"
+    )
+    expect(legacy.html).toContain('<html lang="fr">')
+    // The amount keeps its own currency.
+    expect(legacy.html).toContain("HTG")
+  })
+
   it("renders the order delivered email", () => {
     const template = renderOrderDeliveredEmail(baseOrder())
     expect(template.html.length).toBeGreaterThan(0)

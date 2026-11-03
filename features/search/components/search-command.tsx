@@ -21,16 +21,18 @@ import {
   getSearchIndexAction,
   type SearchIndexEntry,
 } from "@/features/search/actions/search-actions"
+import { useI18n } from "@/i18n/client"
+import type { MessageKey } from "@/i18n/translate"
 
 const SEARCH_HISTORY_KEY = "mitchaella-search-history"
 const MAX_HISTORY = 5
 const MAX_PER_GROUP = 5
 const MAX_SUGGESTED_CATEGORIES = 5
 
-const GROUP_LABELS: Record<SearchIndexEntry["type"], string> = {
-  product: "Produits",
-  category: "Catégories",
-  brand: "Marques",
+const GROUP_LABELS: Record<SearchIndexEntry["type"], MessageKey> = {
+  product: "shell.menu.products",
+  category: "shell.nav.categories",
+  brand: "search.brands",
 }
 
 interface SearchCommandProps {
@@ -82,6 +84,7 @@ export function SearchCommand({ className, inputId }: SearchCommandProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const fuseRef = useRef<Fuse<SearchIndexEntry> | null>(null)
   const valueRef = useRef("")
+  const { t } = useI18n()
   const [indexData, setIndexData] = useState<SearchIndexEntry[]>([])
   const [isIndexReady, setIsIndexReady] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
@@ -278,8 +281,8 @@ export function SearchCommand({ className, inputId }: SearchCommandProps) {
             value={value}
             onChange={(event) => handleChange(event.target.value)}
             onFocus={() => setIsOpen(true)}
-            placeholder="Rechercher un produit…"
-            aria-label="Rechercher"
+            placeholder={t("search.placeholder")}
+            aria-label={t("search.label")}
             className="h-10 rounded-full border-0 bg-transparent pr-20 pl-9 shadow-none focus-visible:ring-0 dark:bg-transparent"
             role="combobox"
             aria-expanded={isOpen}
@@ -293,7 +296,7 @@ export function SearchCommand({ className, inputId }: SearchCommandProps) {
           {value ? (
             <button
               type="button"
-              aria-label="Effacer la recherche"
+              aria-label={t("search.clear")}
               onClick={close}
               className="text-muted-foreground hover:text-foreground absolute right-11"
             >
@@ -302,7 +305,7 @@ export function SearchCommand({ className, inputId }: SearchCommandProps) {
           ) : null}
           <button
             type="submit"
-            aria-label="Lancer la recherche"
+            aria-label={t("search.submit")}
             className="bg-accent-gold text-accent-gold-foreground hover:bg-accent-gold/90 absolute right-1 flex size-8 items-center justify-center rounded-full transition-colors"
           >
             <SearchIcon className="size-4" />
@@ -322,7 +325,7 @@ export function SearchCommand({ className, inputId }: SearchCommandProps) {
                 {history.length > 0 ? (
                   <div className="flex flex-col gap-1">
                     <span className="text-muted-foreground px-2 py-1 text-xs font-medium tracking-wide uppercase">
-                      Recherches récentes
+                      {t("search.recent")}
                     </span>
                     {history.map((term, index) => (
                       <button
@@ -347,7 +350,7 @@ export function SearchCommand({ className, inputId }: SearchCommandProps) {
                 {suggestedCategories.length > 0 ? (
                   <div className="flex flex-col gap-1">
                     <span className="text-muted-foreground px-2 py-1 text-xs font-medium tracking-wide uppercase">
-                      Catégories suggérées
+                      {t("search.suggested")}
                     </span>
                     {suggestedCategories.map((entry, entryIndex) => {
                       const navIndex = history.length + entryIndex
@@ -376,7 +379,7 @@ export function SearchCommand({ className, inputId }: SearchCommandProps) {
               </div>
             ) : (
               <p className="text-muted-foreground px-2 py-3 text-center text-sm">
-                Commencez à taper pour rechercher.
+                {t("search.startTyping")}
               </p>
             )
           ) : groups.length > 0 ? (
@@ -384,7 +387,7 @@ export function SearchCommand({ className, inputId }: SearchCommandProps) {
               {groups.map((group) => (
                 <div key={group.type} className="flex flex-col gap-1">
                   <span className="text-muted-foreground px-2 py-1 text-xs font-medium tracking-wide uppercase">
-                    {GROUP_LABELS[group.type]}
+                    {t(GROUP_LABELS[group.type])}
                   </span>
                   {group.entries.map((result) => {
                     const navIndex = navItems.findIndex(
@@ -450,18 +453,18 @@ export function SearchCommand({ className, inputId }: SearchCommandProps) {
                     : "hover:bg-muted"
                 )}
               >
-                Voir tous les résultats
+                {t("search.seeAll")}
               </button>
             </div>
           ) : !isIndexReady ? (
             <p className="text-muted-foreground px-2 py-6 text-center text-sm">
-              Chargement…
+              {t("common.loading")}
             </p>
           ) : (
             <EmptyState
               icon={SearchXIcon}
-              title="Aucun résultat"
-              description={`Aucun résultat pour « ${value} ».`}
+              title={t("search.noResults")}
+              description={t("search.noResultsFor", { query: value })}
               className="border-none px-2 py-6"
             />
           )}

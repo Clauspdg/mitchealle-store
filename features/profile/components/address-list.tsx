@@ -14,12 +14,14 @@ import {
 } from "@/features/profile/actions/address-actions"
 import { AddressFormDialog } from "@/features/profile/components/address-form-dialog"
 import type { AddressWithId } from "@/types/user"
+import { useI18n } from "@/i18n/client"
 
 interface AddressListProps {
   addresses: AddressWithId[]
 }
 
 export function AddressList({ addresses }: AddressListProps) {
+  const { t } = useI18n()
   const router = useRouter()
 
   async function handleDelete(addressId: string) {
@@ -28,7 +30,7 @@ export function AddressList({ addresses }: AddressListProps) {
       toast.error(result.error)
       return
     }
-    toast.success("Adresse supprimée.")
+    toast.success(t("account.addresses.deleted"))
     router.refresh()
   }
 
@@ -45,10 +47,12 @@ export function AddressList({ addresses }: AddressListProps) {
     return (
       <EmptyState
         icon={MapPinIcon}
-        title="Aucune adresse enregistrée"
-        description="Ajoutez une adresse pour accélérer vos prochaines livraisons."
+        title={t("account.addresses.emptyTitle")}
+        description={t("account.addresses.emptyText")}
         action={
-          <AddressFormDialog trigger={<Button>Ajouter une adresse</Button>} />
+          <AddressFormDialog
+            trigger={<Button>{t("account.addresses.add")}</Button>}
+          />
         }
       />
     )
@@ -65,7 +69,9 @@ export function AddressList({ addresses }: AddressListProps) {
             <div className="flex items-center gap-2">
               <span className="font-medium">{address.label}</span>
               {address.isDefault ? (
-                <Badge variant="secondary">Par défaut</Badge>
+                <Badge variant="secondary">
+                  {t("account.addresses.default")}
+                </Badge>
               ) : null}
             </div>
             <span>{address.recipientName}</span>
@@ -85,26 +91,35 @@ export function AddressList({ addresses }: AddressListProps) {
                 size="sm"
                 onClick={() => handleSetDefault(address.id)}
               >
-                Définir par défaut
+                {t("account.addresses.makeDefault")}
               </Button>
             ) : null}
             <AddressFormDialog
               address={address}
               trigger={
-                <Button variant="ghost" size="icon" aria-label="Modifier">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={t("common.edit")}
+                >
                   <PencilIcon className="size-4" />
                 </Button>
               }
             />
             <ConfirmDialog
               trigger={
-                <Button variant="ghost" size="icon" aria-label="Supprimer">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={t("common.delete")}
+                >
                   <TrashIcon className="size-4" />
                 </Button>
               }
-              title="Supprimer cette adresse ?"
-              description="Cette action est définitive."
-              confirmLabel="Supprimer"
+              title={t("account.addresses.deleteTitle")}
+              description={t("account.addresses.deleteText")}
+              confirmLabel={t("common.delete")}
+              cancelLabel={t("common.cancel")}
               destructive
               onConfirm={() => handleDelete(address.id)}
             />

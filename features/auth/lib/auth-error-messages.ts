@@ -1,22 +1,25 @@
 import { FirebaseError } from "firebase/app"
 
-const MESSAGES: Record<string, string> = {
-  "auth/invalid-email": "Adresse email invalide.",
-  "auth/user-disabled": "Ce compte a été désactivé.",
-  "auth/user-not-found": "Aucun compte ne correspond à cet email.",
-  "auth/wrong-password": "Mot de passe incorrect.",
-  "auth/invalid-credential": "Email ou mot de passe incorrect.",
-  "auth/email-already-in-use": "Un compte existe déjà avec cet email.",
-  "auth/weak-password": "Mot de passe trop faible.",
-  "auth/too-many-requests": "Trop de tentatives. Réessayez plus tard.",
-  "auth/popup-closed-by-user": "Fenêtre de connexion fermée avant la fin.",
-  "auth/network-request-failed": "Problème de connexion réseau.",
+import type { MessageKey } from "@/i18n/translate"
+
+const MESSAGES: Record<string, MessageKey> = {
+  "auth/invalid-email": "auth.errors.invalidEmail",
+  "auth/user-disabled": "auth.errors.userDisabled",
+  "auth/user-not-found": "auth.errors.userNotFound",
+  "auth/wrong-password": "auth.errors.wrongPassword",
+  "auth/invalid-credential": "auth.errors.invalidCredential",
+  "auth/email-already-in-use": "auth.errors.emailInUse",
+  "auth/weak-password": "auth.errors.weakPassword",
+  "auth/too-many-requests": "auth.errors.tooManyRequests",
+  "auth/popup-closed-by-user": "auth.errors.popupClosed",
+  "auth/network-request-failed": "auth.errors.network",
 }
 
-export function getAuthErrorMessage(error: unknown): string {
+/** The dictionary key of what to tell the visitor about a sign-in error. */
+export function getAuthErrorMessage(error: unknown): MessageKey {
   if (error instanceof FirebaseError) {
-    return MESSAGES[error.code] ?? "Une erreur est survenue. Réessayez."
+    return MESSAGES[error.code] ?? "common.genericError"
   }
 
-  return "Une erreur est survenue. Réessayez."
+  return "common.genericError"
 }

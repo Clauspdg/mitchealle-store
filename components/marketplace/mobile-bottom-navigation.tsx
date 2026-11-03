@@ -14,6 +14,7 @@ import {
 import { cn } from "@/lib/utils"
 import { SITE_SEARCH_INPUT_ID } from "@/components/marketplace/marketplace-header"
 import { useCartItemCount } from "@/features/cart/hooks/use-cart-item-count"
+import { useI18n } from "@/i18n/client"
 
 const ITEM_CLASSNAME =
   "relative flex min-h-14 flex-col items-center justify-center gap-0.5 text-[0.68rem] font-medium transition-colors"
@@ -58,6 +59,7 @@ function NavLink({
 }
 
 export function MobileBottomNavigation() {
+  const { t } = useI18n()
   const pathname = usePathname()
   const cartCount = useCartItemCount()
 
@@ -75,18 +77,18 @@ export function MobileBottomNavigation() {
       {/* Keeps the end of the page (footer) clear of the fixed bar. */}
       <div aria-hidden className="h-14 md:hidden print:hidden" />
       <nav
-        aria-label="Navigation principale"
+        aria-label={t("shell.bottomNav.label")}
         className="bg-background/95 fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden print:hidden"
       >
         <NavLink
           href="/"
-          label="Accueil"
+          label={t("shell.bottomNav.home")}
           icon={HomeIcon}
           isActive={pathname === "/"}
         />
         <NavLink
           href="/categories"
-          label="Catégories"
+          label={t("shell.bottomNav.categories")}
           icon={LayoutGridIcon}
           isActive={pathname.startsWith("/categories")}
         />
@@ -96,18 +98,18 @@ export function MobileBottomNavigation() {
           className={cn(ITEM_CLASSNAME, "text-muted-foreground")}
         >
           <SearchIcon className="size-5" />
-          Recherche
+          {t("shell.bottomNav.search")}
         </button>
         <NavLink
           href="/cart"
-          label="Panier"
+          label={t("shell.bottomNav.cart")}
           icon={ShoppingBagIcon}
           isActive={pathname.startsWith("/cart")}
           badge={cartCount}
         />
         <NavLink
           href="/account"
-          label="Compte"
+          label={t("shell.bottomNav.account")}
           icon={UserIcon}
           isActive={pathname.startsWith("/account")}
         />

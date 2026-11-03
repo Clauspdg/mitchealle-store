@@ -101,6 +101,9 @@ export interface OrderDocument {
   delivery: OrderDelivery
   preorder: OrderPreorder | null
   notes: string | null
+  /** The customer's language at checkout. Absent on older orders, placed
+   * on the French-only site: their emails stay in French. */
+  locale?: "en" | "fr" | "ht"
   /** Stores (house excluded) with a sub-order in `sellerOrders`. Absent on
    * orders from before multi-vendor. */
   sellerIds?: string[]

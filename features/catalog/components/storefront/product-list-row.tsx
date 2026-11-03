@@ -9,6 +9,7 @@ import { PriceDisplay } from "@/features/catalog/components/storefront/price-dis
 import { WishlistButton } from "@/features/wishlist/components/wishlist-button"
 import { AddToCartButton } from "@/features/cart/components/add-to-cart-button"
 import { computeProductBadges } from "@/features/catalog/lib/product-badges"
+import { getI18n } from "@/i18n/server"
 
 interface ProductListRowProps {
   product: Product
@@ -17,10 +18,11 @@ interface ProductListRowProps {
 
 /** Compact horizontal card for the category page's "list" view — same data
  * as `MarketplaceProductCard`, laid out image-left/info-right instead of stacked. */
-export function ProductListRow({
+export async function ProductListRow({
   product,
   isInWishlist = false,
 }: ProductListRowProps) {
+  const { t } = await getI18n()
   const image = product.images[0]
   const badges = computeProductBadges(product).slice(0, 2)
   const defaultVariant =
@@ -49,7 +51,7 @@ export function ProductListRow({
               key={badge.key}
               className={cn("text-[0.6rem]", badge.className)}
             >
-              {badge.label}
+              {t(badge.label, badge.params)}
             </Badge>
           ))}
         </div>

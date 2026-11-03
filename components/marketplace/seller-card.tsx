@@ -16,16 +16,17 @@ interface SellerCardProps {
   seller: SellerCardData
   /** Public store page — none exist yet, so demo cards don't link anywhere. */
   href?: string
-  isDemo?: boolean
+  /** Shown as a badge on demo cards, in the visitor's language. */
+  demoLabel?: string
 }
 
-export function SellerCard({ seller, href, isDemo = false }: SellerCardProps) {
+export function SellerCard({ seller, href, demoLabel }: SellerCardProps) {
   const body = (
     <>
       <div className="bg-surface-ink relative h-14 sm:h-16">
-        {isDemo ? (
+        {demoLabel ? (
           <Badge className="bg-accent-gold text-accent-gold-foreground absolute top-2 right-2">
-            Démo
+            {demoLabel}
           </Badge>
         ) : null}
       </div>

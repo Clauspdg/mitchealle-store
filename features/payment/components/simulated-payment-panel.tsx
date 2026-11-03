@@ -6,8 +6,10 @@ import { toast } from "sonner"
 
 import { settleSimulatedPaymentAction } from "@/features/payment/actions/checkout-actions"
 import { Button } from "@/components/ui/button"
+import { useI18n } from "@/i18n/client"
 
 export function SimulatedPaymentPanel({ orderId }: { orderId: string }) {
+  const { t } = useI18n()
   const router = useRouter()
   const [busy, setBusy] = useState(false)
 
@@ -32,14 +34,14 @@ export function SimulatedPaymentPanel({ orderId }: { orderId: string }) {
   return (
     <div className="flex flex-col gap-2">
       <Button disabled={busy} onClick={() => settle("paid")}>
-        Confirmer le paiement simulé
+        {t("checkout.simulated.confirm")}
       </Button>
       <Button
         variant="outline"
         disabled={busy}
         onClick={() => settle("abandoned")}
       >
-        Abandonner le paiement
+        {t("checkout.simulated.abandon")}
       </Button>
     </div>
   )

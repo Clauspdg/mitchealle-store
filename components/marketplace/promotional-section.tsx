@@ -4,6 +4,7 @@ import type { Product } from "@/types/product"
 import { ScrollCarousel } from "@/components/shared/scroll-carousel"
 import { MarketplaceProductCard } from "@/components/marketplace/marketplace-product-card"
 import { SectionHeading } from "@/components/marketplace/section-heading"
+import { getI18n } from "@/i18n/server"
 
 function bestDiscountPercent(products: Product[]): number {
   return Math.max(
@@ -24,12 +25,13 @@ interface PromotionalSectionProps {
   wishlistProductIds: Set<string>
 }
 
-export function PromotionalSection({
+export async function PromotionalSection({
   heading,
   products,
   wishlistProductIds,
 }: PromotionalSectionProps) {
   if (products.length === 0) return null
+  const { t } = await getI18n()
   const discount = bestDiscountPercent(products)
 
   return (
@@ -42,7 +44,7 @@ export function PromotionalSection({
         {discount > 0 ? (
           <p className="text-accent-gold-text mb-3 flex items-center gap-1.5 text-sm font-semibold">
             <TagIcon className="size-4" />
-            Jusqu&apos;à -{discount}% sur la sélection du moment
+            {t("home.upToDiscount", { discount })}
           </p>
         ) : null}
         <ScrollCarousel itemClassName="w-[44vw] sm:w-52 lg:w-56">

@@ -6,8 +6,10 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 
 import { Button } from "@/components/ui/button"
 import { useCompare } from "@/features/compare/context/compare-context"
+import { useI18n } from "@/i18n/client"
 
 export function CompareBar() {
+  const { t, plural } = useI18n()
   const { ids, remove, clear } = useCompare()
   const shouldReduceMotion = useReducedMotion()
 
@@ -26,14 +28,14 @@ export function CompareBar() {
         >
           <div className="flex items-center gap-2 text-sm">
             <span className="font-medium">
-              {ids.length} produit{ids.length > 1 ? "s" : ""} à comparer
+              {plural("catalog.compare.count", ids.length)}
             </span>
             <button
               type="button"
               onClick={clear}
               className="text-surface-ink-foreground/60 hover:text-surface-ink-foreground text-xs underline underline-offset-4"
             >
-              Tout effacer
+              {t("catalog.compare.clear")}
             </button>
           </div>
           <div className="flex items-center gap-2">
@@ -43,14 +45,14 @@ export function CompareBar() {
               size="sm"
               className="bg-accent-gold text-accent-gold-foreground hover:bg-accent-gold/90"
             >
-              Comparer
+              {t("catalog.compare.compare")}
             </Button>
             {ids.map((id) => (
               <button
                 key={id}
                 type="button"
                 onClick={() => remove(id)}
-                aria-label="Retirer du comparateur"
+                aria-label={t("catalog.compare.remove")}
                 className="text-surface-ink-foreground/60 hover:text-surface-ink-foreground"
               >
                 <XIcon className="size-3.5" />

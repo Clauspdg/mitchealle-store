@@ -1,7 +1,7 @@
 import Link from "next/link"
 
-import { formatPriceMinor } from "@/utils/currency"
 import { Button } from "@/components/ui/button"
+import { getI18n } from "@/i18n/server"
 
 interface CartSummaryProps {
   subtotalMinor: number
@@ -10,26 +10,23 @@ interface CartSummaryProps {
   blockedCount: number
 }
 
-export function CartSummary({
+export async function CartSummary({
   subtotalMinor,
   currency,
   blockedCount,
 }: CartSummaryProps) {
+  const { t, plural, price } = await getI18n()
   return (
     <div className="bg-card ring-foreground/10 flex flex-col gap-4 rounded-xl p-6 ring-1">
-      <h2 className="font-heading text-lg font-medium">Résumé</h2>
+      <h2 className="font-heading text-lg font-medium">{t("cart.summary")}</h2>
       <div className="flex items-center justify-between text-sm">
-        <span className="text-muted-foreground">Sous-total</span>
-        <span>{formatPriceMinor(subtotalMinor, currency)}</span>
+        <span className="text-muted-foreground">{t("cart.subtotal")}</span>
+        <span>{price(subtotalMinor, currency)}</span>
       </div>
-      <p className="text-muted-foreground text-xs">
-        Les frais de livraison sont calculés à l&apos;étape suivante.
-      </p>
+      <p className="text-muted-foreground text-xs">{t("cart.shippingNext")}</p>
       {blockedCount > 0 ? (
         <p className="text-destructive text-sm" role="alert">
-          {blockedCount === 1
-            ? `Un article de votre panier n'est pas vendu en ${currency}. Retirez-le pour commander.`
-            : `${blockedCount} articles de votre panier ne sont pas vendus en ${currency}. Retirez-les pour commander.`}
+          {plural("cart.blocked", blockedCount, { currency })}
         </p>
       ) : (
         <Button
@@ -38,7 +35,7 @@ export function CartSummary({
           size="lg"
           className="w-full"
         >
-          Passer la commande
+          {t("cart.checkout")}
         </Button>
       )}
     </div>

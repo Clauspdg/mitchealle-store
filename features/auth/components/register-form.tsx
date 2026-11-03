@@ -13,6 +13,8 @@ import { toast } from "sonner"
 import { auth } from "@/firebase/client"
 import { registerSchema, type RegisterInput } from "@/schemas/auth.schema"
 import { getAuthErrorMessage } from "@/features/auth/lib/auth-error-messages"
+import { authEmailsIn } from "@/features/auth/lib/auth-language"
+import { useI18n } from "@/i18n/client"
 import { syncSessionCookie } from "@/lib/session-client"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -22,6 +24,7 @@ import { Label } from "@/components/ui/label"
 /** `redirectTo` is already checked by `safeRedirectPath` on the page:
  * the visitor goes back to what they were doing, not to their account. */
 export function RegisterForm({ redirectTo = "/" }: { redirectTo?: string }) {
+  const { t, message, locale } = useI18n()
   const [submitting, setSubmitting] = useState(false)
 
   const {
@@ -49,17 +52,18 @@ export function RegisterForm({ redirectTo = "/" }: { redirectTo?: string }) {
         data.password
       )
       await updateProfile(credential.user, { displayName: data.displayName })
+      authEmailsIn(locale)
       await sendEmailVerification(credential.user)
 
       const idToken = await credential.user.getIdToken()
       await syncSessionCookie(idToken)
 
-      toast.success("Compte créé. Vérifiez votre email pour le confirmer.")
+      toast.success(t("auth.register.success"))
       // A full navigation: the next page is rendered with the new session
       // cookie, and the auth page can't redirect in between.
       window.location.assign(redirectTo)
     } catch (error) {
-      toast.error(getAuthErrorMessage(error))
+      toast.error(t(getAuthErrorMessage(error)))
     } finally {
       setSubmitting(false)
     }
@@ -72,7 +76,7 @@ export function RegisterForm({ redirectTo = "/" }: { redirectTo?: string }) {
       noValidate
     >
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="displayName">Nom</Label>
+        <Label htmlFor="displayName">{t("auth.register.name")}</Label>
         <Input
           id="displayName"
           autoComplete="name"
@@ -81,13 +85,13 @@ export function RegisterForm({ redirectTo = "/" }: { redirectTo?: string }) {
         />
         {errors.displayName ? (
           <p className="text-destructive text-sm">
-            {errors.displayName.message}
+            {message(errors.displayName.message)}
           </p>
         ) : null}
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">{t("auth.login.email")}</Label>
         <Input
           id="email"
           type="email"
@@ -96,12 +100,14 @@ export function RegisterForm({ redirectTo = "/" }: { redirectTo?: string }) {
           {...register("email")}
         />
         {errors.email ? (
-          <p className="text-destructive text-sm">{errors.email.message}</p>
+          <p className="text-destructive text-sm">
+            {message(errors.email.message)}
+          </p>
         ) : null}
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="password">Mot de passe</Label>
+        <Label htmlFor="password">{t("auth.login.password")}</Label>
         <Input
           id="password"
           type="password"
@@ -110,12 +116,16 @@ export function RegisterForm({ redirectTo = "/" }: { redirectTo?: string }) {
           {...register("password")}
         />
         {errors.password ? (
-          <p className="text-destructive text-sm">{errors.password.message}</p>
+          <p className="text-destructive text-sm">
+            {message(errors.password.message)}
+          </p>
         ) : null}
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="confirmPassword">Confirmer le mot de passe</Label>
+        <Label htmlFor="confirmPassword">
+          {t("auth.register.confirmPassword")}
+        </Label>
         <Input
           id="confirmPassword"
           type="password"
@@ -125,7 +135,7 @@ export function RegisterForm({ redirectTo = "/" }: { redirectTo?: string }) {
         />
         {errors.confirmPassword ? (
           <p className="text-destructive text-sm">
-            {errors.confirmPassword.message}
+            {message(errors.confirmPassword.message)}
           </p>
         ) : null}
       </div>
@@ -143,17 +153,17 @@ export function RegisterForm({ redirectTo = "/" }: { redirectTo?: string }) {
           htmlFor="acceptTerms"
           className="text-muted-foreground font-normal"
         >
-          J&apos;accepte les conditions d&apos;utilisation.
+          {t("auth.register.acceptTerms")}
         </Label>
       </div>
       {errors.acceptTerms ? (
         <p className="text-destructive -mt-2 text-sm">
-          {errors.acceptTerms.message}
+          {message(errors.acceptTerms.message)}
         </p>
       ) : null}
 
       <Button type="submit" disabled={submitting} className="mt-2">
-        {submitting ? "Création..." : "Créer mon compte"}
+        {submitting ? t("auth.register.submitting") : t("auth.register.submit")}
       </Button>
     </form>
   )

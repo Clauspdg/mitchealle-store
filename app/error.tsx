@@ -3,6 +3,7 @@
 import { useEffect } from "react"
 
 import { Button } from "@/components/ui/button"
+import { useI18n } from "@/i18n/client"
 
 export default function Error({
   error,
@@ -11,6 +12,7 @@ export default function Error({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  const { t } = useI18n()
   useEffect(() => {
     console.error(error)
   }, [error])
@@ -18,12 +20,12 @@ export default function Error({
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
       <h1 className="text-2xl font-semibold tracking-tight">
-        Une erreur est survenue
+        {t("shell.error.title")}
       </h1>
       <p className="text-muted-foreground max-w-sm text-sm">
-        Quelque chose s&apos;est mal passé. Vous pouvez réessayer.
+        {t("shell.error.text")}
       </p>
-      <Button onClick={() => reset()}>Réessayer</Button>
+      <Button onClick={() => reset()}>{t("shell.error.retry")}</Button>
     </div>
   )
 }

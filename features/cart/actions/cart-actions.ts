@@ -12,6 +12,8 @@ import {
   updateCartItemQuantitySchema,
 } from "@/schemas/cart.schema"
 import type { ActionResult } from "@/types/action-result"
+import { getI18n } from "@/i18n/server"
+import { userMessage } from "@/i18n/user-error"
 
 export async function getCartItemCountAction(): Promise<ActionResult<number>> {
   // Uses `getSession()` (nullable, no redirect) rather than `requireSession()`
@@ -37,9 +39,10 @@ export async function addToCartAction(
 ): Promise<ActionResult<undefined>> {
   const session = await requireSession("customer")
 
+  const i18n = await getI18n()
   const parsed = addToCartSchema.safeParse(input)
   if (!parsed.success) {
-    return { success: false, error: "Quantité invalide." }
+    return { success: false, error: i18n.t("errors.invalidQuantity") }
   }
 
   try {
@@ -48,10 +51,7 @@ export async function addToCartAction(
   } catch (error) {
     return {
       success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Impossible d'ajouter ce produit au panier.",
+      error: userMessage(error, i18n, "errors.addToCartFailed"),
     }
   }
 }
@@ -61,9 +61,10 @@ export async function updateCartItemQuantityAction(
 ): Promise<ActionResult<undefined>> {
   const session = await requireSession("customer")
 
+  const i18n = await getI18n()
   const parsed = updateCartItemQuantitySchema.safeParse(input)
   if (!parsed.success) {
-    return { success: false, error: "Quantité invalide." }
+    return { success: false, error: i18n.t("errors.invalidQuantity") }
   }
 
   try {
@@ -77,8 +78,7 @@ export async function updateCartItemQuantityAction(
   } catch (error) {
     return {
       success: false,
-      error:
-        error instanceof Error ? error.message : "Une erreur est survenue.",
+      error: userMessage(error, i18n),
     }
   }
 }
@@ -89,14 +89,14 @@ export async function removeCartItemAction(
 ): Promise<ActionResult<undefined>> {
   const session = await requireSession("customer")
 
+  const i18n = await getI18n()
   try {
     await removeCartItem(session.uid, productId, variantId)
     return { success: true, data: undefined }
   } catch (error) {
     return {
       success: false,
-      error:
-        error instanceof Error ? error.message : "Une erreur est survenue.",
+      error: userMessage(error, i18n),
     }
   }
 }

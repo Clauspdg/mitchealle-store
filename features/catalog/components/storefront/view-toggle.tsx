@@ -3,6 +3,7 @@
 import { LayoutGridIcon, LayoutListIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { useI18n } from "@/i18n/client"
 
 export type CatalogView = "grid" | "list"
 
@@ -12,11 +13,12 @@ interface ViewToggleProps {
 }
 
 export function ViewToggle({ view, onChange }: ViewToggleProps) {
+  const { t } = useI18n()
   return (
     <div className="bg-muted inline-flex items-center gap-0.5 rounded-full p-0.5">
       <button
         type="button"
-        aria-label="Vue grille"
+        aria-label={t("catalog.view.grid")}
         aria-pressed={view === "grid"}
         onClick={() => onChange("grid")}
         className={cn(
@@ -28,7 +30,7 @@ export function ViewToggle({ view, onChange }: ViewToggleProps) {
       </button>
       <button
         type="button"
-        aria-label="Vue liste"
+        aria-label={t("catalog.view.list")}
         aria-pressed={view === "list"}
         onClick={() => onChange("list")}
         className={cn(

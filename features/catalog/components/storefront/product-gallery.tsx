@@ -16,6 +16,7 @@ import type { ProductImage } from "@/types/product"
 import { useSwipe } from "@/hooks/use-swipe"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import { useI18n } from "@/i18n/client"
 
 interface ProductGalleryProps {
   images: ProductImage[]
@@ -29,6 +30,7 @@ export function ProductGallery({
   productName,
   overrideImageUrl,
 }: ProductGalleryProps) {
+  const { t } = useI18n()
   const shouldReduceMotion = useReducedMotion()
   const sortedImages = [...images].sort((a, b) => a.position - b.position)
   const displayImages: ProductImage[] =
@@ -118,7 +120,7 @@ export function ProductGallery({
           className="bg-muted relative aspect-square cursor-zoom-in overflow-hidden rounded-xl"
           role="button"
           tabIndex={0}
-          aria-label="Agrandir l'image"
+          aria-label={t("catalog.gallery.enlarge")}
           onMouseMove={handleMouseMove}
           onMouseEnter={() => setIsZoomed(true)}
           onMouseLeave={() => setIsZoomed(false)}
@@ -236,7 +238,9 @@ export function ProductGallery({
               onClick={toggleFullscreen}
               className="absolute top-2 right-2 rounded-full"
               aria-label={
-                isFullscreen ? "Quitter le plein écran" : "Plein écran"
+                isFullscreen
+                  ? t("catalog.gallery.exitFullscreen")
+                  : t("catalog.gallery.fullscreen")
               }
             >
               {isFullscreen ? <MinimizeIcon /> : <MaximizeIcon />}
@@ -249,7 +253,7 @@ export function ProductGallery({
                   size="icon"
                   onClick={showPrev}
                   className="absolute top-1/2 left-2 -translate-y-1/2 rounded-full"
-                  aria-label="Image précédente"
+                  aria-label={t("catalog.gallery.previous")}
                 >
                   <ChevronLeftIcon />
                 </Button>
@@ -259,7 +263,7 @@ export function ProductGallery({
                   size="icon"
                   onClick={showNext}
                   className="absolute top-1/2 right-2 -translate-y-1/2 rounded-full"
-                  aria-label="Image suivante"
+                  aria-label={t("catalog.gallery.next")}
                 >
                   <ChevronRightIcon />
                 </Button>

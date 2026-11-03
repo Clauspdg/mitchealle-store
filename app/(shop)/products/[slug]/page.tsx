@@ -26,6 +26,7 @@ import { ReturnPolicyCard } from "@/features/delivery/components/return-policy-c
 import { ReviewsSection } from "@/features/reviews/components/reviews-section"
 import { JsonLd } from "@/features/seo/components/json-ld"
 import { Badge } from "@/components/ui/badge"
+import { getI18n } from "@/i18n/server"
 
 // Live product data (price, stock, publication status) must never be baked
 // into the build output.
@@ -94,10 +95,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
     relatedPage.items
   ).slice(0, 8)
   const relatedWishlistIds = new Set(wishlistItems.map((item) => item.id))
+  const i18n = await getI18n()
+  const { t } = i18n
   const badges = computeProductBadges(product)
 
   const breadcrumbItems = [
-    { title: "Produits", href: "/products" },
+    { title: t("shell.menu.products"), href: "/products" },
     ...(category
       ? [{ title: category.name, href: `/categories/${category.slug}` }]
       : []),
@@ -190,7 +193,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               <div className="flex flex-wrap gap-1.5">
                 {badges.map((badge) => (
                   <Badge key={badge.key} className={badge.className}>
-                    {badge.label}
+                    {t(badge.label, badge.params)}
                   </Badge>
                 ))}
               </div>
@@ -216,7 +219,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             {product.description ? (
               <div className="mt-4 border-t pt-4">
                 <h2 className="font-heading mb-2 text-lg font-medium">
-                  Description
+                  {t("catalog.description")}
                 </h2>
                 <p className="text-muted-foreground text-sm whitespace-pre-line">
                   {product.description}
@@ -246,7 +249,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <section className="flex flex-col gap-4 border-t pt-8">
           <Reveal>
             <h2 className="font-heading text-2xl font-medium">
-              Vous pourriez aussi aimer
+              {t("catalog.youMayAlsoLike")}
             </h2>
           </Reveal>
           <Reveal delay={0.1}>

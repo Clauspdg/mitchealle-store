@@ -26,6 +26,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useI18n } from "@/i18n/client"
+import type { MessageKey } from "@/i18n/translate"
 // Deliberately just `{id, name}` — not the Firestore `Category`/`Collection`
 // types, which carry `createdAt`/`updatedAt` as Firestore `Timestamp` class
 // instances. React rejects passing non-plain objects from a Server
@@ -43,13 +45,14 @@ interface CatalogFiltersProps {
   colors: string[]
 }
 
-const GENDER_OPTIONS = [
-  { value: "femme", label: "Femme" },
-  { value: "homme", label: "Homme" },
-  { value: "unisexe", label: "Unisexe" },
+const GENDER_OPTIONS: Array<{ value: string; label: MessageKey }> = [
+  { value: "femme", label: "catalog.filters.women" },
+  { value: "homme", label: "catalog.filters.men" },
+  { value: "unisexe", label: "catalog.filters.unisex" },
 ]
 
 export function CatalogFilters(props: CatalogFiltersProps) {
+  const { t } = useI18n()
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -102,7 +105,7 @@ export function CatalogFilters(props: CatalogFiltersProps) {
         <div className="relative flex-1">
           <SearchIcon className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
           <Input
-            placeholder="Rechercher..."
+            placeholder={t("catalog.filters.search")}
             defaultValue={searchParams.get("q") ?? ""}
             onChange={(event) => debouncedSetMobileSearch(event.target.value)}
             className="h-11 pl-8"
@@ -115,7 +118,7 @@ export function CatalogFilters(props: CatalogFiltersProps) {
             }
           >
             <FilterIcon className="size-4" />
-            Filtres
+            {t("catalog.filters.title")}
             {activeCount > 0 ? (
               <span className="bg-accent-gold text-accent-gold-foreground ml-0.5 flex size-4 items-center justify-center rounded-full text-[0.65rem]">
                 {activeCount}
@@ -124,7 +127,7 @@ export function CatalogFilters(props: CatalogFiltersProps) {
           </SheetTrigger>
           <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto">
             <SheetHeader>
-              <SheetTitle>Filtres</SheetTitle>
+              <SheetTitle>{t("catalog.filters.title")}</SheetTitle>
             </SheetHeader>
             <div className="px-4">
               <FilterFields {...shared} layout="stacked" />
@@ -136,12 +139,12 @@ export function CatalogFilters(props: CatalogFiltersProps) {
                 className="h-11 flex-1"
                 onClick={resetAll}
               >
-                Réinitialiser
+                {t("catalog.filters.reset")}
               </Button>
               <SheetClose
                 render={<Button type="button" className="h-11 flex-1" />}
               >
-                Appliquer
+                {t("catalog.filters.apply")}
               </SheetClose>
             </SheetFooter>
           </SheetContent>
@@ -169,6 +172,7 @@ function FilterFields({
   setParam,
   layout,
 }: FilterFieldsProps) {
+  const { t } = useI18n()
   const stacked = layout === "stacked"
   const rowClass = stacked
     ? "flex flex-col gap-3"
@@ -191,7 +195,7 @@ function FilterFields({
           <div className="relative">
             <SearchIcon className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
             <Input
-              placeholder="Rechercher..."
+              placeholder={t("catalog.filters.search")}
               defaultValue={searchParams.get("q") ?? ""}
               onChange={(event) => debouncedSetSearch(event.target.value)}
               className="w-56 rounded-full pl-8"
@@ -211,12 +215,14 @@ function FilterFields({
                 stacked ? "w-full" : "w-44 rounded-full",
                 fieldWidth
               )}
-              aria-label="Filtrer par catégorie"
+              aria-label={t("catalog.filters.byCategory")}
             >
-              <SelectValue placeholder="Catégorie" />
+              <SelectValue placeholder={t("catalog.specs.category")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Toutes les catégories</SelectItem>
+              <SelectItem value="all">
+                {t("shell.menu.allCategories")}
+              </SelectItem>
               {categories.map((category) => (
                 <SelectItem key={category.id} value={category.id}>
                   {category.name}
@@ -234,12 +240,14 @@ function FilterFields({
         >
           <SelectTrigger
             className={cn(stacked ? "w-full" : "w-44 rounded-full", fieldWidth)}
-            aria-label="Filtrer par collection"
+            aria-label={t("catalog.filters.byCollection")}
           >
-            <SelectValue placeholder="Collection" />
+            <SelectValue placeholder={t("catalog.filters.collection")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Toutes les collections</SelectItem>
+            <SelectItem value="all">
+              {t("catalog.filters.allCollections")}
+            </SelectItem>
             {collections.map((collection) => (
               <SelectItem key={collection.id} value={collection.id}>
                 {collection.name}
@@ -257,17 +265,29 @@ function FilterFields({
               stacked ? "w-full" : "ml-auto w-44 rounded-full",
               fieldWidth
             )}
-            aria-label="Trier les produits"
+            aria-label={t("catalog.filters.sortLabel")}
           >
-            <SelectValue placeholder="Trier par" />
+            <SelectValue placeholder={t("catalog.filters.sortBy")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="createdAt_desc">Nouveautés</SelectItem>
-            <SelectItem value="popularity_desc">Popularité</SelectItem>
-            <SelectItem value="name_asc">Nom (A→Z)</SelectItem>
-            <SelectItem value="name_desc">Nom (Z→A)</SelectItem>
-            <SelectItem value="price_asc">Prix croissant</SelectItem>
-            <SelectItem value="price_desc">Prix décroissant</SelectItem>
+            <SelectItem value="createdAt_desc">
+              {t("shell.nav.newArrivals")}
+            </SelectItem>
+            <SelectItem value="popularity_desc">
+              {t("catalog.filters.popularity")}
+            </SelectItem>
+            <SelectItem value="name_asc">
+              {t("catalog.filters.nameAsc")}
+            </SelectItem>
+            <SelectItem value="name_desc">
+              {t("catalog.filters.nameDesc")}
+            </SelectItem>
+            <SelectItem value="price_asc">
+              {t("catalog.filters.priceAsc")}
+            </SelectItem>
+            <SelectItem value="price_desc">
+              {t("catalog.filters.priceDesc")}
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -277,7 +297,7 @@ function FilterFields({
           <Input
             type="number"
             min={0}
-            placeholder="Prix min"
+            placeholder={t("catalog.filters.priceMin")}
             defaultValue={searchParams.get("priceMin") ?? ""}
             onChange={(event) =>
               debouncedSetPrice("priceMin", event.target.value)
@@ -289,7 +309,7 @@ function FilterFields({
           <Input
             type="number"
             min={0}
-            placeholder="Prix max"
+            placeholder={t("catalog.filters.priceMax")}
             defaultValue={searchParams.get("priceMax") ?? ""}
             onChange={(event) =>
               debouncedSetPrice("priceMax", event.target.value)
@@ -312,12 +332,14 @@ function FilterFields({
                 stacked ? "w-full" : "w-36 rounded-full",
                 fieldWidth
               )}
-              aria-label="Filtrer par marque"
+              aria-label={t("catalog.filters.byBrand")}
             >
-              <SelectValue placeholder="Marque" />
+              <SelectValue placeholder={t("catalog.specs.brand")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Toutes les marques</SelectItem>
+              <SelectItem value="all">
+                {t("catalog.filters.allBrands")}
+              </SelectItem>
               {brands.map((brand) => (
                 <SelectItem key={brand} value={brand}>
                   {brand}
@@ -339,12 +361,14 @@ function FilterFields({
                 stacked ? "w-full" : "w-28 rounded-full",
                 fieldWidth
               )}
-              aria-label="Filtrer par taille"
+              aria-label={t("catalog.filters.bySize")}
             >
-              <SelectValue placeholder="Taille" />
+              <SelectValue placeholder={t("catalog.variant.size")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Toutes tailles</SelectItem>
+              <SelectItem value="all">
+                {t("catalog.filters.allSizes")}
+              </SelectItem>
               {sizes.map((size) => (
                 <SelectItem key={size} value={size}>
                   {size}
@@ -366,12 +390,14 @@ function FilterFields({
                 stacked ? "w-full" : "w-32 rounded-full",
                 fieldWidth
               )}
-              aria-label="Filtrer par couleur"
+              aria-label={t("catalog.filters.byColor")}
             >
-              <SelectValue placeholder="Couleur" />
+              <SelectValue placeholder={t("catalog.variant.color")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Toutes couleurs</SelectItem>
+              <SelectItem value="all">
+                {t("catalog.filters.allColors")}
+              </SelectItem>
               {colors.map((color) => (
                 <SelectItem key={color} value={color}>
                   {color}
@@ -389,15 +415,17 @@ function FilterFields({
         >
           <SelectTrigger
             className={cn(stacked ? "w-full" : "w-28 rounded-full", fieldWidth)}
-            aria-label="Filtrer par genre"
+            aria-label={t("catalog.filters.byGender")}
           >
-            <SelectValue placeholder="Sexe" />
+            <SelectValue placeholder={t("catalog.filters.gender")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tous</SelectItem>
+            <SelectItem value="all">
+              {t("catalog.filters.allGenders")}
+            </SelectItem>
             {GENDER_OPTIONS.map((option) => (
               <SelectItem key={option.value} value={option.value}>
-                {option.label}
+                {t(option.label)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -415,7 +443,7 @@ function FilterFields({
             htmlFor={`filter-on-sale-${layout}`}
             className="text-sm font-normal"
           >
-            En promotion
+            {t("catalog.filters.onSale")}
           </Label>
         </div>
 
@@ -431,7 +459,7 @@ function FilterFields({
             htmlFor={`filter-available-${layout}`}
             className="text-sm font-normal"
           >
-            En stock
+            {t("catalog.filters.inStock")}
           </Label>
         </div>
       </div>

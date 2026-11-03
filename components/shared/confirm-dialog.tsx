@@ -18,6 +18,7 @@ interface ConfirmDialogProps {
   title: string
   description: string
   confirmLabel?: string
+  cancelLabel?: string
   destructive?: boolean
   onConfirm: () => void | Promise<void>
   /** Uncontrolled mode: renders its own trigger element. */
@@ -34,6 +35,7 @@ export function ConfirmDialog({
   title,
   description,
   confirmLabel = "Confirmer",
+  cancelLabel = "Annuler",
   destructive = false,
   onConfirm,
 }: ConfirmDialogProps) {
@@ -57,7 +59,9 @@ export function ConfirmDialog({
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={pending}>Annuler</AlertDialogCancel>
+          <AlertDialogCancel disabled={pending}>
+            {cancelLabel}
+          </AlertDialogCancel>
           <AlertDialogAction
             disabled={pending}
             onClick={handleConfirm}

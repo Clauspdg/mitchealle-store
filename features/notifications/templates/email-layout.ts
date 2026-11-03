@@ -1,4 +1,5 @@
 import { siteConfig } from "@/config/site"
+import type { Translator } from "@/i18n/translate"
 
 /**
  * Shared wrapper for every transactional email — table-based layout with
@@ -6,10 +7,15 @@ import { siteConfig } from "@/config/site"
  * (most clients strip <style> blocks and don't support flexbox/grid).
  * Responsive via a simple max-width table, which degrades gracefully on
  * mobile mail clients without needing media queries.
+ *
+ * Without a translator (emails not translated yet), the page stays French.
  */
-export function emailLayout(bodyHtml: string): string {
+export function emailLayout(
+  bodyHtml: string,
+  i18n?: Pick<Translator, "t" | "locale">
+): string {
   return `<!doctype html>
-<html lang="fr">
+<html lang="${i18n?.locale ?? "fr"}">
   <body style="margin:0;padding:0;background-color:#f5f5f4;font-family:Helvetica,Arial,sans-serif;">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f5f4;padding:24px 0;">
       <tr>
@@ -27,7 +33,7 @@ export function emailLayout(bodyHtml: string): string {
             </tr>
             <tr>
               <td style="padding:16px 24px;background-color:#fafafa;text-align:center;color:#888888;font-size:12px;">
-                ${siteConfig.name} — ${siteConfig.description}
+                ${siteConfig.name} — ${i18n ? i18n.t("shell.store.description") : siteConfig.description}
               </td>
             </tr>
           </table>

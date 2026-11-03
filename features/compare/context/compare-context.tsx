@@ -4,6 +4,7 @@ import { createContext, useContext, useMemo } from "react"
 import { toast } from "sonner"
 
 import { useLocalStorage } from "@/hooks/use-local-storage"
+import { useI18n } from "@/i18n/client"
 
 const COMPARE_STORAGE_KEY = "mitchaella-compare"
 export const MAX_COMPARE_ITEMS = 4
@@ -19,6 +20,7 @@ interface CompareContextValue {
 const CompareContext = createContext<CompareContextValue | null>(null)
 
 export function CompareProvider({ children }: { children: React.ReactNode }) {
+  const { t } = useI18n()
   const [ids, setIds] = useLocalStorage<string[]>(COMPARE_STORAGE_KEY, [])
 
   const value = useMemo<CompareContextValue>(
@@ -28,9 +30,7 @@ export function CompareProvider({ children }: { children: React.ReactNode }) {
         setIds((current) => {
           if (current.includes(productId)) return current
           if (current.length >= MAX_COMPARE_ITEMS) {
-            toast.error(
-              `Vous pouvez comparer jusqu'à ${MAX_COMPARE_ITEMS} produits à la fois.`
-            )
+            toast.error(t("catalog.compare.max", { max: MAX_COMPARE_ITEMS }))
             return current
           }
           return [...current, productId]
@@ -42,7 +42,7 @@ export function CompareProvider({ children }: { children: React.ReactNode }) {
       has: (productId) => ids.includes(productId),
       clear: () => setIds([]),
     }),
-    [ids, setIds]
+    [ids, setIds, t]
   )
 
   return (

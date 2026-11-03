@@ -10,6 +10,7 @@ import {
   renderOrderDeliveredEmail,
   renderOrderRefundedEmail,
   renderOrderShippedEmail,
+  renderOrderSms,
   renderPaymentConfirmedEmail,
 } from "@/features/notifications/templates"
 import { formatPriceMinor } from "@/utils/currency"
@@ -74,10 +75,7 @@ export async function dispatchNotification(
         phone &&
         (event.type === "order_shipped" || event.type === "order_delivered")
       ) {
-        const text =
-          event.type === "order_shipped"
-            ? `Votre commande ${order.orderNumber} a été expédiée.`
-            : `Votre commande ${order.orderNumber} a été livrée.`
+        const text = renderOrderSms(order, event.type)
         await smsProvider.send({ to: phone, text })
       }
       return

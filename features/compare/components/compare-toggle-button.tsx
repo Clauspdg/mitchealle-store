@@ -5,6 +5,7 @@ import { ScaleIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { useCompare } from "@/features/compare/context/compare-context"
+import { useI18n } from "@/i18n/client"
 
 interface CompareToggleButtonProps {
   productId: string
@@ -15,6 +16,7 @@ export function CompareToggleButton({
   productId,
   className,
 }: CompareToggleButtonProps) {
+  const { t } = useI18n()
   const { has, add, remove } = useCompare()
   const active = has(productId)
 
@@ -32,7 +34,9 @@ export function CompareToggleButton({
       size="icon"
       onClick={handleClick}
       className={cn("bg-background/80 backdrop-blur", className)}
-      aria-label={active ? "Retirer du comparateur" : "Ajouter au comparateur"}
+      aria-label={
+        active ? t("catalog.compare.remove") : t("catalog.compare.add")
+      }
       aria-pressed={active}
     >
       <ScaleIcon

@@ -32,8 +32,18 @@ const STATUS_VARIANTS: Record<
   refunded: "destructive",
 }
 
-export function OrderStatusBadge({ status }: { status: OrderStatus }) {
+/** `label` is the translated status on migrated pages; the admin panel,
+ * not translated yet, keeps the French one. */
+export function OrderStatusBadge({
+  status,
+  label,
+}: {
+  status: OrderStatus
+  label?: string
+}) {
   return (
-    <Badge variant={STATUS_VARIANTS[status]}>{STATUS_LABELS[status]}</Badge>
+    <Badge variant={STATUS_VARIANTS[status]}>
+      {label ?? STATUS_LABELS[status]}
+    </Badge>
   )
 }

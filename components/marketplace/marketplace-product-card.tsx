@@ -12,6 +12,7 @@ import { AddToCartButton } from "@/features/cart/components/add-to-cart-button"
 import { BuyNowButton } from "@/features/cart/components/buy-now-button"
 import { CompareToggleButton } from "@/features/compare/components/compare-toggle-button"
 import { computeProductBadges } from "@/features/catalog/lib/product-badges"
+import { getI18n } from "@/i18n/server"
 
 const IMAGE_SIZES =
   "(min-width: 1536px) 16vw, (min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
@@ -26,12 +27,13 @@ interface MarketplaceProductCardProps {
   sellerName?: string | null
 }
 
-export function MarketplaceProductCard({
+export async function MarketplaceProductCard({
   product,
   isInWishlist = false,
   priority = false,
   sellerName = null,
 }: MarketplaceProductCardProps) {
+  const { t } = await getI18n()
   const image = product.images[0]
   const hoverImage = product.images[1]
   const badges = computeProductBadges(product).slice(0, 2)
@@ -67,7 +69,7 @@ export function MarketplaceProductCard({
         <div className="pointer-events-none absolute top-2 left-2 flex flex-col items-start gap-1">
           {badges.map((badge) => (
             <Badge key={badge.key} className={badge.className}>
-              {badge.label}
+              {t(badge.label, badge.params)}
             </Badge>
           ))}
           <PreorderBadge
@@ -154,7 +156,9 @@ export function MarketplaceProductCard({
       >
         {sellerName || product.brand ? (
           <span className="text-muted-foreground truncate text-[0.68rem]">
-            {sellerName ? `Vendu par ${sellerName}` : product.brand}
+            {sellerName
+              ? t("catalog.soldBy", { seller: sellerName })
+              : product.brand}
           </span>
         ) : null}
         <span className="line-clamp-2 min-h-[2.5em] text-sm leading-tight font-medium">

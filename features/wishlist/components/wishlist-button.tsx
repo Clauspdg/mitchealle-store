@@ -10,6 +10,7 @@ import {
   addToWishlistAction,
   removeFromWishlistAction,
 } from "@/features/wishlist/actions/wishlist-actions"
+import { useI18n } from "@/i18n/client"
 
 interface WishlistButtonProps {
   productId: string
@@ -24,6 +25,7 @@ export function WishlistButton({
   initialIsInWishlist,
   className,
 }: WishlistButtonProps) {
+  const { t } = useI18n()
   const [isInWishlist, setIsInWishlist] = useState(initialIsInWishlist)
   const [isPending, startTransition] = useTransition()
 
@@ -55,9 +57,7 @@ export function WishlistButton({
       onClick={handleClick}
       className={cn("bg-background/80 backdrop-blur", className)}
       aria-label={
-        isInWishlist
-          ? "Retirer de la liste de souhaits"
-          : "Ajouter à la liste de souhaits"
+        isInWishlist ? t("catalog.wishlist.remove") : t("catalog.wishlist.add")
       }
       aria-pressed={isInWishlist}
     >

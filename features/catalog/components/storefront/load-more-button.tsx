@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Loader2Icon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { useI18n } from "@/i18n/client"
 
 interface LoadMoreButtonProps {
   /** The `pages` URL param value to navigate to — bumps how many pages the
@@ -14,6 +15,7 @@ interface LoadMoreButtonProps {
 }
 
 export function LoadMoreButton({ nextPages }: LoadMoreButtonProps) {
+  const { t } = useI18n()
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -37,7 +39,7 @@ export function LoadMoreButton({ nextPages }: LoadMoreButtonProps) {
       {isPending ? (
         <Loader2Icon className="size-4 animate-spin" />
       ) : (
-        "Charger plus"
+        t("catalog.loadMore")
       )}
     </Button>
   )

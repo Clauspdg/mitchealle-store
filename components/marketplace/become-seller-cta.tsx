@@ -2,26 +2,33 @@ import Link from "next/link"
 import { EyeIcon, PackageIcon, StoreIcon, type LucideIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { getI18n } from "@/i18n/server"
+import type { MessageKey } from "@/i18n/translate"
 
-const BENEFITS: Array<{ icon: LucideIcon; title: string; text: string }> = [
+const BENEFITS: Array<{
+  icon: LucideIcon
+  title: MessageKey
+  text: MessageKey
+}> = [
   {
     icon: StoreIcon,
-    title: "Votre vitrine en ligne",
-    text: "Présentez votre boutique et vos produits.",
+    title: "home.becomeSeller.showcaseTitle",
+    text: "home.becomeSeller.showcaseText",
   },
   {
     icon: EyeIcon,
-    title: "Plus de visibilité",
-    text: "Touchez des clients au-delà de votre quartier.",
+    title: "home.becomeSeller.visibilityTitle",
+    text: "home.becomeSeller.visibilityText",
   },
   {
     icon: PackageIcon,
-    title: "Vendez simplement",
-    text: "Concentrez-vous sur vos produits et vos clients.",
+    title: "home.becomeSeller.simpleTitle",
+    text: "home.becomeSeller.simpleText",
   },
 ]
 
-export function BecomeSellerCTA() {
+export async function BecomeSellerCTA() {
+  const { t } = await getI18n()
   return (
     <section
       id="devenir-vendeur"
@@ -30,19 +37,17 @@ export function BecomeSellerCTA() {
       <div className="mx-auto grid w-full max-w-7xl items-center gap-6 px-4 py-8 md:grid-cols-2 md:gap-10 md:py-12">
         <div className="flex flex-col items-start gap-3">
           <h2 className="font-heading text-2xl font-bold tracking-tight sm:text-3xl">
-            Devenez vendeur sur C.L.A.G
+            {t("home.becomeSeller.title")}
           </h2>
           <p className="max-w-md text-sm text-white/90 sm:text-base">
-            Vous êtes petit commerçant, vendeur indépendant ou boutique locale ?
-            Déposez votre candidature : notre équipe l&apos;étudie avant
-            l&apos;ouverture de votre boutique.
+            {t("home.becomeSeller.text")}
           </p>
           <Button
             render={<Link href="/account/seller-application" />}
             nativeButton={false}
             className="bg-accent-gold text-accent-gold-foreground hover:bg-accent-gold/90 mt-1 h-11 px-5 font-semibold"
           >
-            Déposer ma candidature
+            {t("home.becomeSeller.apply")}
           </Button>
         </div>
         <ul className="flex flex-col gap-3">
@@ -52,8 +57,8 @@ export function BecomeSellerCTA() {
                 <Icon className="size-4" />
               </span>
               <span className="flex flex-col">
-                <span className="text-sm font-semibold">{title}</span>
-                <span className="text-sm text-white/90">{text}</span>
+                <span className="text-sm font-semibold">{t(title)}</span>
+                <span className="text-sm text-white/90">{t(text)}</span>
               </span>
             </li>
           ))}
