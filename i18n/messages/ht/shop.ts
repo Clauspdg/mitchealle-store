@@ -1,6 +1,9 @@
 import type { Messages } from "@/i18n/messages/en"
 
 export const errors: Messages["errors"] = {
+  noFile: "Nou pa resevwa okenn fichye.",
+  fileType: "Kalite fichye sa a pa otorize: {type}",
+  imageTooLarge: "Imaj la twò gwo (5 Mo pi plis).",
   productMissing: "Pwodui sa a pa egziste.",
   productUnavailable: "Pwodui sa a pa disponib ankò.",
   insufficientStock: "Pa gen ase nan stòk ({count} disponib).",
@@ -125,6 +128,31 @@ export const checkout: Messages["checkout"] = {
 }
 
 export const orders: Messages["orders"] = {
+  emptyTitle: "Poko gen okenn kòmand",
+  emptyText: "Kòmand ou yo ap parèt la a lè w fin pase yo.",
+  detailMetaTitle: "Detay kòmand lan",
+  items: "Atik",
+  discount: "Rabè",
+  taxes: "Taks",
+  deliveredTo: "Livre nan:",
+  tracking: "Swivi",
+  byStore: "Swivi pa boutik",
+  trackingNumber: "Swivi: {number}",
+  payment: "Peman",
+  downloadInvoice: "Telechaje fakti a",
+  storeStatus: {
+    awaiting_payment: "Ap tann peman",
+    to_prepare: "Pou prepare",
+    preparing: "Ap prepare",
+    shipped: "Voye",
+    delivered: "Livre",
+    cancelled: "Anile",
+  },
+  paymentStatus: {
+    pending: "Ap tann",
+    succeeded: "Peye",
+    failed: "Echwe",
+  },
   status: {
     pending: "Ap tann peman",
     confirmed: "Konfime",
@@ -143,6 +171,7 @@ export const account: Messages["account"] = {
   nav: {
     profile: "Pwofil",
     orders: "Kòmand",
+    returns: "Retou",
     addresses: "Adrès",
   },
   email: "Imèl:",

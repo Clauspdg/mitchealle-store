@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useI18n } from "@/i18n/client"
 
 interface SellerApplicationFormProps {
   categories: Array<{ id: string; name: string }>
@@ -28,6 +29,7 @@ export function SellerApplicationForm({
   categories,
   defaultEmail,
 }: SellerApplicationFormProps) {
+  const { t } = useI18n()
   const router = useRouter()
   const [categoryId, setCategoryId] = useState("")
   const [submitting, setSubmitting] = useState(false)
@@ -35,7 +37,7 @@ export function SellerApplicationForm({
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!categoryId) {
-      toast.error("Choisissez la catégorie principale.")
+      toast.error(t("sellerApply.chooseCategory"))
       return
     }
     const formData = new FormData(event.currentTarget)
@@ -52,7 +54,7 @@ export function SellerApplicationForm({
         toast.error(result.error)
         return
       }
-      toast.success("Candidature envoyée.")
+      toast.success(t("sellerApply.sent"))
       router.refresh()
     } finally {
       setSubmitting(false)
@@ -66,9 +68,11 @@ export function SellerApplicationForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       <fieldset className="flex flex-col gap-4">
-        <legend className="mb-2 font-semibold">Votre boutique</legend>
+        <legend className="mb-2 font-semibold">
+          {t("sellerApply.yourStore")}
+        </legend>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="storeName">Nom de la boutique</Label>
+          <Label htmlFor="storeName">{t("sellerApply.storeName")}</Label>
           <Input
             id="storeName"
             name="storeName"
@@ -78,7 +82,7 @@ export function SellerApplicationForm({
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="description">Description</Label>
+          <Label htmlFor="description">{t("catalog.description")}</Label>
           <Textarea
             id="description"
             name="description"
@@ -86,18 +90,20 @@ export function SellerApplicationForm({
             minLength={20}
             maxLength={2000}
             rows={4}
-            placeholder="Ce que vous vendez, votre savoir-faire, votre zone d'activité…"
+            placeholder={t("sellerApply.descriptionPlaceholder")}
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="categoryId">Catégorie principale</Label>
+          <Label htmlFor="categoryId">{t("sellerApply.mainCategory")}</Label>
           <Select
             items={categoryItems}
             value={categoryId || null}
             onValueChange={(value) => setCategoryId(value ?? "")}
           >
             <SelectTrigger id="categoryId" className="w-full">
-              <SelectValue placeholder="Choisir une catégorie" />
+              <SelectValue
+                placeholder={t("sellerApply.chooseCategoryPlaceholder")}
+              />
             </SelectTrigger>
             <SelectContent>
               {categories.map((category) => (
@@ -109,7 +115,7 @@ export function SellerApplicationForm({
           </Select>
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="logo">Logo (facultatif)</Label>
+          <Label htmlFor="logo">{t("sellerApply.logo")}</Label>
           <Input
             id="logo"
             name={SELLER_APPLICATION_LOGO_FIELD}
@@ -117,26 +123,28 @@ export function SellerApplicationForm({
             accept="image/jpeg,image/png,image/webp,image/avif"
           />
           <p className="text-muted-foreground text-xs">
-            JPEG, PNG, WebP ou AVIF, 5 Mo maximum.
+            {t("sellerApply.logoHint")}
           </p>
         </div>
       </fieldset>
 
       <fieldset className="flex flex-col gap-4">
         <legend className="mb-2 font-semibold">
-          Coordonnées professionnelles
+          {t("sellerApply.businessContact")}
         </legend>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="legalName">Raison sociale ou nom</Label>
+            <Label htmlFor="legalName">{t("sellerApply.legalName")}</Label>
             <Input id="legalName" name="legalName" required minLength={2} />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="city">Ville</Label>
+            <Label htmlFor="city">{t("account.addresses.city")}</Label>
             <Input id="city" name="city" required minLength={2} />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="contactEmail">Email professionnel</Label>
+            <Label htmlFor="contactEmail">
+              {t("sellerApply.businessEmail")}
+            </Label>
             <Input
               id="contactEmail"
               name="contactEmail"
@@ -146,7 +154,7 @@ export function SellerApplicationForm({
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="contactPhone">Téléphone</Label>
+            <Label htmlFor="contactPhone">{t("account.addresses.phone")}</Label>
             <Input
               id="contactPhone"
               name="contactPhone"
@@ -159,7 +167,7 @@ export function SellerApplicationForm({
       </fieldset>
 
       <Button type="submit" disabled={submitting} className="self-start">
-        {submitting ? "Envoi..." : "Envoyer ma candidature"}
+        {submitting ? t("common.sending") : t("sellerApply.submit")}
       </Button>
     </form>
   )

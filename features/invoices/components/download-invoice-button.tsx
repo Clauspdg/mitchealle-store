@@ -1,8 +1,10 @@
 import { DownloadIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { getI18n } from "@/i18n/server"
 
-export function DownloadInvoiceButton({ orderId }: { orderId: string }) {
+export async function DownloadInvoiceButton({ orderId }: { orderId: string }) {
+  const { t } = await getI18n()
   return (
     <Button
       render={<a href={`/api/invoices/${orderId}/pdf`} />}
@@ -11,7 +13,7 @@ export function DownloadInvoiceButton({ orderId }: { orderId: string }) {
       size="sm"
     >
       <DownloadIcon />
-      Télécharger la facture
+      {t("orders.downloadInvoice")}
     </Button>
   )
 }

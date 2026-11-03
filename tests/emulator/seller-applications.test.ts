@@ -102,7 +102,8 @@ describe("submitting an application", () => {
     const result = await submitSellerApplicationAction(form("Autre Alice"))
     expect(result).toEqual({
       success: false,
-      error: "Vous avez déjà une candidature en cours d'examen.",
+      // A visitor with no language chosen reads English.
+      error: "You already have an application under review.",
     })
     expect(await applicationsOf("alice")).toHaveLength(1)
   })
@@ -139,7 +140,7 @@ describe("submitting an application", () => {
     const result = await submitSellerApplicationAction(
       form("Carol", { categoryId: "cat-off" })
     )
-    expect(result).toEqual({ success: false, error: "Catégorie introuvable." })
+    expect(result).toEqual({ success: false, error: "Category not found." })
   })
 
   it("redirects an anonymous visitor", async () => {

@@ -2,14 +2,17 @@ import type { Metadata } from "next"
 
 import { getFaqPage } from "@/services/firestore/content-pages"
 import { PageBreadcrumb } from "@/components/shared/page-breadcrumb"
+import { getI18n } from "@/i18n/server"
+import { localizeFaqPage } from "@/i18n/content-pages"
 
-export const metadata: Metadata = {
-  title: "Questions fréquentes",
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n()
+  return { title: t("content.faq.title") }
 }
 export const dynamic = "force-dynamic"
 
 export default async function FaqPage() {
-  const page = await getFaqPage()
+  const page = localizeFaqPage(await getFaqPage(), await getI18n())
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-6 py-12">

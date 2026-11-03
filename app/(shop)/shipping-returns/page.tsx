@@ -2,14 +2,22 @@ import type { Metadata } from "next"
 
 import { getContentPage } from "@/services/firestore/content-pages"
 import { PageBreadcrumb } from "@/components/shared/page-breadcrumb"
+import { getI18n } from "@/i18n/server"
+import { localizeContentPage } from "@/i18n/content-pages"
 
-export const metadata: Metadata = {
-  title: "Livraison & Retours",
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n()
+  return { title: t("content.shippingReturns.title") }
 }
 export const dynamic = "force-dynamic"
 
 export default async function ShippingReturnsPage() {
-  const page = await getContentPage("shipping-returns")
+  const i18n = await getI18n()
+  const page = localizeContentPage(
+    "shipping-returns",
+    await getContentPage("shipping-returns"),
+    i18n
+  )
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-12">

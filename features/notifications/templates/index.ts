@@ -168,47 +168,71 @@ export function renderCouponEmail(coupon: Coupon): EmailTemplate {
   }
 }
 
+/** A return's emails follow the language of its order; older orders were
+ * placed on the French-only site. */
+function returnI18n(locale: string | undefined): Translator {
+  return translatorFor(locale, "fr")
+}
+
 export function renderReturnAcceptedEmail(
-  returnRequest: Return
+  returnRequest: Return,
+  locale?: string
 ): EmailTemplate {
+  const i18n = returnI18n(locale)
+  const { t } = i18n
   return {
-    subject: "Votre demande de retour a été acceptée",
-    html: emailLayout(`
-      <p>Bonjour,</p>
-      <p>Votre demande de retour pour la commande liée a été <strong>acceptée</strong>.</p>
-      ${emailButton(`${APP_URL}/account/returns/${returnRequest.id}`, "Voir ma demande")}
-    `),
+    subject: t("emails.returnAccepted.subject"),
+    html: emailLayout(
+      `
+      <p>${t("emails.hello")}</p>
+      <p>${t("emails.returnAccepted.body")}</p>
+      ${emailButton(`${APP_URL}/account/returns/${returnRequest.id}`, t("emails.viewReturn"))}
+    `,
+      i18n
+    ),
   }
 }
 
+/** `reason` is written by the store or the admin, and shown as written. */
 export function renderReturnRejectedEmail(
   returnRequest: Return,
-  reason: string
+  reason: string | null,
+  locale?: string
 ): EmailTemplate {
+  const i18n = returnI18n(locale)
+  const { t } = i18n
   return {
-    subject: "Votre demande de retour a été refusée",
-    html: emailLayout(`
-      <p>Bonjour,</p>
-      <p>Votre demande de retour a été <strong>refusée</strong>.</p>
-      <p>Motif : ${reason}</p>
-      ${emailButton(`${APP_URL}/account/returns/${returnRequest.id}`, "Voir ma demande")}
-    `),
+    subject: t("emails.returnRejected.subject"),
+    html: emailLayout(
+      `
+      <p>${t("emails.hello")}</p>
+      <p>${t("emails.returnRejected.body")}</p>
+      <p>${t("emails.returnRejected.reason", { reason: reason ?? t("emails.returnRejected.noReason") })}</p>
+      ${emailButton(`${APP_URL}/account/returns/${returnRequest.id}`, t("emails.viewReturn"))}
+    `,
+      i18n
+    ),
   }
 }
 
 export function renderReturnRefundedEmail(
   returnRequest: Return,
   amountMinor: number,
-  currency: string
+  currency: string,
+  locale?: string
 ): EmailTemplate {
+  const i18n = returnI18n(locale)
+  const { t, price } = i18n
   return {
-    subject: "Votre retour a été remboursé",
-    html: emailLayout(`
-      <p>Bonjour,</p>
-      <p>Votre retour a été remboursé pour un montant de
-      <strong>${formatPriceMinor(amountMinor, currency)}</strong>.</p>
-      ${emailButton(`${APP_URL}/account/returns/${returnRequest.id}`, "Voir ma demande")}
-    `),
+    subject: t("emails.returnRefunded.subject"),
+    html: emailLayout(
+      `
+      <p>${t("emails.hello")}</p>
+      <p>${t("emails.returnRefunded.body", { amount: `<strong>${price(amountMinor, currency)}</strong>` })}</p>
+      ${emailButton(`${APP_URL}/account/returns/${returnRequest.id}`, t("emails.viewReturn"))}
+    `,
+      i18n
+    ),
   }
 }
 

@@ -1,10 +1,11 @@
-import { STORE_TIME } from "@/config/region"
 import Link from "next/link"
 
 import { ReturnStatusBadge } from "@/features/returns/components/return-status-badge"
 import type { Return } from "@/types/return"
+import { getI18n } from "@/i18n/server"
 
-export function ReturnRow({ returnRequest }: { returnRequest: Return }) {
+export async function ReturnRow({ returnRequest }: { returnRequest: Return }) {
+  const { t, plural, date } = await getI18n()
   return (
     <Link
       href={`/account/returns/${returnRequest.id}`}
@@ -12,19 +13,16 @@ export function ReturnRow({ returnRequest }: { returnRequest: Return }) {
     >
       <div className="flex flex-col gap-1">
         <span className="font-medium">
-          {returnRequest.items.length} article
-          {returnRequest.items.length > 1 ? "s" : ""}
+          {plural("cart.items", returnRequest.items.length)}
         </span>
         <span className="text-muted-foreground text-xs">
-          {returnRequest.createdAt.toDate().toLocaleDateString("fr-FR", {
-            ...STORE_TIME,
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          })}
+          {date(returnRequest.createdAt.toDate(), "long")}
         </span>
       </div>
-      <ReturnStatusBadge status={returnRequest.status} />
+      <ReturnStatusBadge
+        status={returnRequest.status}
+        label={t(`returns.status.${returnRequest.status}`)}
+      />
     </Link>
   )
 }

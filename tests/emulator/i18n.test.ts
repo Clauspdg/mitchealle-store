@@ -15,6 +15,11 @@ import { applyCouponAction } from "@/features/checkout/actions/apply-coupon-acti
 import { setLocaleAction } from "@/i18n/actions"
 import { syncLanguageWithAccount } from "@/i18n/account-language"
 import { UserError } from "@/i18n/user-error"
+import {
+  createReturnRequestAction,
+  uploadReturnPhotoAction,
+} from "@/features/returns/actions/return-actions"
+import { createReturnRequest } from "@/services/firestore/returns"
 
 let seq = 0
 
@@ -187,6 +192,56 @@ describe("customer errors", () => {
     expect(await applyCouponAction({ code: "I18N-OLD" })).toEqual({
       success: false,
       error: "Koupon sa a ekspire.",
+    })
+  })
+})
+
+describe("return errors", () => {
+  it("tell the customer in their language, and stay French for staff", async () => {
+    const item = await houseProduct(5)
+    await adminDb
+      .doc("carts/i18n-buyer")
+      .set({ items: [], updatedAt: Timestamp.now() })
+    await addCartItem("i18n-buyer", {
+      productId: item,
+      variantId: "v",
+      quantity: 1,
+    })
+    const order = await createOrderFromCart("i18n-buyer", {
+      customerEmail: "i18n-buyer@demo.clag.test",
+      deliveryMethod: "pickup",
+      shippingTier: null,
+      addressSnapshot: null,
+      notes: null,
+      couponCode: null,
+    })
+    const input = {
+      orderId: order.id,
+      items: [
+        { productId: item, variantId: "v", quantity: 1, reason: "Taille" },
+      ],
+      comment: null,
+      photoUrls: [],
+    }
+    await signInAs("i18n-buyer")
+    browserLanguage("ht")
+    expect(await createReturnRequestAction(input)).toEqual({
+      success: false,
+      error: "Se sèlman yon kòmand ki livre ki ka retounen.",
+    })
+    await expect(createReturnRequest("i18n-buyer", input)).rejects.toThrow(
+      "Seule une commande livrée peut faire l'objet d'un retour."
+    )
+  })
+
+  it("explain a refused photo in the visitor's language", async () => {
+    await signInAs("i18n-buyer")
+    browserLanguage("en")
+    const form = new FormData()
+    form.set("file", new File(["text"], "note.txt", { type: "text/plain" }))
+    expect(await uploadReturnPhotoAction(form)).toEqual({
+      success: false,
+      error: "File type not allowed: text/plain",
     })
   })
 })

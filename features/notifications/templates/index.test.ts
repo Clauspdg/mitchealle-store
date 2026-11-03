@@ -197,6 +197,22 @@ describe("email templates", () => {
     expect(template.html).toContain("Article utilisé")
   })
 
+  it("writes return emails in the order's language", () => {
+    const creole = renderReturnRejectedEmail(baseReturn(), null, "ht")
+    expect(creole.subject).toBe("Nou refize demann retou ou")
+    expect(creole.html).toContain("Rezon: Pa presize")
+    expect(creole.html).toContain('<html lang="ht">')
+
+    const english = renderReturnAcceptedEmail(baseReturn(), "en")
+    expect(english.subject).toBe("Your return request has been accepted")
+  })
+
+  it("keeps return emails in French for older orders, as before", () => {
+    const legacy = renderReturnRejectedEmail(baseReturn(), "Article utilisé")
+    expect(legacy.subject).toBe("Votre demande de retour a été refusée")
+    expect(legacy.html).toContain("Motif : Article utilisé")
+  })
+
   it("renders the password-reset email with a working reset link", () => {
     const template = renderPasswordResetEmail({
       resetLink: "https://example.com/reset?token=abc",

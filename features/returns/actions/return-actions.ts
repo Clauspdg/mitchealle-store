@@ -12,7 +12,15 @@ import { uploadImage } from "@/services/storage/images"
 import { logActivity } from "@/services/monitoring/log-activity"
 import type { ActionResult } from "@/types/action-result"
 import type { ReturnStatus } from "@/types/return"
+import { getI18n } from "@/i18n/server"
+import { userMessage } from "@/i18n/user-error"
 
+/** Customer-facing: the visitor's language. */
+async function customerMessage(error: unknown): Promise<string> {
+  return userMessage(error, await getI18n())
+}
+
+/** Staff-facing: the admin panel is not translated yet. */
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Une erreur est survenue."
 }
@@ -25,7 +33,9 @@ export async function createReturnRequestAction(
   if (!parsed.success) {
     return {
       success: false,
-      error: parsed.error.issues[0]?.message ?? "Données invalides.",
+      error: (await getI18n()).message(
+        parsed.error.issues[0]?.message ?? "common.genericError"
+      ),
     }
   }
 
@@ -39,7 +49,7 @@ export async function createReturnRequestAction(
     revalidatePath("/account/returns")
     return { success: true, data: { id: returnRequest.id } }
   } catch (error) {
-    return { success: false, error: errorMessage(error) }
+    return { success: false, error: await customerMessage(error) }
   }
 }
 
@@ -49,14 +59,14 @@ export async function uploadReturnPhotoAction(
   await requireSession("customer")
   const file = formData.get("file")
   if (!(file instanceof File)) {
-    return { success: false, error: "Aucun fichier reçu." }
+    return { success: false, error: (await getI18n()).t("errors.noFile") }
   }
 
   try {
     const result = await uploadImage("returns", file)
     return { success: true, data: result }
   } catch (error) {
-    return { success: false, error: errorMessage(error) }
+    return { success: false, error: await customerMessage(error) }
   }
 }
 

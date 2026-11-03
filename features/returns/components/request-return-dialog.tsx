@@ -22,6 +22,7 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import type { Order } from "@/types/order"
+import { useI18n } from "@/i18n/client"
 
 // Only plain fields: an `Order` carries Firestore `Timestamp`s, which can't
 // cross into a Client Component.
@@ -30,6 +31,7 @@ export function RequestReturnDialog({
 }: {
   order: Pick<Order, "id" | "items">
 }) {
+  const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set())
@@ -71,7 +73,7 @@ export function RequestReturnDialog({
 
   async function handleSubmit() {
     if (selectedKeys.size === 0) {
-      toast.error("Sélectionnez au moins un article.")
+      toast.error(t("returns.selectItem"))
       return
     }
 
@@ -88,7 +90,7 @@ export function RequestReturnDialog({
       }))
 
     if (items.some((item) => !item.reason.trim())) {
-      toast.error("Indiquez un motif pour chaque article sélectionné.")
+      toast.error(t("returns.reasonForEach"))
       return
     }
 
@@ -104,7 +106,7 @@ export function RequestReturnDialog({
         toast.error(result.error)
         return
       }
-      toast.success("Demande de retour envoyée.")
+      toast.success(t("returns.sent"))
       setOpen(false)
     } finally {
       setSubmitting(false)
@@ -114,14 +116,12 @@ export function RequestReturnDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={<Button variant="outline" size="sm" />}>
-        Demander un retour
+        {t("returns.request")}
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Demander un retour</DialogTitle>
-          <DialogDescription>
-            Sélectionnez les articles concernés et indiquez un motif.
-          </DialogDescription>
+          <DialogTitle>{t("returns.request")}</DialogTitle>
+          <DialogDescription>{t("returns.requestText")}</DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-3">
@@ -149,7 +149,7 @@ export function RequestReturnDialog({
                       htmlFor={`return-quantity-${key}`}
                       className="text-sm"
                     >
-                      Quantité à retourner
+                      {t("returns.quantityToReturn")}
                     </Label>
                     <Input
                       id={`return-quantity-${key}`}
@@ -172,7 +172,7 @@ export function RequestReturnDialog({
                 ) : null}
                 {checked ? (
                   <Input
-                    placeholder="Motif du retour"
+                    placeholder={t("returns.reasonPlaceholder")}
                     value={reasons[key] ?? ""}
                     onChange={(event) =>
                       setReasons((current) => ({
@@ -187,7 +187,7 @@ export function RequestReturnDialog({
           })}
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="return-comment">Commentaire (optionnel)</Label>
+            <Label htmlFor="return-comment">{t("returns.commentLabel")}</Label>
             <Textarea
               id="return-comment"
               value={comment}
@@ -196,7 +196,7 @@ export function RequestReturnDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="return-photo">Photo (optionnel)</Label>
+            <Label htmlFor="return-photo">{t("returns.photoLabel")}</Label>
             <Input
               id="return-photo"
               type="file"
@@ -205,14 +205,16 @@ export function RequestReturnDialog({
               onChange={(event) => handlePhotoChange(event.target.files?.[0])}
             />
             {photoUrl ? (
-              <p className="text-muted-foreground text-xs">Photo ajoutée.</p>
+              <p className="text-muted-foreground text-xs">
+                {t("returns.photoAdded")}
+              </p>
             ) : null}
           </div>
         </div>
 
         <DialogFooter>
           <Button type="button" disabled={submitting} onClick={handleSubmit}>
-            {submitting ? "Envoi..." : "Envoyer la demande"}
+            {submitting ? t("common.sending") : t("returns.send")}
           </Button>
         </DialogFooter>
       </DialogContent>

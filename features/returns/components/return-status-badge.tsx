@@ -20,8 +20,18 @@ const STATUS_VARIANTS: Record<
   refunded: "outline",
 }
 
-export function ReturnStatusBadge({ status }: { status: ReturnStatus }) {
+/** `label` is the translated status on customer pages; the admin panel,
+ * not translated yet, keeps the French one. */
+export function ReturnStatusBadge({
+  status,
+  label,
+}: {
+  status: ReturnStatus
+  label?: string
+}) {
   return (
-    <Badge variant={STATUS_VARIANTS[status]}>{STATUS_LABELS[status]}</Badge>
+    <Badge variant={STATUS_VARIANTS[status]}>
+      {label ?? STATUS_LABELS[status]}
+    </Badge>
   )
 }

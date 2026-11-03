@@ -3,6 +3,9 @@ import type { Messages } from "@/i18n/messages/en"
 // The texts the site showed before translation, word for word: tests and
 // the admin panel read some of them.
 export const errors: Messages["errors"] = {
+  noFile: "Aucun fichier reçu.",
+  fileType: "Type de fichier non autorisé : {type}",
+  imageTooLarge: "Image trop volumineuse (5 Mo maximum).",
   productMissing: "Ce produit n'existe pas.",
   productUnavailable: "Ce produit n'est plus disponible.",
   insufficientStock: "Stock insuffisant ({count} disponible(s)).",
@@ -129,6 +132,31 @@ export const checkout: Messages["checkout"] = {
 }
 
 export const orders: Messages["orders"] = {
+  emptyTitle: "Aucune commande pour le moment",
+  emptyText: "Vos commandes apparaîtront ici une fois passées.",
+  detailMetaTitle: "Détail de la commande",
+  items: "Articles",
+  discount: "Réduction",
+  taxes: "Taxes",
+  deliveredTo: "Livraison à :",
+  tracking: "Suivi",
+  byStore: "Suivi par boutique",
+  trackingNumber: "Suivi : {number}",
+  payment: "Paiement",
+  downloadInvoice: "Télécharger la facture",
+  storeStatus: {
+    awaiting_payment: "Paiement en attente",
+    to_prepare: "À préparer",
+    preparing: "En préparation",
+    shipped: "Expédiée",
+    delivered: "Livrée",
+    cancelled: "Annulée",
+  },
+  paymentStatus: {
+    pending: "En attente",
+    succeeded: "Payé",
+    failed: "Échoué",
+  },
   status: {
     pending: "En attente de paiement",
     confirmed: "Confirmée",
@@ -147,6 +175,7 @@ export const account: Messages["account"] = {
   nav: {
     profile: "Profil",
     orders: "Commandes",
+    returns: "Retours",
     addresses: "Adresses",
   },
   email: "Email :",

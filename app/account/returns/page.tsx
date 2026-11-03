@@ -6,14 +6,19 @@ import { listReturnsForUser } from "@/services/firestore/returns"
 import { EmptyState } from "@/components/shared/empty-state"
 import { CursorPagination } from "@/components/shared/cursor-pagination"
 import { ReturnRow } from "@/features/returns/components/return-row"
+import { getI18n } from "@/i18n/server"
 
-export const metadata: Metadata = { title: "Mes retours" }
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n()
+  return { title: t("returns.title") }
+}
 
 interface ReturnsPageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
 export default async function ReturnsPage({ searchParams }: ReturnsPageProps) {
+  const { t } = await getI18n()
   const session = await requireSession("customer")
   const rawParams = await searchParams
   const cursor = typeof rawParams.cursor === "string" ? rawParams.cursor : null
@@ -27,14 +32,14 @@ export default async function ReturnsPage({ searchParams }: ReturnsPageProps) {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="font-heading text-xl font-semibold tracking-tight">
-        Mes retours
+        {t("returns.title")}
       </h1>
 
       {returns.length === 0 ? (
         <EmptyState
           icon={PackageXIcon}
-          title="Aucune demande de retour"
-          description="Vos demandes de retour apparaîtront ici."
+          title={t("returns.emptyTitle")}
+          description={t("returns.emptyText")}
         />
       ) : (
         <div className="flex flex-col gap-2">

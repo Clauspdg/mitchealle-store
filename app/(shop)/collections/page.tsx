@@ -4,17 +4,24 @@ import type { Metadata } from "next"
 
 import { listCollections } from "@/services/firestore/collections"
 import { Reveal } from "@/components/shared/reveal"
+import { getI18n } from "@/i18n/server"
 
-export const metadata: Metadata = { title: "Collections" }
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n()
+  return { title: t("shell.menu.collections") }
+}
 // Live catalog data must never be baked into the build output.
 export const dynamic = "force-dynamic"
 
 export default async function CollectionsPage() {
+  const { t } = await getI18n()
   const collections = await listCollections({ activeOnly: true })
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-6 py-12">
-      <h1 className="font-heading text-3xl font-medium">Collections</h1>
+      <h1 className="font-heading text-3xl font-medium">
+        {t("shell.menu.collections")}
+      </h1>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {collections.map((collection, index) => (

@@ -6,6 +6,7 @@ import type { MessageKey } from "@/i18n/translate"
 const ACCOUNT_NAV: Array<{ key: MessageKey; href: string }> = [
   { key: "account.nav.profile", href: "/account" },
   { key: "account.nav.orders", href: "/account/orders" },
+  { key: "account.nav.returns", href: "/account/returns" },
   { key: "account.nav.addresses", href: "/account/addresses" },
   { key: "shell.header.wishlist", href: "/account/wishlist" },
   { key: "shell.header.sell", href: "/account/seller-application" },

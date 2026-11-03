@@ -1,4 +1,7 @@
 export const errors = {
+  noFile: "No file received.",
+  fileType: "File type not allowed: {type}",
+  imageTooLarge: "Image too large (5 MB maximum).",
   productMissing: "This product doesn't exist.",
   productUnavailable: "This product is no longer available.",
   insufficientStock: "Not enough stock ({count} available).",
@@ -123,6 +126,31 @@ export const checkout = {
 }
 
 export const orders = {
+  emptyTitle: "No orders yet",
+  emptyText: "Your orders will appear here once placed.",
+  detailMetaTitle: "Order details",
+  items: "Items",
+  discount: "Discount",
+  taxes: "Taxes",
+  deliveredTo: "Delivered to:",
+  tracking: "Tracking",
+  byStore: "Tracking by store",
+  trackingNumber: "Tracking: {number}",
+  payment: "Payment",
+  downloadInvoice: "Download the invoice",
+  storeStatus: {
+    awaiting_payment: "Awaiting payment",
+    to_prepare: "To prepare",
+    preparing: "Being prepared",
+    shipped: "Shipped",
+    delivered: "Delivered",
+    cancelled: "Cancelled",
+  },
+  paymentStatus: {
+    pending: "Pending",
+    succeeded: "Paid",
+    failed: "Failed",
+  },
   status: {
     pending: "Awaiting payment",
     confirmed: "Confirmed",
@@ -141,6 +169,7 @@ export const account = {
   nav: {
     profile: "Profile",
     orders: "Orders",
+    returns: "Returns",
     addresses: "Addresses",
   },
   email: "Email:",

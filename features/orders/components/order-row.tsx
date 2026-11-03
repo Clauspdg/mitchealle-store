@@ -1,11 +1,11 @@
-import { STORE_TIME } from "@/config/region"
 import Link from "next/link"
 
-import { formatPriceMinor } from "@/utils/currency"
 import { OrderStatusBadge } from "@/features/orders/components/order-status-badge"
 import type { Order } from "@/types/order"
+import { getI18n } from "@/i18n/server"
 
-export function OrderRow({ order }: { order: Order }) {
+export async function OrderRow({ order }: { order: Order }) {
+  const { t, price, date } = await getI18n()
   return (
     <Link
       href={`/account/orders/${order.id}`}
@@ -14,17 +14,15 @@ export function OrderRow({ order }: { order: Order }) {
       <div className="flex flex-col gap-1">
         <span className="font-medium">{order.orderNumber}</span>
         <span className="text-muted-foreground text-xs">
-          {order.createdAt.toDate().toLocaleDateString("fr-FR", {
-            ...STORE_TIME,
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          })}
+          {date(order.createdAt.toDate(), "long")}
         </span>
       </div>
-      <OrderStatusBadge status={order.status} />
+      <OrderStatusBadge
+        status={order.status}
+        label={t(`orders.status.${order.status}`)}
+      />
       <span className="font-medium">
-        {formatPriceMinor(order.totalMinor, order.currency)}
+        {price(order.totalMinor, order.currency)}
       </span>
     </Link>
   )

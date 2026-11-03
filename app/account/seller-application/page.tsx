@@ -6,24 +6,17 @@ import { listCategories } from "@/services/firestore/categories"
 import { listApplicationsForApplicant } from "@/services/firestore/seller/applications"
 import { Badge } from "@/components/ui/badge"
 import { SellerApplicationForm } from "@/features/sellers/components/seller-application-form"
-import {
-  APPLICATION_STATUS_BADGE,
-  APPLICATION_STATUS_LABELS,
-  formatDateTime,
-} from "@/features/sellers/lib/seller-labels"
+import { APPLICATION_STATUS_BADGE } from "@/features/sellers/lib/seller-labels"
+import { getI18n } from "@/i18n/server"
 
-export const metadata: Metadata = { title: "Vendre sur C.L.A.G" }
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n()
+  return { title: t("shell.header.sell") }
+}
 export const dynamic = "force-dynamic"
 
-const STATUS_MESSAGES = {
-  pending:
-    "Notre équipe étudie votre candidature. Vous pourrez en déposer une nouvelle une fois celle-ci traitée.",
-  approved:
-    "Votre boutique est ouverte : gérez votre catalogue et votre stock depuis l'espace vendeur.",
-  rejected: "Votre candidature n'a pas été retenue.",
-} as const
-
 export default async function SellerApplicationPage() {
+  const { t, dateTime } = await getI18n()
   const session = await requireSession("customer")
   const [applications, categories] = await Promise.all([
     listApplicationsForApplicant(session.uid),
@@ -35,17 +28,19 @@ export default async function SellerApplicationPage() {
     <div className="flex flex-col gap-8">
       <div>
         <h1 className="text-xl font-semibold tracking-tight">
-          Vendre sur C.L.A.G
+          {t("shell.header.sell")}
         </h1>
         <p className="text-muted-foreground text-sm">
-          Demandez l&apos;ouverture de votre boutique. Votre compte client reste
-          inchangé pendant toute la procédure.
+          {t("sellerApply.intro")}
         </p>
       </div>
 
       {applications.length > 0 ? (
-        <section className="flex flex-col gap-3" aria-label="Mes candidatures">
-          <h2 className="font-semibold">Mes candidatures</h2>
+        <section
+          className="flex flex-col gap-3"
+          aria-label={t("sellerApply.mine")}
+        >
+          <h2 className="font-semibold">{t("sellerApply.mine")}</h2>
           {applications.map((application) => (
             <article
               key={application.id}
@@ -54,25 +49,29 @@ export default async function SellerApplicationPage() {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="font-medium">{application.storeName}</span>
                 <Badge className={APPLICATION_STATUS_BADGE[application.status]}>
-                  {APPLICATION_STATUS_LABELS[application.status]}
+                  {t(`sellerApply.status.${application.status}`)}
                 </Badge>
               </div>
               <p className="text-muted-foreground text-xs">
-                Déposée le {formatDateTime(application.createdAt.toMillis())}
+                {t("sellerApply.submittedOn", {
+                  date: dateTime(application.createdAt.toMillis()),
+                })}
               </p>
-              <p className="text-sm">{STATUS_MESSAGES[application.status]}</p>
+              <p className="text-sm">
+                {t(`sellerApply.statusText.${application.status}`)}
+              </p>
               {application.status === "approved" && application.sellerId ? (
                 <Link
                   href={`/seller/${application.sellerId}`}
                   className="text-sm font-medium underline underline-offset-4"
                 >
-                  Ouvrir l&apos;espace vendeur
+                  {t("account.openSellerCenter")}
                 </Link>
               ) : null}
               {application.status === "rejected" &&
               application.rejectionReason ? (
                 <p className="bg-muted rounded-md p-3 text-sm">
-                  Motif : {application.rejectionReason}
+                  {t("returns.reason", { reason: application.rejectionReason })}
                 </p>
               ) : null}
             </article>
@@ -84,8 +83,8 @@ export default async function SellerApplicationPage() {
         <section className="flex flex-col gap-4">
           <h2 className="font-semibold">
             {applications.length > 0
-              ? "Nouvelle candidature"
-              : "Votre candidature"}
+              ? t("sellerApply.newApplication")
+              : t("sellerApply.yourApplication")}
           </h2>
           <SellerApplicationForm
             categories={categories.map(({ id, name }) => ({ id, name }))}

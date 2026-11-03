@@ -8,10 +8,10 @@ export const createReturnSchema = z.object({
         productId: z.string().min(1),
         variantId: z.string().min(1),
         quantity: z.number().int().positive(),
-        reason: z.string().min(1, "Indiquez un motif."),
+        reason: z.string().min(1, "returns.reasonRequired"),
       })
     )
-    .min(1, "Sélectionnez au moins un article."),
+    .min(1, "returns.selectItem"),
   comment: z.string().nullable(),
   photoUrls: z.array(z.string()),
 })

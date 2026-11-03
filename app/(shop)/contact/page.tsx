@@ -3,15 +3,22 @@ import type { Metadata } from "next"
 import { getContentPage } from "@/services/firestore/content-pages"
 import { getStoreSettings } from "@/services/firestore/settings"
 import { PageBreadcrumb } from "@/components/shared/page-breadcrumb"
+import { getI18n } from "@/i18n/server"
+import { localizeContentPage } from "@/i18n/content-pages"
 
-export const metadata: Metadata = {
-  title: "Contact",
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n()
+  return { title: t("content.contact.title") }
 }
 export const dynamic = "force-dynamic"
 
 export default async function ContactPage() {
+  const i18n = await getI18n()
+  const { t } = i18n
   const [page, settings] = await Promise.all([
-    getContentPage("contact"),
+    getContentPage("contact").then((found) =>
+      localizeContentPage("contact", found, i18n)
+    ),
     getStoreSettings(),
   ])
 
@@ -32,7 +39,7 @@ export default async function ContactPage() {
         {settings.contactEmail ? (
           <div className="flex flex-col gap-1">
             <span className="text-muted-foreground text-xs uppercase">
-              Email
+              {t("auth.login.email")}
             </span>
             <a
               href={`mailto:${settings.contactEmail}`}
@@ -45,7 +52,7 @@ export default async function ContactPage() {
         {settings.contactPhone ? (
           <div className="flex flex-col gap-1">
             <span className="text-muted-foreground text-xs uppercase">
-              Téléphone
+              {t("account.addresses.phone")}
             </span>
             <a
               href={`tel:${settings.contactPhone}`}
@@ -66,7 +73,7 @@ export default async function ContactPage() {
         {settings.address.line1 ? (
           <div className="flex flex-col gap-1">
             <span className="text-muted-foreground text-xs uppercase">
-              Adresse
+              {t("account.addresses.address")}
             </span>
             <span>
               {settings.address.line1}, {settings.address.city}

@@ -5,6 +5,21 @@ export const emails: Messages["emails"] = {
   viewOrder: "Wè kòmand mwen",
   trackOrder: "Swiv kòmand mwen",
   total: "Total: {amount}",
+  viewReturn: "Wè demann mwen",
+  returnAccepted: {
+    subject: "Nou aksepte demann retou ou",
+    body: "Nou <strong>aksepte</strong> demann retou ou pou kòmand sa a.",
+  },
+  returnRejected: {
+    subject: "Nou refize demann retou ou",
+    body: "Nou <strong>refize</strong> demann retou ou.",
+    reason: "Rezon: {reason}",
+    noReason: "Pa presize",
+  },
+  returnRefunded: {
+    subject: "Nou ranbouse retou ou",
+    body: "Nou ranbouse retou ou pou yon montan {amount}.",
+  },
   confirmation: {
     subject: "Nou resevwa kòmand {number}",
     body: "Nou byen resevwa kòmand ou {number}.",

@@ -42,6 +42,7 @@ import type {
   ReturnItem,
   ReturnStatus,
 } from "@/types/return"
+import { UserError } from "@/i18n/user-error"
 
 const RETURNS_COLLECTION = "returns"
 const PAGE_SIZE = 20
@@ -143,12 +144,10 @@ export async function createReturnRequest(
     ])
     const order = orderSnap.data() as OrderDocument | undefined
     if (!order || order.userId !== uid) {
-      throw new Error("Commande introuvable.")
+      throw new UserError("errors.orderNotFound")
     }
     if (order.status !== "delivered") {
-      throw new Error(
-        "Seule une commande livrée peut faire l'objet d'un retour."
-      )
+      throw new UserError("returns.onlyDelivered")
     }
 
     // Each line must be one of the order's, for no more than what is left.
@@ -166,7 +165,7 @@ export async function createReturnRequest(
       const line = lineOf(item)
       const left = (line?.quantity ?? 0) - (tally.lines.get(key)?.units ?? 0)
       if (!line || item.quantity < 1 || requested.get(key)! > left) {
-        throw new Error("Un article de la demande ne peut pas être retourné.")
+        throw new UserError("returns.itemNotReturnable")
       }
     }
 
@@ -581,7 +580,8 @@ export async function updateReturnStatus(
         const template = renderReturnRefundedEmail(
           updated,
           refundedMinor,
-          order.currency
+          order.currency,
+          order.locale
         )
         await emailProvider.send({
           to: order.customerEmail,
@@ -593,8 +593,8 @@ export async function updateReturnStatus(
       if (order) {
         const template =
           status === "approved"
-            ? renderReturnAcceptedEmail(updated)
-            : renderReturnRejectedEmail(updated, note ?? "Non spécifié")
+            ? renderReturnAcceptedEmail(updated, order.locale)
+            : renderReturnRejectedEmail(updated, note ?? null, order.locale)
         await emailProvider.send({
           to: order.customerEmail,
           subject: template.subject,

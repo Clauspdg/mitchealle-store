@@ -15,12 +15,25 @@ import {
   sellerApplicationSchema,
 } from "@/schemas/seller-application.schema"
 import type { ActionResult } from "@/types/action-result"
+import { getI18n } from "@/i18n/server"
+import { UserError } from "@/i18n/user-error"
+import type { MessageKey } from "@/i18n/translate"
 
 /** Any signed-in account may apply. Its platform role is never changed. */
+/** What the shared seller workflow tells an applicant, by its French text. */
+const APPLICANT_ERRORS: Record<string, MessageKey> = {
+  "Ce nom de boutique est déjà utilisé.": "sellerApply.nameTaken",
+  "Le nom de la boutique est invalide.": "sellerApply.nameInvalid",
+  "Vous avez déjà une candidature en cours d'examen.":
+    "sellerApply.alreadyPending",
+  "Catégorie introuvable.": "sellerApply.categoryMissing",
+}
+
 export async function submitSellerApplicationAction(
   formData: FormData
 ): Promise<ActionResult<{ applicationId: string }>> {
   const session = await requireSession("customer")
+  const { t } = await getI18n()
 
   const fields = Object.fromEntries(
     [...formData.entries()].filter(
@@ -29,13 +42,13 @@ export async function submitSellerApplicationAction(
   )
   const parsed = sellerApplicationSchema.safeParse(fields)
   if (!parsed.success) {
-    return { success: false, error: "Vérifiez les informations du formulaire." }
+    return { success: false, error: t("sellerApply.checkForm") }
   }
 
   if (await hasPendingApplication(session.uid)) {
     return {
       success: false,
-      error: "Vous avez déjà une candidature en cours d'examen.",
+      error: t("sellerApply.alreadyPending"),
     }
   }
 
@@ -61,7 +74,11 @@ export async function submitSellerApplicationAction(
     return { success: true, data: { applicationId } }
   } catch (error) {
     if (error instanceof SellerWorkflowError) {
-      return { success: false, error: error.message }
+      const key = APPLICANT_ERRORS[error.message]
+      return { success: false, error: key ? t(key) : error.message }
+    }
+    if (error instanceof UserError) {
+      return { success: false, error: t(error.key, error.params) }
     }
     if (
       error instanceof Error &&
@@ -74,7 +91,7 @@ export async function submitSellerApplicationAction(
     })
     return {
       success: false,
-      error: "La candidature n'a pas pu être enregistrée. Réessayez.",
+      error: t("sellerApply.saveFailed"),
     }
   }
 }

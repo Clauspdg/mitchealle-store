@@ -5,6 +5,21 @@ export const emails: Messages["emails"] = {
   viewOrder: "Voir ma commande",
   trackOrder: "Suivre ma commande",
   total: "Total : {amount}",
+  viewReturn: "Voir ma demande",
+  returnAccepted: {
+    subject: "Votre demande de retour a été acceptée",
+    body: "Votre demande de retour pour la commande liée a été <strong>acceptée</strong>.",
+  },
+  returnRejected: {
+    subject: "Votre demande de retour a été refusée",
+    body: "Votre demande de retour a été <strong>refusée</strong>.",
+    reason: "Motif : {reason}",
+    noReason: "Non spécifié",
+  },
+  returnRefunded: {
+    subject: "Votre retour a été remboursé",
+    body: "Votre retour a été remboursé pour un montant de {amount}.",
+  },
   confirmation: {
     subject: "Commande {number} reçue",
     body: "Nous avons bien reçu votre commande {number}.",

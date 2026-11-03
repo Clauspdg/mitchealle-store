@@ -1,8 +1,8 @@
 import Image from "next/image"
 import Link from "next/link"
 
-import { formatPriceMinor } from "@/utils/currency"
 import type { Product } from "@/types/product"
+import { getI18n } from "@/i18n/server"
 
 interface CompareTableProps {
   products: Product[]
@@ -29,33 +29,55 @@ interface AttributeRow {
   render: (product: Product) => React.ReactNode
 }
 
-export function CompareTable({ products, categoryNames }: CompareTableProps) {
+export async function CompareTable({
+  products,
+  categoryNames,
+}: CompareTableProps) {
+  const { t, price, number } = await getI18n()
   const rows: AttributeRow[] = [
     {
-      label: "Prix",
+      label: t("compare.price"),
       render: (product) =>
-        formatPriceMinor(
+        price(
           product.salePriceMinor ?? product.basePriceMinor,
           product.currency
         ),
     },
-    { label: "Tailles", render: (product) => uniqueValues(product, "size") },
-    { label: "Couleurs", render: (product) => uniqueValues(product, "color") },
-    { label: "Matière", render: (product) => product.material ?? "—" },
     {
-      label: "Catégorie",
+      label: t("compare.sizes"),
+      render: (product) => uniqueValues(product, "size"),
+    },
+    {
+      label: t("compare.colors"),
+      render: (product) => uniqueValues(product, "color"),
+    },
+    {
+      label: t("catalog.specs.material"),
+      render: (product) => product.material ?? "—",
+    },
+    {
+      label: t("catalog.specs.category"),
       render: (product) => categoryNames[product.categoryId] ?? "—",
     },
-    { label: "Marque", render: (product) => product.brand ?? "—" },
     {
-      label: "Poids",
-      render: (product) =>
-        product.weightGrams ? `${product.weightGrams} g` : "—",
+      label: t("catalog.specs.brand"),
+      render: (product) => product.brand ?? "—",
     },
-    { label: "Dimensions", render: (product) => product.dimensionsCm ?? "—" },
     {
-      label: "Disponibilité",
-      render: (product) => (isAvailable(product) ? "En stock" : "Épuisé"),
+      label: t("catalog.specs.weight"),
+      render: (product) =>
+        product.weightGrams ? `${number(product.weightGrams)} g` : "—",
+    },
+    {
+      label: t("catalog.specs.dimensions"),
+      render: (product) => product.dimensionsCm ?? "—",
+    },
+    {
+      label: t("compare.availability"),
+      render: (product) =>
+        isAvailable(product)
+          ? t("catalog.filters.inStock")
+          : t("catalog.badges.soldOut"),
     },
   ]
 

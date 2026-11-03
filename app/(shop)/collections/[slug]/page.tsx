@@ -11,6 +11,7 @@ import { PageBreadcrumb } from "@/components/shared/page-breadcrumb"
 import { ProductGrid } from "@/features/catalog/components/storefront/product-grid"
 import { CursorPagination } from "@/components/shared/cursor-pagination"
 import { JsonLd } from "@/features/seo/components/json-ld"
+import { getI18n } from "@/i18n/server"
 
 // Live catalog data must never be baked into the build output.
 export const dynamic = "force-dynamic"
@@ -78,7 +79,10 @@ export default async function CollectionPage({
 
   const wishlistProductIds = new Set(wishlist.map((item) => item.id))
   const breadcrumbItems = [
-    { title: "Collections", href: "/collections" },
+    {
+      title: (await getI18n()).t("shell.menu.collections"),
+      href: "/collections",
+    },
     { title: collection.name },
   ]
 

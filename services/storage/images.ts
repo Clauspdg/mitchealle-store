@@ -2,6 +2,7 @@ import "server-only"
 import { randomUUID } from "node:crypto"
 
 import { adminStorage } from "@/firebase/admin"
+import { UserError } from "@/i18n/user-error"
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024 // 5 MB
 const ALLOWED_CONTENT_TYPES = new Set([
@@ -16,10 +17,10 @@ const GCS_PUBLIC_HOST = "https://storage.googleapis.com"
 /** Same checks for every image the app stores, public or private. */
 export function assertAllowedImage(file: File): string {
   if (!ALLOWED_CONTENT_TYPES.has(file.type)) {
-    throw new Error(`Type de fichier non autorisé : ${file.type || "inconnu"}`)
+    throw new UserError("errors.fileType", { type: file.type || "?" })
   }
   if (file.size > MAX_FILE_SIZE_BYTES) {
-    throw new Error("Image trop volumineuse (5 Mo maximum).")
+    throw new UserError("errors.imageTooLarge")
   }
   return file.type.split("/")[1] ?? "jpg"
 }
